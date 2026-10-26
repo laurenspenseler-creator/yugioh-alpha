@@ -210,8 +210,10 @@ participant's deck) and on `/inventory/files`. They need no account and no API k
   card is read reliably; in a photo of six cards about nine in ten are found, plus a
   few wrong hits, fewer on a small photo or with foil lettering. The lines are appended
   to the list, so the review table (with "sicher" and "Unsicher") decides what is added.
-- **Speech** (`SpeechInput.vue`, `app/utils/speech-transcribe.ts`): Whisper base
-  (`@huggingface/transformers`, WASM) transcribes the recording;
+- **Speech** (`SpeechInput.vue`, `app/utils/speech-transcribe.ts`): Whisper
+  (`@huggingface/transformers`, WASM, in the Web Worker `app/workers/speech.worker.ts` so the
+  page stays usable) transcribes the recording, "Genau" with the small model (the default,
+  240 MB, slow) or "Schnell" with the base one (75 MB), chosen next to the button;
   `app/utils/spoken-card-lines.ts` turns "dreimal Ash Blossom" into `3x Ash Blossom`.
   A name the recognizer wrote as it sounds ("Goldsako-Fark") is still found: the lookup
   also compares the letters and the sound of all names. A card named twice, anywhere in the
@@ -220,7 +222,7 @@ participant's deck) and on `/inventory/files`. They need no account and no API k
   dev server over plain HTTP a file input records with the phone's own recorder.
 - **Assets**: the OCR core and ONNX runtime are copied to `public/ai` by
   `pnpm ai:assets` (part of `postinstall`; git-ignored). `pnpm ai:assets --models`
-  also downloads the speech model and the OCR language data (about 95 MB); the
+  also downloads both speech models and the OCR language data (about 335 MB); the
   desktop build does that (`desktop/scripts/prepare-server.mjs`) so the installed app
   works offline. Without them the browser fetches the model from Hugging Face on
   first use. `public/ai` is not in the service worker's precache.

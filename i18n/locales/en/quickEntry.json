@@ -56,7 +56,14 @@
       "start": "Dictate",
       "stop": "Done",
       "pickFile": "Choose a recording",
-      "hint": "Say the cards with the quantity before the name, for example “three Blue-Eyes White Dragon, two Kuriboh”. It is written down on your device; the first time the speech model is loaded (about 80 MB).",
+      "hint": "Say the cards with the quantity before the name, for example “three Blue-Eyes White Dragon, two Kuriboh”; a card you name twice is two copies. It is written down on your device.",
+      "quality": {
+        "download": "The first time, the speech model is loaded (about {size} MB).",
+        "label": "Accuracy",
+        "accurate": "Accurate (slower)",
+        "fast": "Fast",
+        "slow": "The accurate reading takes several times as long as the recording."
+      },
       "noMicrophone": "The microphone does not work on this page (only over HTTPS or in the desktop app). Choose a recording instead; on a phone this opens the voice recorder.",
       "recording": "Recording … {seconds} s",
       "transcribing": "Writing it down …",

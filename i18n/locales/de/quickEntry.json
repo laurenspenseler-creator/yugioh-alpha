@@ -56,7 +56,14 @@
       "start": "Diktieren",
       "stop": "Fertig",
       "pickFile": "Aufnahme auswählen",
-      "hint": "Sprich die Karten mit der Menge vor dem Namen, zum Beispiel „drei Blauäugiger weißer Drache, zwei Kuriboh“. Die Auswertung läuft auf deinem Gerät; beim ersten Mal wird das Sprachmodell geladen (etwa 80 MB).",
+      "hint": "Sprich die Karten mit der Menge vor dem Namen, zum Beispiel „drei Blauäugiger weißer Drache, zwei Kuriboh“; nennst du eine Karte zweimal, sind es zwei Exemplare. Die Auswertung läuft auf deinem Gerät.",
+      "quality": {
+        "download": "Beim ersten Mal wird das Sprachmodell geladen (etwa {size} MB).",
+        "label": "Genauigkeit",
+        "accurate": "Genau (langsamer)",
+        "fast": "Schnell",
+        "slow": "Die genaue Auswertung dauert ein Mehrfaches der Länge der Aufnahme."
+      },
       "noMicrophone": "Das Mikrofon geht auf dieser Seite nicht (nur über HTTPS oder in der Desktop-App). Wähle stattdessen eine Aufnahme aus; auf dem Handy öffnet sich dafür der Rekorder.",
       "recording": "Aufnahme läuft … {seconds} s",
       "transcribing": "Wird ausgewertet …",

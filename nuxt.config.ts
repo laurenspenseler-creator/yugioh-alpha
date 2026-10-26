@@ -24,6 +24,9 @@ export default defineNuxtConfig({
   },
   // Dev only: pre-bundle the auth client so Vite doesn't discover it at runtime and reload the first page.
   vite: {
+    // The dictation runs in a Web Worker (app/workers/speech.worker.ts) that loads its model library on
+    // demand; a worker that splits its code must be built as an ES module (the default is a single IIFE file).
+    worker: { format: 'es' },
     optimizeDeps: {
       include: [
         'better-auth/vue',

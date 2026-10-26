@@ -1,20 +1,15 @@
 // Speech to text on the device (ADR 0040): the microphone (or a recording the
-// user picks) is decoded to 16 kHz mono and written down by Whisper (base,
-// multilingual, 8-bit quantized) running in WebAssembly through transformers.js.
-// No account, no key, no server: the audio never leaves the device.
-import { AI_ASSETS, aiAssetServed } from '~/utils/ai-assets'
+// user picks) is decoded to 16 kHz mono here, and written down by Whisper (multilingual,
+// 8-bit quantized) in a Web Worker (`app/workers/speech.worker.ts`, the engine is
+// `speech-engine.ts`), so the page stays usable while it works. No account, no key, no
+// server: the audio never leaves the device.
+import { DEFAULT_SPEECH_QUALITY } from '~/utils/speech-models'
+import type { SpeechLanguage, SpeechLoadProgress, SpeechQuality } from '~/utils/speech-models'
+import type { SpeechReply, SpeechRequest } from '~/workers/speech.worker'
 
-export const SPEECH_MODEL = 'Xenova/whisper-base'
 const SAMPLE_RATE = 16_000
 /** A recording stops by itself after this long: a card list is read out in well under a minute. */
 export const MAX_RECORDING_SECONDS = 90
-
-export type SpeechLanguage = 'german' | 'english'
-
-export interface SpeechLoadProgress {
-  /** 0–100 over the whole download, or null while it is not known. */
-  percent: number | null
-}
 
 /** The microphone needs a secure page (HTTPS, localhost or the desktop app); a phone on plain http://192.168… has none. */
 export function canRecordMicrophone(): boolean {
@@ -83,49 +78,59 @@ export async function decodeAudio(blob: Blob): Promise<Float32Array> {
   }
 }
 
-type Transcriber = (audio: Float32Array, options: Record<string, unknown>) => Promise<{ text: string } | Array<{ text: string }>>
+let worker: Worker | null = null
+let lastRequest = 0
 
-let loading: Promise<Transcriber> | null = null
-
-/** Loads Whisper once (the files are fetched on first use unless the build ships them) and keeps it. */
-function loadTranscriber(onProgress?: (progress: SpeechLoadProgress) => void): Promise<Transcriber> {
-  loading ??= (async () => {
-    const { pipeline, env } = await import('@huggingface/transformers')
-    env.backends.onnx.wasm!.wasmPaths = `${AI_ASSETS}/onnx/`
-    env.localModelPath = `${AI_ASSETS}/models/`
-    env.allowLocalModels = await aiAssetServed(`models/${SPEECH_MODEL}/config.json`)
-    env.allowRemoteModels = true
-
-    // The model arrives as several files; report the share of what is announced so far.
-    const files = new Map<string, { loaded: number, total: number }>()
-    const transcriber = await pipeline('automatic-speech-recognition', SPEECH_MODEL, {
-      dtype: 'q8',
-      device: 'wasm',
-      progress_callback: (event: { status: string, file?: string, loaded?: number, total?: number }) => {
-        if (event.status === 'progress' && event.file && event.total) {
-          files.set(event.file, { loaded: event.loaded ?? 0, total: event.total })
-          const all = [...files.values()]
-          const total = all.reduce((sum, file) => sum + file.total, 0)
-          onProgress?.({ percent: total > 0 ? Math.round((all.reduce((sum, file) => sum + file.loaded, 0) / total) * 100) : null })
-        }
-      },
-    })
-    return transcriber as unknown as Transcriber
-  })().catch((error) => {
-    // A failed load (offline on first use) can be tried again.
-    loading = null
-    throw error
-  })
-  return loading
+/** The background thread, started on first use and kept (it holds the loaded model). */
+function speechWorker(): Worker {
+  worker ??= new Worker(new URL('../workers/speech.worker.ts', import.meta.url), { type: 'module' })
+  return worker
 }
 
 /** What was said in the audio, written down; `language` is the language it is spoken in. */
-export async function transcribe(
+export function transcribe(
   audio: Float32Array,
   language: SpeechLanguage,
+  quality: SpeechQuality = DEFAULT_SPEECH_QUALITY,
   onProgress?: (progress: SpeechLoadProgress) => void,
 ): Promise<string> {
-  const transcriber = await loadTranscriber(onProgress)
-  const result = await transcriber(audio, { language, task: 'transcribe', chunk_length_s: 30, stride_length_s: 5 })
-  return (Array.isArray(result) ? result.map(part => part.text).join(' ') : result.text).trim()
+  return new Promise((resolve, reject) => {
+    const thread = speechWorker()
+    lastRequest += 1
+    const id = lastRequest
+
+    const done = () => {
+      thread.removeEventListener('message', onMessage)
+      thread.removeEventListener('error', onFailure)
+    }
+    const onMessage = (event: MessageEvent<SpeechReply>) => {
+      const reply = event.data
+      if (reply.id !== id) {
+        return
+      }
+      if (reply.type === 'progress') {
+        onProgress?.({ percent: reply.percent })
+        return
+      }
+      done()
+      if (reply.type === 'result') {
+        resolve(reply.text)
+      }
+      else {
+        reject(new Error(reply.message))
+      }
+    }
+    // The thread itself could not start (a blocked or missing script): start a new one next time.
+    const onFailure = (event: ErrorEvent) => {
+      done()
+      thread.terminate()
+      worker = null
+      reject(new Error(event.message || 'The speech worker failed'))
+    }
+    thread.addEventListener('message', onMessage)
+    thread.addEventListener('error', onFailure)
+
+    const request: SpeechRequest = { id, audio, language, quality }
+    thread.postMessage(request, [audio.buffer])
+  })
 }

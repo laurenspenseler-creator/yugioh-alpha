@@ -4,8 +4,10 @@
 // go to whoever uses this: the quick capture's list, the deck import's text. Where
 // the microphone is not available (a phone on plain http://192.168…) the user picks
 // a recording instead; the phone opens its voice recorder for that.
+import { DEFAULT_SPEECH_QUALITY, SPEECH_MODELS } from '~/utils/speech-models'
+import type { SpeechLanguage, SpeechQuality } from '~/utils/speech-models'
 import { canRecordMicrophone, decodeAudio, startRecording, transcribe } from '~/utils/speech-transcribe'
-import type { Recording, SpeechLanguage } from '~/utils/speech-transcribe'
+import type { Recording } from '~/utils/speech-transcribe'
 import { spokenCardLines } from '~/utils/spoken-card-lines'
 
 const emit = defineEmits<{
@@ -23,10 +25,34 @@ const heard = ref('')
 const errorMessage = ref('')
 const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 
+// How exactly the recording is written down: the larger speech model is the default, the
+// smaller one is faster. The choice is a per-person convenience, kept in the browser.
+const QUALITY_KEY = 'ygo-speech-quality'
+const quality = ref<SpeechQuality>(DEFAULT_SPEECH_QUALITY)
+const qualityItems = computed(() => (['accurate', 'fast'] as const).map(value => ({ value, label: t(`quickEntry.speech.quality.${value}`) })))
+
 // Known on the client only; the server cannot tell what the browser has.
 const microphone = ref(false)
 onMounted(() => {
   microphone.value = canRecordMicrophone()
+  try {
+    const saved = localStorage.getItem(QUALITY_KEY)
+    if (saved === 'fast' || saved === 'accurate') {
+      quality.value = saved
+    }
+  }
+  catch {
+    // No storage (a private window): the default stays.
+  }
+})
+
+watch(quality, (value) => {
+  try {
+    localStorage.setItem(QUALITY_KEY, value)
+  }
+  catch {
+    // Not kept; the choice still holds for this page.
+  }
 })
 
 /** The language the cards are said in: the card language (German cards are said in German). */
@@ -46,7 +72,7 @@ async function finish(audio: Blob) {
   loadPercent.value = null
   try {
     const samples = await decodeAudio(audio)
-    heard.value = await transcribe(samples, language.value, (progress) => {
+    heard.value = await transcribe(samples, language.value, quality.value, (progress) => {
       loadPercent.value = progress.percent
     })
     const lines = spokenCardLines(heard.value)
@@ -152,8 +178,18 @@ onBeforeUnmount(() => {
         :disabled="phase !== 'idle'"
         @click="() => fileInput?.click()"
       />
+      <USelect
+        v-model="quality"
+        :items="qualityItems"
+        :disabled="phase !== 'idle'"
+        size="sm"
+        class="w-44"
+        :aria-label="t('quickEntry.speech.quality.label')"
+        data-testid="speech-quality"
+      />
       <p class="min-w-0 flex-1 basis-64 text-xs text-muted">
         {{ microphone ? t('quickEntry.speech.hint') : t('quickEntry.speech.noMicrophone') }}
+        {{ t('quickEntry.speech.quality.download', { size: n(SPEECH_MODELS[quality].megabytes, 'integer') }) }}
       </p>
     </div>
 
@@ -172,6 +208,10 @@ onBeforeUnmount(() => {
       data-testid="speech-status"
     >
       {{ loadPercent !== null && loadPercent < 100 ? t('quickEntry.speech.loading', { percent: n(loadPercent, 'integer') }) : t('quickEntry.speech.transcribing') }}
+      <span
+        v-if="quality === 'accurate' && (loadPercent === null || loadPercent >= 100)"
+        class="block text-xs text-muted"
+      >{{ t('quickEntry.speech.quality.slow') }}</span>
     </p>
     <p
       v-else-if="heard"

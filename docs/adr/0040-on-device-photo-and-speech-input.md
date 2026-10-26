@@ -56,8 +56,15 @@ of all cards (a bigram index, scored without order and tolerant to misread lette
 
 ### Speech: Whisper in the browser
 
-`@huggingface/transformers` runs `Xenova/whisper-base` (multilingual, 8-bit) as WASM.
-The recording is transcribed, `spoken-card-lines.ts` turns "dreimal Ash Blossom" or
+`@huggingface/transformers` runs Whisper (multilingual, 8-bit) as WASM, in a Web Worker
+(`app/workers/speech.worker.ts`, the engine in `speech-engine.ts`): on the page the
+accurate model froze every button for over a minute. The page sends the recording to
+the worker (`transcribe()` in `speech-transcribe.ts`) and gets the text and the progress
+of the model's download back. There are two sizes (`speech-models.ts`): "Genau" is
+`Xenova/whisper-small` (240 MB, about 4 s of work per second of speech, the default) and
+"Schnell" is `Xenova/whisper-base` (75 MB, about one second per second); the choice
+is a select next to "Diktieren", kept in the browser's local storage. The recording is
+transcribed, `spoken-card-lines.ts` turns "dreimal Ash Blossom" or
 "2x Maxx C" into lines (also when a recognizer wrote digits and no commas, dropping
 "[Music]" and the like, and keeping "D.D." together), and the quick capture's lookup and
 review table take over. The browser's own `SpeechRecognition` (ADR 0003) was not used
@@ -76,15 +83,17 @@ this took base from 8 to 14 cards found and `whisper-small` from 14 to 18.
 A card named twice is two copies, wherever in the list and however it was spelled: the
 lines are merged by the card their best candidate is (from a score of 0.6), and a quantity
 that comes from merging equal lines is no longer taken back by `resolveEntryLine` (it
-was: "Kuriboh" said twice was one copy). `whisper-small` is far better (238 MB, about three
-times slower: 33 s for 9 s of speech with four threads) and is the option if the
-accuracy of base is not enough.
+was: "Kuriboh" said twice was one copy). `whisper-small` writes down far more names right
+(14 of 21 on the test dictation against 8 for base) and is slower; with four threads
+(possible only on a page with cross-origin isolation, which the app does not set yet) 9 s
+of speech took 33 s, on one thread about 4 s per second of speech.
 
 ### Where the engines and models live
 
 `pnpm ai:assets` (also part of `postinstall`) copies the OCR core and the ONNX runtime
-into `public/ai` (git-ignored). The speech model and the English OCR data are not in
-the repository (English and German OCR data): `pnpm ai:assets --models` downloads them (about 95 MB) into
+into `public/ai` (git-ignored). The speech models and the OCR language data (English and
+German) are not in the repository: `pnpm ai:assets --models` downloads them (about 335 MB:
+both Whisper sizes and the language data) into
 `public/ai/models`, which the desktop build does (`desktop/scripts/prepare-server.mjs`),
 so the installed app works offline from the first use. On the web the browser fetches
 them from Hugging Face / the Tesseract data host on first use and keeps them in its
@@ -115,8 +124,8 @@ HTTP cache. `public/ai` is excluded from the service worker's precache.
   a few wrong hits that the review table (with "sicher" marking) lets the user remove.
   Dictation of a single, rarely used word can be misheard. This is why the result is
   always a review list, never a direct write.
-- The first use downloads the model on the web (about 95 MB), unless the build ships it.
-  The installer is about 100 MB larger.
+- The first use downloads the model on the web (75 MB for "Schnell", 240 MB for "Genau", the
+  default), unless the build ships it. The installer is about 335 MB larger than without them.
 - The microphone needs a secure context (HTTPS, `localhost`, or the desktop app). A
   phone that opens the laptop's address over plain HTTP gets a file input
   (`accept="audio/*" capture`) that records with the phone's own recorder instead.

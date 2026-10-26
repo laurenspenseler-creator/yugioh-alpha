@@ -4,9 +4,9 @@
 //
 //   node scripts/ai-assets.mjs            copy the code (ONNX runtime, OCR core) from node_modules;
 //                                         runs after every `pnpm install`
-//   node scripts/ai-assets.mjs --models   also download the speech model and the OCR language
-//                                         data (about 95 MB), so a build works offline; the
-//                                         desktop installer is built with this
+//   node scripts/ai-assets.mjs --models   also download the speech models (base and small) and the
+//                                         OCR language data (about 335 MB), so a build works offline;
+//                                         the desktop installer is built with this
 //
 // Without --models the app fetches the model and language data on first use from
 // Hugging Face and the Tesseract data host. public/ai is not committed.
@@ -65,10 +65,12 @@ async function download(url, to) {
 }
 
 async function downloadModels() {
-  // The seven files transformers.js reads for the quantized multilingual Whisper base.
-  const model = 'Xenova/whisper-base'
-  for (const file of ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json', 'onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']) {
-    await download(`https://huggingface.co/${model}/resolve/main/${file}`, join(out, 'models', model, file))
+  // The seven files transformers.js reads for the quantized multilingual Whisper: base (about 75 MB,
+  // the fast size) and small (about 240 MB, the accurate one that is the default).
+  for (const model of ['Xenova/whisper-base', 'Xenova/whisper-small']) {
+    for (const file of ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json', 'onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']) {
+      await download(`https://huggingface.co/${model}/resolve/main/${file}`, join(out, 'models', model, file))
+    }
   }
   // The Tesseract language data of the "4.0.0" set the library uses by default.
   for (const language of ['eng', 'deu']) {
