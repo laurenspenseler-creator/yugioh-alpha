@@ -5,6 +5,7 @@ import {
   evaluateDeck,
   matchesCardFilter,
   MAX_COPIES_RULE,
+  referencedCardIds,
   RuleSetValidationError,
   validateRuleSet,
 } from '../../shared/rule-formats'
@@ -573,6 +574,103 @@ describe('filter rules', () => {
     )
     expect(byEffect.cards[CARDS.kuriboh.id]!.maxCopies).toBe(1)
     expect(byEffect.cards[CARDS.darkMagician.id]!.maxCopies).toBe(3)
+  })
+})
+
+describe('card text and exceptions (ADR 0038)', () => {
+  const textCard = (id: number, name: string, type: string, desc: string | null): ValidationCardData => ({ id, name, type, desc, frameType: null })
+  const TEXT_CARDS = {
+    ashBlossom: textCard(1, 'Ash Blossom & Joyous Spring', 'Effect Monster', 'When a card or effect is activated that includes any of these effects: You can discard this card.'),
+    exodia: textCard(2, 'Exodia the Forbidden One', 'Effect Monster', 'If you have all 5 pieces in your hand, you win the Duel.'),
+    destiny: textCard(3, 'Destiny Board', 'Trap Card', 'When the last letter is placed, the owner wins the Duel.'),
+    synchroRelay: textCard(4, 'Synchro Relay', 'Spell Card', 'Special Summon 1 Synchro Monster from your Extra Deck.'),
+    linkuriboh: textCard(5, 'Linkuriboh', 'Link Monster', 'Cannot be destroyed by battle.'),
+    plain: textCard(6, 'Blue Plain', 'Normal Monster', null),
+  }
+  const TEXT_LIST = Object.values(TEXT_CARDS)
+  const entries = (...names: Array<keyof typeof TEXT_CARDS>): DeckCardEntry[] => names.map(name => ({ catalogCardId: TEXT_CARDS[name].id, section: 'main', quantity: 1 }))
+
+  it('matches whole words of the card text, ignoring case, and never a card without a text', () => {
+    expect(matchesCardFilter({ textContains: ['win the Duel', 'wins the Duel'] }, TEXT_CARDS.exodia)).toBe(true)
+    expect(matchesCardFilter({ textContains: ['win the Duel', 'wins the Duel'] }, TEXT_CARDS.destiny)).toBe(true)
+    // One word of the phrase is not the phrase.
+    expect(matchesCardFilter({ textContains: ['win the Duel'] }, TEXT_CARDS.destiny)).toBe(false)
+    expect(matchesCardFilter({ textContains: ['SYNCHRO'] }, TEXT_CARDS.synchroRelay)).toBe(true)
+    // "Link" is a word of its own; it is not in the name-like "Linkuriboh" text.
+    expect(matchesCardFilter({ textContains: ['Link'] }, { ...TEXT_CARDS.linkuriboh, desc: 'Linkuriboh is cute.' })).toBe(false)
+    expect(matchesCardFilter({ textContains: ['Link'] }, { ...TEXT_CARDS.linkuriboh, desc: 'A Link-3 monster. Link Summon only.' })).toBe(true)
+    expect(matchesCardFilter({ textContains: ['win the Duel'] }, TEXT_CARDS.plain)).toBe(false)
+    // Whitespace in the phrase matches any run of white space, and the phrase is no pattern.
+    expect(matchesCardFilter({ textContains: ['win   the Duel'] }, textCard(7, 'x', 'Spell Card', 'you win\nthe Duel'))).toBe(true)
+    expect(matchesCardFilter({ textContains: ['.*'] }, TEXT_CARDS.exodia)).toBe(false)
+  })
+
+  it('applies a text rule to the cards whose text matches, and an exception lifts it for cards it matches', () => {
+    const rules: Rule[] = [{
+      kind: 'filter',
+      match: 'matching',
+      filter: { textContains: ['win the Duel', 'wins the Duel'] },
+      maxCopies: 0,
+      label: 'Instant Win',
+      except: { nameContains: 'Exodia' },
+    }]
+
+    const result = evaluateDeck(rules, entries('exodia', 'destiny', 'ashBlossom'), TEXT_LIST)
+
+    expect(result.cards[TEXT_CARDS.destiny.id]!.status).toBe('forbidden')
+    expect(result.cards[TEXT_CARDS.destiny.id]!.reasons).toEqual([{ kind: 'filter', label: 'Instant Win', rule: rules[0] }])
+    expect(result.cards[TEXT_CARDS.exodia.id]!.status).toBe('unrestricted')
+    expect(result.cards[TEXT_CARDS.ashBlossom.id]!.status).toBe('unrestricted')
+    expect(codes(result.issues)).toEqual(['card_forbidden'])
+  })
+
+  it('lets an exception lift a "not matching" rule too', () => {
+    const rules: Rule[] = [{
+      kind: 'filter',
+      match: 'not_matching',
+      filter: { types: ['Effect Monster'] },
+      maxCopies: 0,
+      except: { cardIds: [TEXT_CARDS.destiny.id] },
+    }]
+
+    const result = evaluateDeck(rules, entries('destiny', 'plain', 'exodia'), TEXT_LIST)
+
+    expect(result.cards[TEXT_CARDS.destiny.id]!.status).toBe('unrestricted')
+    expect(result.cards[TEXT_CARDS.plain.id]!.status).toBe('forbidden')
+    expect(result.cards[TEXT_CARDS.exodia.id]!.status).toBe('unrestricted')
+  })
+
+  it('validates textContains and except, and drops an exception that would match everything', () => {
+    const result = validateRuleSet({
+      rules: [{
+        kind: 'filter',
+        match: 'matching',
+        maxCopies: 0,
+        filter: { textContains: ['  win the Duel ', 'win the Duel', ''] },
+        except: { nameContains: ' Exodia ', nonsense: 1 },
+      }, {
+        kind: 'filter',
+        match: 'matching',
+        maxCopies: 0,
+        filter: { types: ['Spell Card'] },
+        except: {},
+      }],
+    })
+
+    expect(result.rules).toEqual([
+      { kind: 'filter', match: 'matching', maxCopies: 0, filter: { textContains: ['win the Duel'] }, except: { nameContains: 'Exodia' } },
+      { kind: 'filter', match: 'matching', maxCopies: 0, filter: { types: ['Spell Card'] } },
+    ])
+    expect(() => validateRuleSet({ rules: [{ kind: 'filter', match: 'matching', maxCopies: 0, filter: { textContains: 'nope' } }] })).toThrow(RuleSetValidationError)
+    expect(() => validateRuleSet({
+      rules: [{ kind: 'filter', match: 'matching', maxCopies: 0, filter: { textContains: Array.from({ length: 21 }, (_, index) => `phrase ${index}`) } }],
+    })).toThrow(RuleSetValidationError)
+  })
+
+  it('lists the cards an exception names among the referenced cards', () => {
+    const ids = referencedCardIds({ rules: [{ kind: 'filter', match: 'matching', filter: { cardIds: [1] }, maxCopies: 0, except: { cardIds: [2, 3] } }] })
+
+    expect(ids.sort()).toEqual([1, 2, 3])
   })
 })
 

@@ -13,7 +13,6 @@ import {
   createImportRows,
   importCounts,
   importCoverCardId,
-  importSizeWarnings,
   rowSection,
   rowsInSection,
 } from '../../app/utils/deck-import'
@@ -210,13 +209,10 @@ describe('deck import rows', () => {
     expect(rowsInSection(rows, 'main').map(row => row.query)).toEqual(['A', 'C', 'D'])
   })
 
-  it('counts copies of the resolved rows only, and warns about the usual deck sizes', () => {
+  it('counts copies of the resolved rows only', () => {
     const rows = createImportRows(preview())
 
     expect(importCounts(rows)).toEqual({ main: 4, extra: 1, side: 2 })
-    expect(importSizeWarnings({ main: 40, extra: 15, side: 15 })).toEqual([])
-    expect(importSizeWarnings({ main: 39, extra: 16, side: 16 }).map(warning => warning.code)).toEqual(['main_below_min', 'extra_above_max', 'side_above_max'])
-    expect(importSizeWarnings({ main: 61, extra: 0, side: 0 }).map(warning => warning.code)).toEqual(['main_above_max'])
   })
 
   it('builds the create payload from resolved rows, merging a card pointed at twice', () => {

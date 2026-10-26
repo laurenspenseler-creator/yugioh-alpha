@@ -4,8 +4,8 @@
     "description": "Karten als Liste tippen — und vor dem Speichern prüfen.",
     "backToInventory": "Zurück zum Inventar",
     "assistantHint": {
-      "title": "Karten per Foto? Nutze den Assistenten",
-      "description": "Ein Kartenfoto erkennen oder direkt ein Deck bauen lassen — das übernimmt jetzt der Assistent.",
+      "title": "Mehr als eine Liste? Nutze den Assistenten",
+      "description": "Ein einzelnes Kartenfoto mit KI erkennen oder direkt ein Deck bauen lassen — das übernimmt der Assistent (er braucht einen KI-Zugang).",
       "cta": "Zum Assistenten"
     },
     "list": {
@@ -14,6 +14,59 @@
       "examples": "Beispiele:",
       "tooManyLines": "{count} Zeilen — bitte höchstens {max} auf einmal auswerten.",
       "submit": "Karten erkennen"
+    },
+    "file": {
+      "button": "Excel- oder CSV-Datei einlesen",
+      "hint": "Eine Tabelle mit den Spalten „Name“, „Menge“ und optional „Set-Code“ (.xlsx, .csv) oder eine Textliste. Die Karten erscheinen unten zur Prüfung, bevor etwas gespeichert wird.",
+      "summary": "„{name}“: {count} Zeile gelesen | „{name}“: {count} Zeilen gelesen",
+      "remaining": "{count} Zeile aus der Datei ist noch nicht in der Prüfliste. | {count} Zeilen aus der Datei sind noch nicht in der Prüfliste.",
+      "skipped": "{count} Zeile ohne Karte oder Menge wurde übersprungen. | {count} Zeilen ohne Karte oder Menge wurden übersprungen.",
+      "truncated": "Die Datei hat mehr als {max} Zeilen, der Rest wurde nicht gelesen.",
+      "queueFirst": "Speichere zuerst die Karten in der Prüfliste, dann lädst du die nächsten.",
+      "chooseTitle": "„{name}“ hat mehrere Blätter mit Karten",
+      "chooseDescription": "Welches Blatt soll eingelesen werden? Es wird noch nichts gespeichert.",
+      "sheetOption": "{sheet} · {count} Zeile | {sheet} · {count} Zeilen",
+      "loadMore": "Nächste Zeilen laden",
+      "errors": {
+        "unsupported": "Dieses Dateiformat kann nicht gelesen werden. Speichere die Tabelle in Excel als .xlsx oder .csv.",
+        "unreadable": "Die Datei konnte nicht gelesen werden. Ist es eine gültige .xlsx- oder .csv-Datei?",
+        "tooLarge": "Die Datei ist zu groß (höchstens 5 MB).",
+        "noCards": "In der Datei wurden keine Karten gefunden. Die Tabelle braucht eine Spalte „Name“ (und gern „Menge“)."
+      }
+    },
+    "photo": {
+      "button": "Fotos auswerten",
+      "camera": "Foto aufnehmen",
+      "hint": "Lege die Karten gut sichtbar nebeneinander, mit gut lesbarem Namen oben auf jeder Karte, bei gutem Licht. Die Auswertung läuft auf deinem Gerät (die Fotos werden nicht hochgeladen), dauert etwa eine Minute pro Foto und ist eine Hilfe: Prüfe die Karten unten, bevor etwas gespeichert wird. Karten, die quer liegen, werden erkannt; spiegelnde Folie und kleine Fotos sind schwer zu lesen.",
+      "starting": "Das Erkennungsmodul wird geladen …",
+      "progress": "Foto {photo} von {photos} wird gelesen (Durchlauf {pass} von {passes}) …",
+      "result": "{count} Karte erkannt. | {count} Karten erkannt.",
+      "unsure": "{count} davon ist unsicher. | {count} davon sind unsicher.",
+      "none": "Auf den Fotos wurden keine Karten erkannt. Versuche es mit besserem Licht, näher dran und so, dass der Name oben auf jeder Karte gut lesbar ist.",
+      "sourceName": "Fotos",
+      "errors": {
+        "tooMany": "Bitte höchstens {max} Fotos auf einmal.",
+        "notImage": "„{name}“ ist kein Foto.",
+        "tooLarge": "Das Foto „{name}“ ist zu groß (höchstens {max} MB).",
+        "failed": "Die Fotos konnten nicht ausgewertet werden.",
+        "offline": "Das Erkennungsmodul konnte nicht geladen werden. Beim ersten Mal ist eine Internetverbindung nötig."
+      }
+    },
+    "speech": {
+      "start": "Diktieren",
+      "stop": "Fertig",
+      "pickFile": "Aufnahme auswählen",
+      "hint": "Sprich die Karten mit der Menge vor dem Namen, zum Beispiel „drei Blauäugiger weißer Drache, zwei Kuriboh“. Die Auswertung läuft auf deinem Gerät; beim ersten Mal wird das Sprachmodell geladen (etwa 80 MB).",
+      "noMicrophone": "Das Mikrofon geht auf dieser Seite nicht (nur über HTTPS oder in der Desktop-App). Wähle stattdessen eine Aufnahme aus; auf dem Handy öffnet sich dafür der Rekorder.",
+      "recording": "Aufnahme läuft … {seconds} s",
+      "transcribing": "Wird ausgewertet …",
+      "loading": "Sprachmodell wird geladen … {percent} %",
+      "heard": "Verstanden: „{text}“",
+      "nothing": "Es wurde nichts verstanden. Sprich langsam und deutlich, mit der Menge vor jeder Karte.",
+      "errors": {
+        "denied": "Der Zugriff auf das Mikrofon wurde nicht erlaubt.",
+        "failed": "Die Aufnahme konnte nicht ausgewertet werden."
+      }
     },
     "queueFull": {
       "title": "Prüfliste ist voll",

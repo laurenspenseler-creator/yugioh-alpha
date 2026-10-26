@@ -48,7 +48,8 @@ function listFiles(dir: string, extensions: string[]): string[] {
   const entries = readdirSync(resolve(ROOT, dir), { recursive: true, withFileTypes: true })
   return entries
     .filter(entry => entry.isFile() && extensions.some(extension => entry.name.endsWith(extension)))
-    .map(entry => relative(ROOT, join(entry.parentPath, entry.name)))
+    // Forward slashes on every platform: the allowlist's file names are written with them.
+    .map(entry => relative(ROOT, join(entry.parentPath, entry.name)).replaceAll('\\', '/'))
     .sort()
 }
 

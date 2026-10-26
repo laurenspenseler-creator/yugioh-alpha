@@ -159,12 +159,13 @@
     "participants": {
       "title": "Teilnehmer ({count})",
       "accountBadge": "Konto",
-      "accountHint": "Spieler mit eigenem Benutzerkonto – meldet sein Deck selbst an. Gäste ohne Konto verwaltet die Turnierleitung.",
-      "accountLegend": "„Konto“: Spieler mit eigenem Benutzerkonto – meldet sein Deck selbst an. Gäste ohne Konto verwaltet die Turnierleitung.",
+      "accountHint": "Spieler mit eigenem Benutzerkonto – kann sein Deck selbst anmelden. Die Turnierleitung trägt Decks für alle ein.",
+      "accountLegend": "„Konto“: Spieler mit eigenem Benutzerkonto – kann sein Deck selbst anmelden. Die Turnierleitung trägt Decks für alle ein.",
       "deckReminder": "Melde dein Deck an, bevor das Turnier startet.",
-      "registerDeck": "Deck anmelden",
-      "changeDeck": "Deck ändern",
-      "managesOwnDeck": "Meldet Deck selbst an",
+      "registerDeck": "Deck hinzufügen",
+      "changeDeck": "Decks ändern",
+      "editDecksOf": "Decks von {name} bearbeiten",
+      "deckSeparator": "/",
       "add": {
         "byEmail": "Per E-Mail",
         "asGuest": "Als Gast",
@@ -183,7 +184,6 @@
       "showIssues": "Regelverstöße von {name} anzeigen",
       "issuesTitle": "Regelverstöße",
       "issueCount": "{count} Regelverstoß | {count} Regelverstöße",
-      "registeredAt": "Angemeldet am {date}",
       "optionsFor": "Optionen für {name}",
       "menu": {
         "rename": "Umbenennen",
@@ -215,16 +215,36 @@
         "withdrawFailed": "Die Wertung konnte nicht geändert werden."
       }
     },
-    "deckRegistration": {
-      "title": "Deck anmelden",
-      "deck": "Deck",
-      "checking": "Regelprüfung läuft …",
-      "counts": "{count} Karte (Main {main}, Extra {extra}, Side {side}) | {count} Karten (Main {main}, Extra {extra}, Side {side})",
-      "checkedOnRegistration": "Die Regelprüfung erfolgt bei der Anmeldung.",
-      "noFormat": "Dieses Turnier hat kein Pflichtformat.",
-      "copyHint": "Dein Deck wird beim Anmelden kopiert. Spätere Änderungen am Deck ändern das Turnier nicht.",
-      "submit": "Anmelden",
-      "saveFailed": "Das Deck konnte nicht angemeldet werden."
+    "decksDialog": {
+      "title": "Decks von {name}",
+      "current": "Eingetragene Decks",
+      "none": "Noch kein Deck eingetragen.",
+      "nameOnly": "nur der Name",
+      "remove": "{name} entfernen",
+      "limit": "Ein Spieler kann höchstens {max} Decks haben.",
+      "pick": {
+        "label": "Deck aus der App wählen",
+        "placeholder": "Deck wählen",
+        "add": "Hinzufügen",
+        "none": "Du hast noch keine Decks, die du hinzufügen könntest.",
+        "noneShared": "{name} hat noch keine Decks mit dir geteilt. Decks sind privat, bis ihr Besitzer sie teilt. Tippe unten stattdessen den Decknamen ein.",
+        "ownHint": "Deine Decks. Beim Hinzufügen wird die Deckliste kopiert und gegen das Format geprüft; spätere Änderungen am Deck ändern das Turnier nicht.",
+        "sharedHint": "Hier siehst du nur die Decks, die {name} mit dir geteilt hat; alle anderen sind privat. Die Deckliste wird beim Hinzufügen kopiert und gegen das Format geprüft."
+      },
+      "import": {
+        "button": "Deck aus Fotos, Sprache oder Liste anlegen",
+        "hint": "Für ein Deck, das noch nicht in der App ist: Fotos der Karten, eine Ansage oder eine Liste. Es wird als neues Deck in deinem Konto angelegt (du prüfst die Karten vorher) und hier eingetragen, mit Prüfung gegen das Turnierformat.",
+        "deckName": "Deck von {name}"
+      },
+      "name": {
+        "label": "Oder Deckname eintippen",
+        "placeholder": "z. B. Blauäugiger Weißer Drache",
+        "add": "Eintragen"
+      },
+      "done": "Fertig",
+      "loadFailed": "Die Decks konnten nicht geladen werden.",
+      "addFailed": "Das Deck konnte nicht hinzugefügt werden.",
+      "removeFailed": "Das Deck konnte nicht entfernt werden."
     },
     "rounds": {
       "title": "Runden",
@@ -250,9 +270,6 @@
       "draw": "Unentschieden",
       "win": "Sieg {name}",
       "editResult": "Ergebnis ändern",
-      "saveResult": "Ergebnis speichern",
-      "enterResultFirst": "Trage zuerst ein Ergebnis ein",
-      "gamesOf": "Spiele {name}",
       "saveFailed": "Das Ergebnis konnte nicht gespeichert werden.",
       "byeNoPoints": "ohne Wertung",
       "winBy": "{name} gewinnt {score}",

@@ -128,7 +128,6 @@ test.describe('deck editor card overlay and card-kind breakdown', () => {
     await page.goto(`/decks/${deckId}`)
     await waitForHydration(page)
 
-    await page.getByRole('checkbox', { name: 'Auch Katalogkarten anzeigen' }).check()
     // "Hexer" is only in Dark Magician's German card text, not in a name.
     await page.getByLabel('Karten für das Deck suchen').fill('Hexer')
     await expect(page.getByText('Keine Karten gefunden.')).toBeVisible()

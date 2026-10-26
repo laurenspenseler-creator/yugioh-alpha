@@ -37,6 +37,34 @@ export function deckKindBreakdown(rows: ReadonlyArray<DeckBreakdownRow>): Array<
   })
 }
 
+/**
+ * The inventory's chips: the deck kinds plus "Pendel" between Xyz and Link
+ * (tester feedback, round 2). Pendulum is the second half of a frame, so a
+ * Pendulum Effect Monster is counted under "Effekt" and under "Pendel" – the
+ * same as the "Kartenart" filter the chip toggles, so the number on a chip is
+ * the number of copies the list shows after a click.
+ */
+export type InventoryKind = DeckCardKind | 'pendulum'
+
+/**
+ * The chips the inventory always shows, in order (Pendel between Xyz and Link), also for
+ * a kind the user owns none of: the row looks the same for everyone and a chip never
+ * appears or vanishes between two visits. "Sonstige" (tokens, skills) joins only when
+ * there are copies.
+ */
+export const INVENTORY_KINDS = ['normal', 'effect', 'ritual', 'spell', 'trap', 'fusion', 'synchro', 'xyz', 'pendulum', 'link'] as const satisfies readonly InventoryKind[]
+
+export function inventoryKindBreakdown(rows: ReadonlyArray<DeckBreakdownRow>): Array<{ kind: InventoryKind, count: number }> {
+  const kinds: Array<{ kind: InventoryKind, count: number }> = deckKindBreakdown(rows)
+  const pendulum = rows.reduce((sum, row) => (cardFrame(row)?.pendulum ? sum + row.quantity : sum), 0)
+  if (pendulum === 0) {
+    return kinds
+  }
+  const at = kinds.findIndex(entry => entry.kind === 'link' || entry.kind === 'other')
+  kinds.splice(at === -1 ? kinds.length : at, 0, { kind: 'pendulum', count: pendulum })
+  return kinds
+}
+
 /** Main then Extra; groups without copies are left out. The Side Deck is never counted. */
 export function deckBreakdownGroups(sections: {
   main: ReadonlyArray<DeckBreakdownRow>

@@ -35,7 +35,7 @@ test.describe('security headers', () => {
     const response = await page.goto('/login')
     const headers = response!.headers()
 
-    expect(headers['content-security-policy']).toMatch(/script-src 'self' 'sha256-/)
+    expect(headers['content-security-policy']).toMatch(/script-src 'self' 'wasm-unsafe-eval' 'sha256-/)
     expect(headers['content-security-policy']).not.toMatch(/script-src[^;]*unsafe-inline/)
     expect(headers['x-content-type-options']).toBe('nosniff')
     expect(headers['x-frame-options']).toBe('DENY')

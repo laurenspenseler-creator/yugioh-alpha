@@ -12,6 +12,7 @@
 //   classifications.jsonl                   the cache, merged with the fresh results
 //   review.csv                              every restricted or flagged card, for review
 //   server/utils/classic-plus-banlist.json  Forbidden / Limited / Semi-Limited card ids
+//   server/utils/classic-plus-handtraps.json  the cards that hit rule 4 (hand traps)
 //
 // A card's status is the strictest limit of the rule steps it hits (0, 1 or 2
 // copies: Forbidden, Limited, Semi-Limited). Rule 2 is forbidden. Rule 1 is
@@ -39,6 +40,7 @@ const classificationsPath = join(here, 'classifications.jsonl')
 const overridesPath = join(here, 'overrides.json')
 const reviewPath = join(here, 'review.csv')
 const banlistPath = join(here, '../../server/utils/classic-plus-banlist.json')
+const handtrapsPath = join(here, '../../server/utils/classic-plus-handtraps.json')
 
 const { values: args } = parseArgs({
   options: { 'allow-missing': { type: 'boolean', default: false } },
@@ -187,6 +189,9 @@ function main() {
   const banlist: ClassicPlusBanlist = { forbidden: [], limited: [], semiLimited: [] }
   const listFor = [banlist.forbidden, banlist.limited, banlist.semiLimited]
   const stepCounts = new Map<string, number>()
+  // Cards that hit rule 4 (hand traps), for the "Classic Plus definition" of a
+  // rulebook import (server/utils/handtrap-lists.ts, ADR 0037).
+  const handtrapIds: number[] = []
   let rule1ByBanlist = 0
   const reviewRows: Array<{ card: PoolCard, maxCopies: number, codes: string[], hits: Hit[], unsure: boolean, quoteMissing: boolean, note: string, overridden: boolean }> = []
 
@@ -231,6 +236,9 @@ function main() {
     if (maxCopies < 3) {
       listFor[maxCopies]!.push(card.id)
     }
+    if (codes.has('4')) {
+      handtrapIds.push(card.id)
+    }
     const unsure = !override && classification!.unsure
     const quoteMissing = !override && hits.some(hit => !hit.quote || !card.desc.includes(hit.quote))
     if (codes.size > 0 || unsure || quoteMissing) {
@@ -251,6 +259,7 @@ function main() {
     ids.sort((a, b) => a - b)
   }
   writeFileSync(banlistPath, `${JSON.stringify(banlist, null, 2)}\n`)
+  writeFileSync(handtrapsPath, `${JSON.stringify({ ids: handtrapIds.sort((a, b) => a - b) }, null, 2)}\n`)
 
   reviewRows.sort((a, b) => a.maxCopies - b.maxCopies || a.card.name.localeCompare(b.card.name))
   const header = ['id', 'name', 'maxCopies', 'rules', 'unsure', 'quoteMissing', 'overridden', 'reasons', 'quotes', 'note']

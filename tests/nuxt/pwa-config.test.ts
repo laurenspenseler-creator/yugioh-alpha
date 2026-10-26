@@ -25,6 +25,10 @@ describe('PWA service worker options', () => {
     expect(pwaOptions.workbox?.globIgnores).toContain('assets/**')
   })
 
+  it('keeps the on-device OCR and speech engines and models (public/ai) out of the precache', () => {
+    expect(pwaOptions.workbox?.globIgnores).toContain('ai/**')
+  })
+
   it('does not precache web fonts (they load on demand per unicode range)', () => {
     for (const pattern of pwaOptions.workbox?.globPatterns ?? []) {
       expect(pattern).not.toMatch(/woff/i)

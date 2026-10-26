@@ -22,7 +22,8 @@ function listFiles(dir: string, extensions: string[]): string[] {
   const entries = readdirSync(resolve(ROOT, dir), { recursive: true, withFileTypes: true })
   return entries
     .filter(entry => entry.isFile() && extensions.some(extension => entry.name.endsWith(extension)))
-    .map(entry => relative(ROOT, join(entry.parentPath, entry.name)))
+    // Forward slashes on every platform: the expectations below are written with them.
+    .map(entry => relative(ROOT, join(entry.parentPath, entry.name)).replaceAll('\\', '/'))
 }
 
 const scanned = [...DIRECTORIES.flatMap(({ dir, extensions }) => listFiles(dir, extensions)), ...FILES].sort()

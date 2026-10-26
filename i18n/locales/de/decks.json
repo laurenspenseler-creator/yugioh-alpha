@@ -122,7 +122,7 @@
         "saveFailed": "Die Änderung konnte nicht gespeichert werden."
       },
       "addPanel": {
-        "title": "Aus Inventar hinzufügen",
+        "title": "Karten hinzufügen",
         "hide": "Ausblenden",
         "show": "Anzeigen",
         "searchPlaceholder": "Kartenname (deutsch oder englisch)...",
@@ -132,10 +132,11 @@
         "allTypes": "Alle Typen",
         "allAttributes": "Alle Attribute",
         "inText": "Auch im Kartentext suchen",
-        "includeCatalog": "Auch Katalogkarten anzeigen",
+        "inventoryOnly": "Nur aus dem Inventar anzeigen",
         "shownOf": "{shown} von {total} Karten",
         "total": "{count} Karte | {count} Karten",
-        "empty": "Keine Karten gefunden. Aktiviere „Auch Katalogkarten anzeigen“ oder {link}.",
+        "empty": "Keine Karten gefunden.",
+        "emptyInventory": "Keine Karten in deinem Inventar gefunden. Schalte „Nur aus dem Inventar anzeigen“ aus oder {link}.",
         "emptyLink": "erfasse Karten im Inventar",
         "ownedInDeck": "Besitz: {owned} · im Deck: {inDeck}",
         "cannotAdd": "{name} kann nicht ins {section}",
@@ -182,6 +183,7 @@
         "fusion": "Fusion",
         "synchro": "Synchro",
         "xyz": "Xyz",
+        "pendulum": "Pendel",
         "link": "Link",
         "other": "Sonstige"
       }
@@ -213,7 +215,6 @@
       },
       "cardCount": "{count} Karte | {count} Karten",
       "sectionEmpty": "Keine Karten.",
-      "sizeWarningTitle": "Das Deck weicht von den üblichen Größen ab",
       "unresolvedHint": "Einige Zeilen sind noch offen. Wähle eine Karte oder entferne die Zeile, um das Deck anzulegen.",
       "defaultName": "Importiertes Deck",
       "errors": {

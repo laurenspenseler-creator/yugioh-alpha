@@ -59,6 +59,7 @@
         "matching": "Cards with {filter}: {copies}",
         "notMatching": "Cards without {filter}: {copies}",
         "labelled": "{label} — {rule}",
+        "except": "{rule}, except {except}",
         "copies": {
           "forbidden": "forbidden",
           "limited": "limited (max. 1)",
@@ -84,6 +85,7 @@
         "releasedBefore": "released before {date} ({region})",
         "releasedAfter": "released after {date} ({region})",
         "nameContains": "name contains \"{text}\"",
+        "textContains": "card text contains {values}",
         "all": "all cards"
       }
     },
@@ -134,7 +136,114 @@
     },
     "new": {
       "title": "New format",
-      "description": "Set deck sizes, copy limits and your own rules."
+      "description": "Set deck sizes, copy limits and your own rules, or have them created from a rulebook as a PDF or text."
+    },
+    "pdf": {
+      "title": "Create from a PDF or text",
+      "description": "Upload a format's rules as a PDF or paste the text. The app reads the rules, builds a format from them and tells you what it can check and what it can't.",
+      "pick": "Choose PDF",
+      "removeFile": "Choose another file",
+      "dropHint": "or drop it here. Only PDFs with text (no scans), at most {max} MB.",
+      "tooLarge": "The PDF is too large (at most {max} MB).",
+      "notPdf": "That is not a PDF.",
+      "textLabel": "Or paste the rules text",
+      "textHint": "If a PDF is chosen, the PDF is used.",
+      "textPlaceholder": "e.g. Main Deck: 40–50 cards, at most 3 copies per card, no Side Deck …",
+      "analyze": "Read the rules",
+      "analyzing": "Reading …",
+      "failed": "The rules could not be read.",
+      "except": "Exception: {except}",
+      "why": "Why not:",
+      "source": "From the rulebook: “{text}”",
+      "result": {
+        "title": "How the app read the rules",
+        "rules": "{count} rule created | {count} rules created",
+        "decisions": "{count} decision open | {count} decisions open",
+        "notCheckable": "{count} point can't be checked | {count} points can't be checked",
+        "next": "The rules it created are in the editor below. Review them, add what's missing and save the format."
+      },
+      "group": {
+        "applied": "What the app enforces",
+        "decision": "You need to decide here",
+        "decisionHint": "The rulebook says something that can mean several things. Choose what should apply.",
+        "unsupported": "What the app can't check",
+        "unsupportedHint": "These points stay in the rulebook but aren't checked when a deck is validated. For most of them it helps to add the cards you mean one by one with the “Individual cards” rule.",
+        "unclear": "What the app didn't understand",
+        "unclearHint": "These sentences matched no rule the app knows and were not taken over.",
+        "description": "Game flow",
+        "descriptionHint": "These aren't deck rules (life points, turn order, procedure …). They go into the format's description.",
+        "info": "Note"
+      },
+      "handtrap": {
+        "question": "What counts as a hand trap?",
+        "open": "Until you choose, the hand trap rule is not applied.",
+        "helpMark": "?",
+        "showDefinition": "Show the definition of “{name}”",
+        "option": {
+          "classic-plus": {
+            "label": "Classic Plus definition",
+            "definition": "A hand trap is a monster effect that can be activated from the hand during the opponent's turn. It is forbidden if it negates or prevents an action of the opponent or removes a card from any zone (except this card itself). Effects that work only in the Battle Phase or against battle damage are allowed. Implemented as a fixed list of cards."
+          },
+          "restrictive": {
+            "label": "More restrictive",
+            "definition": "Every monster whose text says it can be played from the hand outside your own Main Phase: discard the card, send it from the hand, or summon it as a Quick Effect, in the opponent's turn, in the Battle Phase or in response. Whatever the effect does. The list is built from the card text and may contain a card too many or miss one."
+          },
+          "own": {
+            "label": "My own definition",
+            "definition": "You decide what a hand trap is. Write the definition into your rulebook (PDF or text) and upload it again."
+          }
+        },
+        "added": "{count} card added as forbidden (see the rules below). | {count} cards added as forbidden (see the rules below).",
+        "ownHint": "Write your definition into the rulebook (what exactly counts as a hand trap?) and upload it again. Until then the hand trap rule is not applied.",
+        "failed": "The cards for this definition could not be loaded."
+      },
+      "finding": {
+        "size": { "text": "{section}: {min}–{max} cards" },
+        "limitMin": { "text": "{section}: at least {min} cards" },
+        "limitMax": { "text": "{section}: at most {max} cards" },
+        "limitBoth": { "text": "{section}: at least {min}, at most {max} cards" },
+        "no_side": { "text": "No Side Deck" },
+        "copies": { "text": "At most {max} copies per card" },
+        "extra_fusion_only": { "text": "Extra Deck: Fusion monsters only (Synchro, Xyz and Link are blocked there)" },
+        "modern_summons": { "text": "Blocked: monsters of type {terms}" },
+        "gemini": { "text": "Blocked: Gemini monsters" },
+        "effects_limited": { "text": "Cards with an effect: at most {max}× per card" },
+        "banlist": { "text": "The banlist applies: {source}" },
+        "card_list": { "text": "{status}: {found} of {total} named cards found in the catalog" },
+        "text_mention": { "text": "Blocked: cards whose card text says {terms}" },
+        "instant_win": { "text": "Blocked: cards whose text says someone wins the Duel (instant win)" },
+        "receiver": { "text": "Blocked: Tuner monsters (German: “Empfänger”)" },
+        "handtrap": { "text": "Hand traps are forbidden" },
+        "sleeves": {
+          "text": "A rule about card sleeves",
+          "why": "Sleeves are seen at the table, not in the deck. The app doesn't know them and can't check them."
+        },
+        "effect_class": {
+          "text": "Rule “{topic}”: cards are restricted by what they do",
+          "why": "Which cards count depends on the effect, and the app deliberately doesn't read effects. Name the affected cards one by one (“Individual cards”) or use a ready-made list."
+        },
+        "banlist_unknown": {
+          "text": "A banlist applies, but the text doesn't say which",
+          "why": "The app knows TCG, OCG, GOAT, Edison and Classic Plus. Pick the right one as a “Banlist” rule in the editor, or add the cards one by one."
+        },
+        "card_names_missing": {
+          "text": "{count} card not found in the catalog: {names} | {count} cards not found in the catalog: {names}",
+          "why": "The name doesn't match a single card clearly (typo or a different name). Add the cards by hand under “Individual cards” in the editor."
+        },
+        "rule_invalid": {
+          "text": "A rule ({kind}) didn't pass the check",
+          "why": "Its values contradict each other or are outside what the app allows. The rule was left out."
+        },
+        "too_many_rules": {
+          "text": "More than {max} rules came out",
+          "why": "A format can have at most {max} rules. The rest was left out."
+        },
+        "not_understood": {
+          "text": "Not understood",
+          "why": "The sentence matches no rule the app knows. If it contains a deck rule, add it by hand in the editor."
+        },
+        "builtin_exists": { "text": "“{name}” already exists as a built-in format. Find it under Formats and clone it there; the built-in version also knows rules a text can't express." }
+      }
     },
     "detail": {
       "fallbackTitle": "Format",
@@ -192,6 +301,9 @@
         "ocg": "OCG date"
       },
       "nameContains": "Name contains",
+      "textContains": "Card text contains (comma = or)",
+      "textContainsHint": "The English card text is searched, for whole words and ignoring upper and lower case. One match is enough.",
+      "exceptName": "Exception: name contains",
       "addRule": "Add rule",
       "addRuleLabel": "Add rule: {kind}",
       "check": {

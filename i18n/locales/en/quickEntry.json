@@ -4,8 +4,8 @@
     "description": "Type cards as a list — and check them before saving.",
     "backToInventory": "Back to inventory",
     "assistantHint": {
-      "title": "Cards from a photo? Use the assistant",
-      "description": "Recognizing a card photo or building a deck for you — the assistant handles that now.",
+      "title": "More than a list? Use the assistant",
+      "description": "Recognizing a single card photo with AI or building a deck for you — the assistant does that (it needs an AI connection).",
       "cta": "Go to the assistant"
     },
     "list": {
@@ -14,6 +14,59 @@
       "examples": "Examples:",
       "tooManyLines": "{count} lines — please process at most {max} at a time.",
       "submit": "Recognize cards"
+    },
+    "file": {
+      "button": "Read an Excel or CSV file",
+      "hint": "A table with the columns “Name”, “Quantity” and optionally “Set code” (.xlsx, .csv), or a text list. The cards appear below for review before anything is saved.",
+      "summary": "“{name}”: {count} line read | “{name}”: {count} lines read",
+      "remaining": "{count} line from the file is not in the review list yet. | {count} lines from the file are not in the review list yet.",
+      "skipped": "{count} line without a card or quantity was skipped. | {count} lines without a card or quantity were skipped.",
+      "truncated": "The file has more than {max} lines; the rest was not read.",
+      "queueFirst": "Save the cards in the review list first, then load the next ones.",
+      "chooseTitle": "“{name}” has several sheets with cards",
+      "chooseDescription": "Which sheet should be read? Nothing is saved yet.",
+      "sheetOption": "{sheet} · {count} line | {sheet} · {count} lines",
+      "loadMore": "Load next lines",
+      "errors": {
+        "unsupported": "This file format can't be read. Save the table in Excel as .xlsx or .csv.",
+        "unreadable": "The file couldn't be read. Is it a valid .xlsx or .csv file?",
+        "tooLarge": "The file is too large (at most 5 MB).",
+        "noCards": "No cards were found in the file. The table needs a “Name” column (and ideally “Quantity”)."
+      }
+    },
+    "photo": {
+      "button": "Read photos",
+      "camera": "Take a photo",
+      "hint": "Lay the cards next to each other in good light, with the name at the top of each card easy to read. Reading happens on your device (the photos are not uploaded), takes about a minute per photo and is an aid: check the cards below before anything is saved. Cards lying on their side are recognized; shiny foil and small photos are hard to read.",
+      "starting": "Loading the recognition module …",
+      "progress": "Reading photo {photo} of {photos} (pass {pass} of {passes}) …",
+      "result": "{count} card recognized. | {count} cards recognized.",
+      "unsure": "{count} of them is uncertain. | {count} of them are uncertain.",
+      "none": "No cards were recognized in the photos. Try better light, get closer, and make sure the name at the top of each card is easy to read.",
+      "sourceName": "Photos",
+      "errors": {
+        "tooMany": "Please use at most {max} photos at a time.",
+        "notImage": "“{name}” is not a photo.",
+        "tooLarge": "The photo “{name}” is too large (at most {max} MB).",
+        "failed": "The photos could not be read.",
+        "offline": "The recognition module could not be loaded. The first time needs an internet connection."
+      }
+    },
+    "speech": {
+      "start": "Dictate",
+      "stop": "Done",
+      "pickFile": "Choose a recording",
+      "hint": "Say the cards with the quantity before the name, for example “three Blue-Eyes White Dragon, two Kuriboh”. It is written down on your device; the first time the speech model is loaded (about 80 MB).",
+      "noMicrophone": "The microphone does not work on this page (only over HTTPS or in the desktop app). Choose a recording instead; on a phone this opens the voice recorder.",
+      "recording": "Recording … {seconds} s",
+      "transcribing": "Writing it down …",
+      "loading": "Loading the speech model … {percent} %",
+      "heard": "Heard: “{text}”",
+      "nothing": "Nothing was understood. Speak slowly and clearly, with the quantity before each card.",
+      "errors": {
+        "denied": "Access to the microphone was not allowed.",
+        "failed": "The recording could not be read."
+      }
     },
     "queueFull": {
       "title": "The review list is full",

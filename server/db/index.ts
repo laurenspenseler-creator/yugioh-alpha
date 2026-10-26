@@ -13,6 +13,11 @@ function resolveDbPath(): string {
   return resolve(dbFilePath)
 }
 
+/** The folder the database file lives in; what the app stores besides the database goes beside it (ADR 0033). */
+export function resolveDataDir(): string {
+  return dirname(resolveDbPath())
+}
+
 /**
  * Singleton Drizzle client backed by better-sqlite3.
  * The containing directory is created on first access if missing.

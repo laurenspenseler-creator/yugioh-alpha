@@ -1,8 +1,10 @@
 import { createError, getRouterParam, readBody } from 'h3'
 import { useDb } from '../../../../../db'
-import { registerParticipantDeck, validateDeckRegistrationInput } from '../../../../../utils/tournaments'
+import { addParticipantDeck, validateDeckEntryInput } from '../../../../../utils/tournaments'
 import { requireUser } from '../../../../../utils/session'
 
+// Adds a deck to a participant: `{ deckId }` for one of the app's decks, or
+// `{ name }` for a deck that is only a name (ADR 0039).
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   const participantId = getRouterParam(event, 'participantId')
@@ -11,7 +13,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = await requireUser(event)
-  const { deckId } = validateDeckRegistrationInput(await readBody(event))
+  const input = validateDeckEntryInput(await readBody(event))
 
-  return registerParticipantDeck(useDb(), user.id, id, participantId, deckId)
+  return addParticipantDeck(useDb(), user.id, id, participantId, input)
 })

@@ -122,7 +122,7 @@
         "saveFailed": "Couldn't save the change."
       },
       "addPanel": {
-        "title": "Add from inventory",
+        "title": "Add cards",
         "hide": "Hide",
         "show": "Show",
         "searchPlaceholder": "Card name (English or German)...",
@@ -132,10 +132,11 @@
         "allTypes": "All types",
         "allAttributes": "All attributes",
         "inText": "Also search card text",
-        "includeCatalog": "Also show catalog cards",
+        "inventoryOnly": "Show inventory cards only",
         "shownOf": "{shown} of {total} cards",
         "total": "{count} card | {count} cards",
-        "empty": "No cards found. Turn on “Also show catalog cards” or {link}.",
+        "empty": "No cards found.",
+        "emptyInventory": "No cards found in your inventory. Turn off “Show inventory cards only” or {link}.",
         "emptyLink": "add cards to your inventory",
         "ownedInDeck": "Owned: {owned} · in deck: {inDeck}",
         "cannotAdd": "{name} can't go in the {section}",
@@ -182,6 +183,7 @@
         "fusion": "Fusion",
         "synchro": "Synchro",
         "xyz": "Xyz",
+        "pendulum": "Pendulum",
         "link": "Link",
         "other": "Other"
       }
@@ -213,7 +215,6 @@
       },
       "cardCount": "{count} card | {count} cards",
       "sectionEmpty": "No cards.",
-      "sizeWarningTitle": "The deck differs from the usual sizes",
       "unresolvedHint": "Some lines are still open. Pick a card or remove the line to create the deck.",
       "defaultName": "Imported deck",
       "errors": {

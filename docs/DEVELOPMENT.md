@@ -37,6 +37,7 @@ See [`.env.example`](../.env.example) for all available variables:
 - `NUXT_DB_FILE_PATH` - path to the SQLite database file (default: `./data/app.db`; the directory is created automatically)
 - `NUXT_INVITE_CODE` - shared invite code the register form asks for (case, spaces and dashes don't matter). Empty = anyone can sign up; **set it in production** ([ADR 0027](adr/0027-invite-code-and-admin-token.md))
 - `NUXT_ADMIN_TOKEN` - bearer token for the `/api/admin/**` catalog sync endpoints. Empty = those endpoints are off
+- `NUXT_TRUST_LOCAL_NETWORK` - `true` also trusts sign-in requests whose origin is a private home-network address that is exactly the host asked (a phone reaching the desktop app, [ADR 0036](adr/0036-phone-connects-to-the-desktop-app.md)). Default `false`; leave it off on a public host
 - `NUXT_ASSISTANT_API_KEY` - API key for the chat assistant (optional; falls back to `OPENAI_API_KEY`). Without a key or a custom base URL the feature is disabled and the UI shows a notice instead.
 - `NUXT_ASSISTANT_PROVIDER` / `NUXT_ASSISTANT_BASE_URL` / `NUXT_ASSISTANT_MODEL` / `NUXT_ASSISTANT_REASONING_EFFORT` - override the assistant's provider (`openai` / `fake`), the OpenAI-compatible endpoint's base URL, the model id, and an optional `reasoning_effort` some gateways (e.g. OpenCode Go) require; see [`.env.example`](../.env.example)
 - `NUXT_ASSISTANT_VISION_MODEL` - optional override model for chat turns that include an image (the chat assistant at `/assistant`, see below); leave empty to use `NUXT_ASSISTANT_MODEL` for those turns too
@@ -50,6 +51,21 @@ Start the dev server at `http://localhost:3000`:
 ```bash
 pnpm dev
 ```
+
+To look at the dev server on a phone in the same Wi-Fi, start it with:
+
+```bash
+pnpm dev:phone
+```
+
+It listens on every interface (`nuxt dev --host 0.0.0.0`), sets
+`NUXT_TRUST_LOCAL_NETWORK=true` (the same switch as the desktop app's "Mit Handy
+verbinden", [ADR 0036](adr/0036-phone-connects-to-the-desktop-app.md)) and prints
+the addresses to open on the phone, e.g. `http://192.168.178.20:3000`. The first
+start asks the Windows firewall to allow Node on private networks. A phone needs a
+registered account like any browser (the register form asks for an invite code only
+when `NUXT_INVITE_CODE` is set). Without HTTPS the phone only gets a shortcut, not a
+real PWA install.
 
 The service worker is off in dev (#94). Start with `PWA_DEV_SW=1 pnpm dev` to test PWA behaviour; then
 restart the dev server by hand whenever `.nuxt` was wiped (`pnpm install`, `nuxt prepare`, `pnpm build`).
@@ -154,6 +170,18 @@ nothing is written before it has been confirmed:
   (`Monster`, `Zauber`, `Extra Deck`, `#main`, `!side`) never become rows, and
   entries for the same card are merged (across sections) before the 50-line cap, so
   a YDK with one line per copy fits.
+- **Datei einlesen** – "Excel- oder CSV-Datei einlesen" reads an `.xlsx`, `.csv`,
+  `.tsv`, `.txt` or `.ydk` file ([ADR 0034](adr/0034-card-list-from-spreadsheet.md)).
+  It is read in the browser (`app/utils/spreadsheet-list.ts`, with `fflate` for the
+  zip of an `.xlsx`) into the same lines as the box takes, so the server only ever
+  sees lines. The columns come from a header row ("Name", "Menge"/"Anzahl…",
+  "Set-Code"; English works too); without one, a column of small whole numbers is
+  the quantity and the most text-like other column the name. A workbook with
+  several sheets of cards asks which one to read; a sheet of numbers ("Karten" as
+  a count) is not offered. Lines go into the review table 50 at a time, up to its
+  200 rows, and "Nächste Zeilen laden" continues once those are saved. The same
+  import is the "Karten importieren" button on `/inventory/files` for a stored
+  `.xlsx` / `.csv`. Old `.xls` and `.ods` are not read.
 
 The review table preselects certain matches (passcode, set code, exact name)
 and anything scoring at least 0.85, marks weaker hits as "Unsicher" with a
@@ -168,10 +196,40 @@ in a "Gerade gespeichert" panel below it, which moves exactly those copies to
 another collection through `POST /api/inventory/move` and can be dismissed. It
 never refills the review table, so nothing is written twice.
 
-Recognizing a card from a photo now lives in the chat assistant
-(`/assistant`, see below) instead of its own modes here
-— see [`docs/adr/0010-chat-assistant-with-tools.md`](adr/0010-chat-assistant-with-tools.md)
-(supersedes [`docs/adr/0003`](adr/0003-client-side-ocr-and-speech-entry.md)).
+### Photos and speech (on the device)
+
+"Fotos auswerten" and "Diktieren" ([ADR 0040](adr/0040-on-device-photo-and-speech-input.md))
+sit above the list here, in the deck import dialog (also for a tournament
+participant's deck) and on `/inventory/files`. They need no account and no API key:
+
+- **Photos** (`app/components/cards/PhotoImport.vue`, `app/utils/photo-ocr.ts`): several
+  photos at once, read in the browser with Tesseract (WASM, English and German, three
+  passes; a photo of cards lying on their side is turned the right way up first); only
+  the text lines and their relative heights go to `POST /api/cards/match-fragments`
+  (`server/utils/card-fragments.ts`), which returns candidate cards. A photo of one
+  card is read reliably; in a photo of six cards about nine in ten are found, plus a
+  few wrong hits, fewer on a small photo or with foil lettering. The lines are appended
+  to the list, so the review table (with "sicher" and "Unsicher") decides what is added.
+- **Speech** (`SpeechInput.vue`, `app/utils/speech-transcribe.ts`): Whisper base
+  (`@huggingface/transformers`, WASM) transcribes the recording;
+  `app/utils/spoken-card-lines.ts` turns "dreimal Ash Blossom" into `3x Ash Blossom`.
+  A name the recognizer wrote as it sounds ("Goldsako-Fark") is still found: the lookup
+  also compares the letters and the sound of all names. A card named twice, anywhere in the
+  list and however spelled, is two copies (the lines are merged by their best candidate).
+  The microphone needs HTTPS, `localhost` or the desktop app; on a phone that opens the
+  dev server over plain HTTP a file input records with the phone's own recorder.
+- **Assets**: the OCR core and ONNX runtime are copied to `public/ai` by
+  `pnpm ai:assets` (part of `postinstall`; git-ignored). `pnpm ai:assets --models`
+  also downloads the speech model and the OCR language data (about 95 MB); the
+  desktop build does that (`desktop/scripts/prepare-server.mjs`) so the installed app
+  works offline. Without them the browser fetches the model from Hugging Face on
+  first use. `public/ai` is not in the service worker's precache.
+- After adding files under `public/`, restart `pnpm dev` (Vite can crash on the new
+  folder).
+
+Recognizing a card from a photo with a vision model is still possible in the chat
+assistant (`/assistant`, see below)
+— see [`docs/adr/0010-chat-assistant-with-tools.md`](adr/0010-chat-assistant-with-tools.md).
 
 ## Inventar und Sammlungen
 
@@ -208,15 +266,48 @@ is its frame (`catalog_card.frame_type`, with the type-line keywords of
 Toon, Union and Gemini monsters; Pendulum is a second kind next to the frame.
 The exact `type=` filter stays as the finer one and combines with it (AND).
 
+The chips beside the inventory's filters (`GET /api/inventory/kind-counts`) show
+the copies per kind in a row of their own: Normal, Effekt, Ritual, Zauber, Falle,
+Fusion, Synchro, Xyz, Pendel, Link. Like the filter, a Pendulum monster counts
+under its frame *and* under Pendel (so a chip's number is what the list shows
+after a click); the chips therefore add up to more than the inventory's copies.
+All ten chips are always there, also with 0 copies (shown dimmed and not clickable), so
+the row looks the same for everyone and Pendel never vanishes; the chips stay in one row
+and share it evenly, and on a window too narrow for ten of them the row scrolls sideways
+instead of wrapping.
+
+### Dateien
+
+`/inventory/files` (the "Dateien" button in the inventory's header) keeps files
+with the inventory: spreadsheets, receipts, scans, PDFs ([ADR 0033](adr/0033-inventory-files.md)).
+They are private to the user and stored; the server doesn't read them. For an
+`.xlsx` / `.csv` / text file the page offers "Karten importieren", which reads the
+card list in the browser and hands it to the quick capture
+([ADR 0034](adr/0034-card-list-from-spreadsheet.md)).
+
+- `GET /api/inventory/files` lists them (`{ items, totalBytes }`).
+- `POST /api/inventory/files` takes multipart `file` fields (up to 20 per
+  request, 25 MB each; 200 files and 500 MB per user) and answers 201 with the
+  created items.
+- `GET /api/inventory/files/:id` opens a PDF, image or `.txt` in the browser and
+  sends everything else as a download; `?download=1` always downloads.
+- `DELETE /api/inventory/files/:id` removes the row and the bytes.
+
+The bytes sit in `<folder of NUXT_DB_FILE_PATH>/files/<user id>/<file id>`
+(`data/files/` by default), so back up `data/` as a whole. The limits are
+constants in `shared/inventory-files.ts`.
+
 ## Decks
 
 Decks live under `/decks`: the list page searches by deck name *or* by a card
 contained in the deck, and the editor at `/decks/<id>` manages the Main, Extra,
-and Side Deck of a single deck. Cards are added from the card source panel,
-which searches the user's inventory by default (all collections, or one chosen
-in "Quelle", see above) and, with "Auch Katalogkarten
-anzeigen", the whole catalog — so a deck can be planned with cards that aren't
-owned yet. Fusion/Synchro/XYZ/Link monsters can only go into the Extra or Side
+and Side Deck of a single deck. Cards are added from the "Karten hinzufügen"
+panel, which lists the whole catalog by default — so a deck can be planned with
+cards that aren't owned yet, each row showing how many copies the user owns. The
+checkbox "Nur aus dem Inventar anzeigen" (right under the search, next to "Auch im
+Kartentext suchen") narrows it to the user's inventory, and only then does the
+"Quelle" select (all collections, or one chosen, see above) appear; the type and
+attribute lists follow the source. Fusion/Synchro/XYZ/Link monsters can only go into the Extra or Side
 Deck; every other card only into the Main or Side Deck.
 
 A deck references **catalog** cards, not owned-card rows (see
@@ -289,9 +380,45 @@ A format is a list of typed rules (max 50) stored as JSON and evaluated in code
 | `filter` | restrict all cards matching (or *not* matching) a card filter to 0–3 copies |
 
 A card filter can combine types, frame types, attributes, races, archetypes,
-sets, card ids, level/ATK/DEF ranges, a name substring, an effect flag, and a
-release cut-off. All provided fields are ANDed, the values inside one field are
-ORed, and an empty filter matches every card.
+sets, card ids, level/ATK/DEF ranges, a name substring, a card-text phrase list
+(`textContains`), an effect flag, and a release cut-off. All provided fields are
+ANDed, the values inside one field are ORed, and an empty filter matches every
+card. A `filter` rule can carry an `except` filter that lifts it for the cards it
+matches ("no hand traps except Kuriboh"). `textContains` searches the English card
+text for whole words, ignoring case, so "wins the Duel" or "Synchro" find the cards
+that say so ([ADR 0038](adr/0038-card-text-filters-and-handtrap-definitions.md)).
+
+### Format from a rulebook (PDF or text)
+
+`/formats/new` starts with "Aus PDF oder Text erstellen"
+([ADR 0037](adr/0037-format-from-a-rulebook.md)). A PDF (up to 5 MB, text PDFs
+only, no OCR) or pasted text goes to `POST /api/formats/analyze`, which saves
+nothing and answers with the rules, the name and description it found, and a list
+of findings. `shared/format-rulebook.ts` reads the text with fixed rules (German
+and English); `server/utils/format-import.ts` turns named cards into catalog ids
+(exact name or a near-certain match only) and validates each rule alone;
+`server/utils/pdf-text.ts` puts the PDF's text back into printed lines. The page
+shows the findings grouped (enforced / needs a decision / can't be checked, with a
+reason / not understood / game flow / remarks) and fills the editor below, so the
+user reviews and saves as for a hand-made format.
+
+Besides deck sizes and card types, the reader turns "Empfängermonster" (German for
+Tuner), "Karten, die Synchro … erwähnen" and "Instant Win … (außer Exodia)" into
+rules (type filter, card-text filter, card-text filter with an exception). "Hand
+traps are forbidden" depends on what a hand trap is, so it becomes a *decision*:
+the page offers the Classic Plus definition (the cards of its rule 4, from
+`server/utils/classic-plus-handtraps.json`, written by
+`scripts/classic-plus/combine.ts`), a stricter one (every monster whose text says it
+is played from the hand outside the owner's Main Phase, found at request time) or the
+user's own, which has to be written into the rulebook (`POST /api/formats/handtraps`,
+`server/utils/handtrap-lists.ts`). The chosen definition's cards replace those of the
+earlier choice in the editor (`replaceRulesFrom`) and leave everything else alone.
+
+To teach the reader a phrasing, add a detector in `shared/format-rulebook.ts`, a
+finding code with `.text` (and `.why` if the engine can't check it) in
+`formats.pdf.finding` in both languages, and a case in
+`tests/nuxt/format-rulebook.test.ts`. The two example rulebooks used as fixtures are
+in `tests/nuxt/fixtures/rulebooks/`.
 
 ### Validation semantics
 
@@ -433,11 +560,23 @@ this phase; see
 Tournaments live under `/tournaments`. A tournament has one organizer, who creates
 it, picks a rule format (or none) and a pairing system (`Schweizer System` or
 `Jeder gegen jeden`), and adds participants either as linked app users (by
-exact e-mail match) or as free-text guests. Registering a deck for a
-participant copies its decklist and legality verdict into a snapshot
-(`deck_snapshot`) — later edits to the deck, the format, or the catalog never
-change what a tournament recorded, unlike deck legality elsewhere in the app
-(see [Formate](#formate)), which is always recomputed live.
+exact e-mail match) or as free-text guests. A participant plays up to five decks
+(`tournament_participant_deck`, [ADR 0039](adr/0039-decks-of-tournament-participants.md)):
+each is either a copy of one of the app's decks (decklist and legality verdict are
+frozen in a snapshot) or just a name that was typed. Later edits to the deck, the
+format, or the catalog never change what a tournament recorded, unlike deck legality
+elsewhere in the app (see [Formate](#formate)), which is always recomputed live.
+The organizer sets decks for everyone until the tournament is over (guests and the
+organizer's own row from the organizer's decks; another player's row from the decks
+that player has shared with the organizer, or by typing a name); a player sets their
+own while it is open. `POST /api/tournaments/:id/participants/:pid/decks`
+(`{ deckId }` or `{ name }`), `DELETE …/decks/:entryId`, `GET …/deck-options`.
+The participant list shows each player's deck names in the middle of the row, told
+apart by a bold slash. A deck that is not in the app yet (a guest's, on paper) is made
+from the decks dialog: "Deck aus Fotos, Sprache oder Liste anlegen" opens the deck
+import (photos and speech, see [Schnellerfassung](#schnellerfassung)), creates the deck
+in the caller's account named "Deck von <participant>", and adds it to the participant
+through the same `POST …/decks { deckId }`, checked against the format.
 
 Starting a tournament freezes the seed order and creates the first round's
 pairings; each round is played, results are entered with the `2:0` / `2:1` /
@@ -534,6 +673,27 @@ depending on a full `catalog:sync` import. Set `E2E_PORT` to run the E2E server 
 default `3300` (useful when running `pnpm test:e2e` alongside `pnpm dev`). After a full page load, call
 `waitForHydration(page)` (`e2e/helpers/auth.ts`) before typing or clicking; don't use `networkidle`
 (lint rejects it).
+
+## Desktop-App (Windows)
+
+`desktop/` is an Electron app around the production server, with the data on the
+PC ([ADR 0035](adr/0035-desktop-app.md)). It is its own package, installed with
+`npm`, and not part of the pnpm install or the web deploy.
+
+```bash
+cd desktop
+npm install
+npm run prepare-server -- --build   # pnpm build (3.5 GB heap), then copies .output, the migrations and Node
+npm start                           # run it from the folder
+npm run dist                        # installer: desktop/dist/YGO Alpha Setup <version>.exe
+```
+
+- Data, settings and logs: `%APPDATA%\YGO Alpha` (`data\app.db`, `config.json`,
+  `logs\server.log`); `YGO_ALPHA_USER_DATA` points the app at another folder.
+- The menu "Datei" has "Mit Handy verbinden …" ([ADR 0036](adr/0036-phone-connects-to-the-desktop-app.md)),
+  "Kartenkatalog laden / aktualisieren …" (the admin catalog sync, it needs
+  internet) and "Datenordner öffnen".
+- The installer is unsigned: Windows SmartScreen shows "Unknown publisher".
 
 ## Production
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PARTICIPANT_NAME_MAX_LENGTH } from '~~/shared/tournaments'
-import type { TournamentDetail, TournamentParticipantDto } from '~~/shared/tournaments'
+import type { TournamentDetail, TournamentParticipantDeckDto, TournamentParticipantDto } from '~~/shared/tournaments'
 import { apiErrorCode } from '~/utils/card-entry'
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const emit = defineEmits<{
   updated: [detail: TournamentDetail]
 }>()
 
-const { t, n, d } = useI18n()
+const { t, n } = useI18n()
 const count = useCount()
 const apiError = useApiError()
 const validationText = useValidationText()
@@ -249,20 +249,27 @@ function menuItemsFor(participant: TournamentParticipantDto) {
   return items.length > 0 ? [items] : []
 }
 
-// --- Deck registration --------------------------------------------------------
+// --- Decks (ADR 0039) ---------------------------------------------------------
 
 const deckModalOpen = ref(false)
-const deckModalParticipant = ref<TournamentParticipantDto | null>(null)
+const deckModalParticipantId = ref<string | null>(null)
+// Looked up by id, so the dialog shows the decks of the detail that was just saved.
+const deckModalParticipant = computed(() =>
+  props.tournament.participants.find(participant => participant.id === deckModalParticipantId.value) ?? null)
 
-function canRegisterDeck(participant: TournamentParticipantDto): boolean {
-  if (props.tournament.status !== 'registration') {
-    return false
+/**
+ * The organizer puts decks on everybody until the tournament is over; a player
+ * only on their own row while it is open.
+ */
+function canManageDecks(participant: TournamentParticipantDto): boolean {
+  if (props.tournament.role === 'organizer') {
+    return props.tournament.status !== 'finished'
   }
-  return participant.isSelf || (props.tournament.role === 'organizer' && !participant.linked)
+  return props.tournament.status === 'registration' && participant.isSelf
 }
 
 function openDeckModal(participant: TournamentParticipantDto) {
-  deckModalParticipant.value = participant
+  deckModalParticipantId.value = participant.id
   deckModalOpen.value = true
 }
 
@@ -270,23 +277,47 @@ function onDeckUpdated(detail: TournamentDetail) {
   emit('updated', detail)
 }
 
-// A linked participant who isn't the caller and isn't self-registerable by
-// the organizer either (i.e. any other linked participant while the
-// tournament is still open) manages their own deck — say so instead of just
-// omitting the button silently (#34).
-function managesOwnDeck(participant: TournamentParticipantDto): boolean {
-  return props.tournament.status === 'registration'
-    && participant.linked
-    && !participant.isSelf
-    && !canRegisterDeck(participant)
+// A deck made from photos, speech or a list for this participant (ADR 0039/0040): the
+// deck import creates it in the caller's decks, and it goes onto the participant, where
+// it is checked against the tournament's format. The decks dialog steps aside meanwhile.
+const deckImportOpen = ref(false)
+const deckImportFor = ref<string | null>(null)
+const deckImportName = computed(() => t('tournaments.decksDialog.import.deckName', { name: deckModalParticipant.value?.name ?? '' }))
+
+function startDeckImport() {
+  deckImportFor.value = deckModalParticipantId.value
+  deckModalOpen.value = false
+  deckImportOpen.value = true
 }
+
+async function onDeckImported(deck: { id: string }) {
+  const participantId = deckImportFor.value
+  if (!participantId) {
+    return
+  }
+  rowError.value = ''
+  try {
+    emit('updated', await $fetch<TournamentDetail>(`/api/tournaments/${props.tournament.id}/participants/${participantId}/decks`, { method: 'POST', body: { deckId: deck.id } }))
+  }
+  catch (error) {
+    rowError.value = apiError(error, 'tournaments.decksDialog.addFailed')
+  }
+}
+
+// Whether the import was finished or cancelled, the user is back at the participant's decks.
+watch(deckImportOpen, (open) => {
+  if (!open && deckImportFor.value) {
+    deckModalParticipantId.value = deckImportFor.value
+    deckImportFor.value = null
+    deckModalOpen.value = true
+  }
+})
 
 // Whether a row has anything to act on. On phones the actions cell is a
 // full-width strip under the card, so a row with nothing in it hides that
 // cell instead of leaving an empty bordered strip (#28).
 function rowHasActions(participant: TournamentParticipantDto): boolean {
-  return canRegisterDeck(participant)
-    || managesOwnDeck(participant)
+  return canManageDecks(participant)
     || menuItemsFor(participant).length > 0
 }
 
@@ -303,7 +334,7 @@ const showDeckReminder = computed(() =>
   props.tournament.role === 'participant'
   && props.tournament.status === 'registration'
   && selfParticipant.value !== null
-  && !selfParticipant.value.deckName)
+  && selfParticipant.value.decks.length === 0)
 
 function openOwnDeckModal() {
   if (selfParticipant.value) {
@@ -311,26 +342,18 @@ function openOwnDeckModal() {
   }
 }
 
-function deckBadge(participant: TournamentParticipantDto): { label: string, color: 'success' | 'error' | 'neutral' } | null {
-  // deckName is snapshot-derived and survives the underlying deck being
-  // deleted (deckId is ON DELETE SET NULL); gate on it, not on deckId, so a
-  // deleted deck keeps showing the registered snapshot's legality badge.
-  if (!participant.deckName) {
+function deckBadge(entry: TournamentParticipantDeckDto): { label: string, color: 'success' | 'error' | 'neutral' } | null {
+  // A name only has no list to check. The verdict is snapshot-derived and
+  // survives the underlying deck being deleted, so a deleted deck keeps its badge.
+  if (!entry.hasList) {
     return null
   }
-  if (participant.deckLegal === null) {
+  if (entry.legal === null) {
     return { label: t('tournaments.noFormat'), color: 'neutral' }
   }
-  return participant.deckLegal
+  return entry.legal
     ? { label: t('validation.badge.legal'), color: 'success' }
     : { label: t('validation.badge.notLegal'), color: 'error' }
-}
-
-function issueCountLabel(participant: TournamentParticipantDto): string | null {
-  if (!participant.deckIssueCount) {
-    return null
-  }
-  return count('tournaments.participants.issueCount', participant.deckIssueCount)
 }
 
 /**
@@ -338,24 +361,14 @@ function issueCountLabel(participant: TournamentParticipantDto): string | null {
  * params, since #34 F2c) through the validation catalogue; older snapshots
  * only have the stored message strings, shown as they are.
  */
-function issueMessages(participant: TournamentParticipantDto): string[] {
-  const validation = participant.deckSnapshot?.validation
+function issueMessages(entry: TournamentParticipantDeckDto): string[] {
+  const validation = entry.snapshot?.validation
   if (!validation) {
     return []
   }
   return validation.issueDetails
     ? validation.issueDetails.map(issue => validationText(issue))
     : validation.issues.map(issue => validationText(issue))
-}
-
-// "Stand: 12.9.2026, 13:13:52" was overly precise and ambiguous about what
-// it meant; "Angemeldet am 12.09.2026, 13:13" (no seconds) reads clearly (#30).
-function capturedAtLabel(participant: TournamentParticipantDto): string | null {
-  const capturedAt = participant.deckSnapshot?.capturedAt
-  if (!capturedAt) {
-    return null
-  }
-  return t('tournaments.participants.registeredAt', { date: d(new Date(capturedAt), 'dateTime') })
 }
 </script>
 
@@ -487,7 +500,7 @@ function capturedAtLabel(participant: TournamentParticipantDto): string | null {
             </th>
             <th
               role="columnheader"
-              class="px-2 py-2"
+              class="px-2 py-2 text-center"
             >
               {{ t('tournaments.participants.columns.deck') }}
             </th>
@@ -500,15 +513,18 @@ function capturedAtLabel(participant: TournamentParticipantDto): string | null {
             </th>
           </tr>
         </thead>
+        <!-- On a phone a card is two lines: seed, name and the "…" menu in the
+             first, the deck under the name. The menu used to sit in a third,
+             full-width row, which made a long list of players very tall. -->
         <tbody
           role="rowgroup"
-          class="block space-y-2 sm:table-row-group sm:space-y-0 sm:divide-y sm:divide-default"
+          class="block space-y-1.5 sm:table-row-group sm:space-y-0 sm:divide-y sm:divide-default"
         >
           <tr
             v-for="participant in tournament.participants"
             :key="participant.id"
             role="row"
-            class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-lg border border-default p-3 transition-colors sm:table-row sm:rounded-none sm:border-0 sm:p-0 sm:hover:bg-elevated/40"
+            class="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 gap-y-0.5 rounded-lg border border-default px-3 py-1.5 transition-colors sm:table-row sm:rounded-none sm:border-0 sm:p-0 sm:hover:bg-elevated/40"
           >
             <td
               role="cell"
@@ -547,86 +563,112 @@ function capturedAtLabel(participant: TournamentParticipantDto): string | null {
                 />
               </div>
             </td>
+            <!-- The deck names sit in the middle of the row, one player each; several decks
+                 are told apart by a bold slash (ADR 0039). A name opens the deck dialog. -->
             <td
               role="cell"
-              class="col-start-2 sm:px-2 sm:py-2"
+              class="col-span-2 col-start-2 sm:px-2 sm:py-2 sm:text-center"
             >
-              <template v-if="participant.deckName">
-                <div class="text-highlighted">
-                  {{ participant.deckName }}
-                </div>
-                <div class="mt-0.5 flex flex-wrap items-center gap-1">
-                  <UPopover v-if="deckBadge(participant) && participant.deckIssueCount">
-                    <button
-                      type="button"
-                      class="tap-target inline-flex items-center gap-1 rounded hover:bg-elevated/50"
-                      :aria-label="t('tournaments.participants.showIssues', { name: participant.name })"
-                    >
-                      <UBadge
-                        size="sm"
-                        variant="subtle"
-                        :color="deckBadge(participant)!.color"
-                        :label="deckBadge(participant)!.label"
-                      />
-                      <span class="text-xs text-muted">{{ issueCountLabel(participant) }}</span>
-                    </button>
-
-                    <template #content>
-                      <div class="max-w-xs space-y-1 p-3">
-                        <p class="text-xs font-semibold text-highlighted">
-                          {{ t('tournaments.participants.issuesTitle') }}
-                        </p>
-                        <ul class="list-inside list-disc space-y-0.5 text-xs text-toned">
-                          <li
-                            v-for="(issue, index) in issueMessages(participant)"
-                            :key="index"
-                          >
-                            {{ issue }}
-                          </li>
-                        </ul>
-                      </div>
-                    </template>
-                  </UPopover>
-                  <UBadge
-                    v-else-if="deckBadge(participant)"
-                    size="sm"
-                    variant="subtle"
-                    :color="deckBadge(participant)!.color"
-                    :label="deckBadge(participant)!.label"
-                  />
-                </div>
-                <div
-                  v-if="capturedAtLabel(participant)"
-                  class="mt-0.5 text-xs text-muted"
+              <div
+                v-if="participant.decks.length > 0"
+                class="flex flex-wrap items-center gap-y-1 sm:justify-center"
+                data-testid="participant-decks"
+              >
+                <template
+                  v-for="(entry, index) in participant.decks"
+                  :key="entry.id"
                 >
-                  {{ capturedAtLabel(participant) }}
-                </div>
-              </template>
+                  <span
+                    v-if="index > 0"
+                    class="px-2 font-extrabold text-muted"
+                    aria-hidden="true"
+                  >{{ t('tournaments.participants.deckSeparator') }}</span>
+                  <span class="inline-flex flex-wrap items-center gap-1.5">
+                    <button
+                      v-if="canManageDecks(participant)"
+                      type="button"
+                      class="text-highlighted hover:underline"
+                      :aria-label="t('tournaments.participants.editDecksOf', { name: participant.name })"
+                      @click="openDeckModal(participant)"
+                    >
+                      {{ entry.name }}
+                    </button>
+                    <span
+                      v-else
+                      class="text-highlighted"
+                    >{{ entry.name }}</span>
+
+                    <UPopover v-if="deckBadge(entry) && entry.issueCount">
+                      <button
+                        type="button"
+                        class="tap-target inline-flex items-center gap-1 rounded hover:bg-elevated/50"
+                        :aria-label="t('tournaments.participants.showIssues', { name: entry.name })"
+                      >
+                        <UBadge
+                          size="sm"
+                          variant="subtle"
+                          :color="deckBadge(entry)!.color"
+                          :label="deckBadge(entry)!.label"
+                        />
+                        <span class="text-xs text-muted">{{ count('tournaments.participants.issueCount', entry.issueCount) }}</span>
+                      </button>
+
+                      <template #content>
+                        <div class="max-w-xs space-y-1 p-3">
+                          <p class="text-xs font-semibold text-highlighted">
+                            {{ t('tournaments.participants.issuesTitle') }}
+                          </p>
+                          <ul class="list-inside list-disc space-y-0.5 text-xs text-toned">
+                            <li
+                              v-for="(issue, issueIndex) in issueMessages(entry)"
+                              :key="issueIndex"
+                            >
+                              {{ issue }}
+                            </li>
+                          </ul>
+                        </div>
+                      </template>
+                    </UPopover>
+                    <UBadge
+                      v-else-if="deckBadge(entry)"
+                      size="sm"
+                      variant="subtle"
+                      :color="deckBadge(entry)!.color"
+                      :label="deckBadge(entry)!.label"
+                    />
+                  </span>
+                </template>
+              </div>
+              <button
+                v-else-if="canManageDecks(participant)"
+                type="button"
+                class="cursor-pointer text-xs text-muted underline decoration-dotted underline-offset-2 hover:text-highlighted sm:text-sm"
+                :aria-label="t('tournaments.participants.editDecksOf', { name: participant.name })"
+                @click="openDeckModal(participant)"
+              >
+                {{ t('tournaments.noDeck') }}
+              </button>
               <span
                 v-else
-                class="text-muted"
+                class="text-xs text-muted sm:text-sm"
               >{{ t('tournaments.noDeck') }}</span>
             </td>
             <td
               v-if="hasRowActions"
               role="cell"
-              class="col-span-full border-t border-muted pt-2 sm:border-0 sm:px-2 sm:py-2"
+              class="max-sm:col-start-3 max-sm:row-start-1 sm:px-2 sm:py-2"
               :class="rowHasActions(participant) ? undefined : 'max-sm:hidden'"
             >
-              <div class="flex items-center justify-start gap-2 sm:justify-end">
+              <div class="flex items-center justify-end gap-2">
                 <UButton
-                  v-if="canRegisterDeck(participant)"
+                  v-if="canManageDecks(participant)"
                   size="xs"
                   color="neutral"
                   variant="outline"
                   class="tap-target"
-                  :label="participant.deckName ? t('tournaments.participants.changeDeck') : t('tournaments.participants.registerDeck')"
+                  :label="participant.decks.length > 0 ? t('tournaments.participants.changeDeck') : t('tournaments.participants.registerDeck')"
                   @click="openDeckModal(participant)"
                 />
-                <span
-                  v-else-if="managesOwnDeck(participant)"
-                  class="text-xs text-muted"
-                >{{ t('tournaments.participants.managesOwnDeck') }}</span>
                 <UDropdownMenu
                   v-if="menuItemsFor(participant).length > 0"
                   :items="menuItemsFor(participant)"
@@ -696,13 +738,19 @@ function capturedAtLabel(participant: TournamentParticipantDto): string | null {
       </template>
     </UModal>
 
-    <TournamentsDeckRegistrationModal
+    <TournamentsParticipantDecksModal
       v-model:open="deckModalOpen"
       :tournament-id="tournament.id"
-      :participant-id="deckModalParticipant?.id ?? null"
-      :current-deck-id="deckModalParticipant?.deckId ?? null"
-      :format="tournament.format"
+      :participant="deckModalParticipant"
+      :can-manage="deckModalParticipant !== null && canManageDecks(deckModalParticipant)"
       @updated="onDeckUpdated"
+      @import-deck="startDeckImport"
+    />
+
+    <DecksDeckImportModal
+      v-model:open="deckImportOpen"
+      :default-name="deckImportName"
+      @created="onDeckImported"
     />
   </section>
 </template>

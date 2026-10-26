@@ -85,6 +85,8 @@ test.describe('accessibility basics', () => {
     }
 
     await page.getByRole('button', { name: 'Karten hinzufügen', exact: true }).click()
+    // The panel lists the whole catalog; narrow it to the one owned card so the list is short and stable.
+    await page.getByRole('checkbox', { name: 'Nur aus dem Inventar anzeigen' }).check()
     await expect(page.getByRole('button', { name: `${CARD.darkMagician} zum Main Deck hinzufügen`, exact: true })).toBeVisible()
     await expectTapTarget(`${CARD.darkMagician} zum Main Deck hinzufügen`)
   })

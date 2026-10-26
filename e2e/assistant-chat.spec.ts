@@ -204,7 +204,7 @@ test.describe('Chat assistant', () => {
     await registerAndLogin(page)
     await page.goto('/inventory/quick-entry')
 
-    await expect(page.getByText('Karten per Foto? Nutze den Assistenten')).toBeVisible()
+    await expect(page.getByText('Mehr als eine Liste? Nutze den Assistenten')).toBeVisible()
     await expect(page.getByRole('tab', { name: 'Foto' })).toHaveCount(0)
     await expect(page.getByRole('tab', { name: 'Sprache' })).toHaveCount(0)
 

@@ -58,6 +58,19 @@ describe('rule describer', () => {
     expect(describeRule({ kind: 'filter', match: 'matching', filter: {}, maxCopies: 3 })).toBe('Karten mit alle Karten: erlaubt (max. 3)')
   })
 
+  it('describes a card-text filter and an exception (ADR 0038)', async () => {
+    const { describeRule } = await composables()
+
+    expect(describeRule({
+      kind: 'filter',
+      match: 'matching',
+      filter: { textContains: ['win the Duel', 'wins the Duel'] },
+      maxCopies: 0,
+      label: 'Instant Win',
+      except: { nameContains: 'Exodia' },
+    })).toBe('Instant Win — Karten mit Kartentext enthält "win the Duel" oder "wins the Duel": verboten, außer Name enthält "Exodia"')
+  })
+
   it('labels card types, attributes and races in the card language (ADR 0015)', async () => {
     const { describeCardFilter } = await composables()
     const filter = { types: ['Spell Card'], attributes: ['dark'], races: ['Spellcaster', 'Yami Yugi'] }

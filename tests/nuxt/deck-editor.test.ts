@@ -74,7 +74,7 @@ mockNuxtImport('useFetch', () => {
       state.sourceQuery = options?.query
       return { data: ref(state.source), pending: ref(false), error: ref(null), refresh: vi.fn() }
     }
-    if (resolvedUrl === '/api/inventory/search/facets') {
+    if (resolvedUrl === '/api/inventory/search/facets' || resolvedUrl === '/api/catalog/facets') {
       return { data: ref(state.facets), pending: ref(false), error: ref(null), refresh: vi.fn() }
     }
     if (resolvedUrl === '/api/inventory/owned-quantities') {
@@ -302,8 +302,8 @@ describe('deck editor', () => {
 
     const component = await mountSuspended(DeckEditorPage)
 
-    expect(component.text()).toContain('Aus Inventar hinzufügen')
-    expect(component.text()).toContain('Auch Katalogkarten anzeigen')
+    expect(component.text()).toContain('Karten hinzufügen')
+    expect(component.text()).toContain('Nur aus dem Inventar anzeigen')
     // Owned quantity and how many copies are already in this deck.
     expect(component.text()).toContain('Besitz: 2')
 
@@ -717,6 +717,26 @@ describe('deck editor mutations', () => {
     }
   })
 
+  it('lists every card by default, with both checkboxes right under the search field', async () => {
+    state.source = { items: [], total: 0 }
+    state.deck = darkMagicianDeck(1)
+
+    const component = await mountSuspended(DeckEditorPage)
+    const html = component.html()
+    const at = (needle: string) => html.indexOf(needle)
+
+    // Search, then the two checkboxes, then the selects.
+    expect(at('aria-label="Karten für das Deck suchen"')).toBeGreaterThan(-1)
+    expect(at('Auch im Kartentext suchen')).toBeGreaterThan(at('aria-label="Karten für das Deck suchen"'))
+    expect(at('Nur aus dem Inventar anzeigen')).toBeGreaterThan(at('Auch im Kartentext suchen'))
+    expect(at('aria-label="Kartenart"')).toBeGreaterThan(at('Nur aus dem Inventar anzeigen'))
+
+    // Unchecked: the catalog is what is listed, and the old wording is gone.
+    expect(checkboxByLabel(component, 'Nur aus dem Inventar anzeigen').attributes('aria-checked')).toBe('false')
+    expect(html).not.toContain('Auch Katalogkarten anzeigen')
+    expect(html).not.toContain('Aus Inventar hinzufügen')
+  })
+
   it('picks the add panel\'s "Quelle": a collection\'s own copies, or all', async () => {
     state.collections = { items: [{ id: 'box-1', name: 'Box 1' }, { id: 'box-2', name: 'Deck-Box' }], allCount: 5 }
     state.source = {
@@ -727,10 +747,14 @@ describe('deck editor mutations', () => {
     const sourceQuery = () => unref(state.sourceQuery as Ref<Record<string, unknown>>)
 
     const component = await mountSuspended(DeckEditorPage)
+    // The panel lists every card by default; "Quelle" belongs to the inventory view.
+    expect(component.find('[aria-label="Quelle"]').exists()).toBe(false)
+    await checkboxByLabel(component, 'Nur aus dem Inventar anzeigen').trigger('click')
+    await flushPromises()
     const source = selectWithOption(component.findAllComponents(USelect), 'box-1')!
 
     expect(optionLabels(source)).toEqual(['Alle Sammlungen', 'Ohne Sammlung', 'Box 1', 'Deck-Box'])
-    // Default: the whole inventory, as before.
+    // Default source: the whole inventory.
     expect(sourceQuery().collectionId).toBeUndefined()
     expect(sourceQuery().scoped).toBeUndefined()
     expect(component.text()).toContain('Besitz: 2 · im Deck: 1')
@@ -750,13 +774,13 @@ describe('deck editor mutations', () => {
     await flushPromises()
     expect(sourceQuery().collectionId).toBeUndefined()
 
-    // The catalog has no collections: the select is off and nothing is sent.
+    // The catalog has no collections: leaving the inventory view removes the select and sends nothing.
     await source.setValue('box-2')
-    await checkboxByLabel(component, 'Auch Katalogkarten anzeigen').trigger('click')
+    await checkboxByLabel(component, 'Nur aus dem Inventar anzeigen').trigger('click')
     await flushPromises()
     expect(sourceQuery().collectionId).toBeUndefined()
     expect(sourceQuery().scoped).toBeUndefined()
-    expect(component.find('[aria-label="Quelle"]').attributes('disabled')).toBeDefined()
+    expect(component.find('[aria-label="Quelle"]').exists()).toBe(false)
     state.collections = { items: [], allCount: 0 }
   })
 
@@ -818,12 +842,12 @@ describe('deck editor mutations', () => {
       total: 1,
     }
 
+    // The catalog is what the panel lists by default: no click needed.
     const component = await mountSuspended(DeckEditorPage)
-    await checkboxByLabel(component, 'Auch Katalogkarten anzeigen').trigger('click')
     await flushPromises()
     await component.vm.$nextTick()
 
-    expect(component.text()).toContain('Auch Katalogkarten anzeigen')
+    expect(component.text()).toContain('Nur aus dem Inventar anzeigen')
     expect(component.text()).toContain('Besitz: 4')
   })
 })
@@ -1166,10 +1190,12 @@ describe('deck editor add panel layout', () => {
     state.deck = deckDetail({ main: [row({ name: 'Dark Magician', section: 'main' })] })
 
     const component = await mountSuspended(DeckEditorPage)
-    const text = component.text()
+    const html = component.html()
 
-    expect(text.indexOf('Noch keine Karten im Side Deck.')).toBeGreaterThan(-1)
-    expect(text.indexOf('Noch keine Karten im Side Deck.')).toBeLessThan(text.indexOf('Aus Inventar hinzufügen'))
+    // "Karten hinzufügen" is also the header's jump button, so compare with the panel's own heading.
+    expect(component.find('#deck-add-panel-title').text()).toBe('Karten hinzufügen')
+    expect(html.indexOf('Noch keine Karten im Side Deck.')).toBeGreaterThan(-1)
+    expect(html.indexOf('Noch keine Karten im Side Deck.')).toBeLessThan(html.indexOf('id="deck-add-panel-title"'))
   })
 
   it('collapses the add panel on small screens once the deck has cards', async () => {
@@ -1667,6 +1693,9 @@ describe('deck editor add panel paging', () => {
     const fetchMock = stubSourceFetch(() => Promise.resolve({ items: inventoryItems(2, 12), total: 14 }))
 
     const component = await mountSuspended(DeckEditorPage)
+    // The inventory view; the default (the catalog) loads its next page from /api/catalog/cards.
+    await checkboxByLabel(component, 'Nur aus dem Inventar anzeigen').trigger('click')
+    await flushPromises()
 
     expect(panelCards(component)).toHaveLength(12)
     expect(component.text()).toContain('12 von 14 Karten')
@@ -1699,7 +1728,6 @@ describe('deck editor add panel paging', () => {
     })
 
     const component = await mountSuspended(DeckEditorPage)
-    await checkboxByLabel(component, 'Auch Katalogkarten anzeigen').trigger('click')
     await flushPromises()
 
     await loadMoreButton(component)!.trigger('click')
@@ -1846,7 +1874,8 @@ describe('deck editor in English', () => {
     expect(component.find('[data-testid="deck-breakdown"]').findAll('li').map(li => li.text())).toEqual(['1 Normal Monster', '2 Spell Cards'])
     expect(component.find('[data-testid="deck-breakdown"] ul').attributes('aria-label')).toBe('Card kinds in the Main Deck')
     expect(text).toContain('Cover card')
-    expect(text).toContain('Add from inventory')
+    expect(component.find('#deck-add-panel-title').text()).toBe('Add cards')
+    expect(text).toContain('Show inventory cards only')
     expect(text).not.toMatch(/Karte|Regel|Titelkarte|Verboten|Limitiert|hinzufügen/)
 
     // Status badges and their tooltips (the reasons behind the limit).

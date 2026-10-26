@@ -49,8 +49,8 @@ test.describe('deck import and export', () => {
     await expect(dialog.locator('[data-section="extra"]').getByText(CARD.stardustDragon, { exact: true })).toBeVisible()
     await expect(dialog.locator('[data-section="side"]').getByText(CARD.monsterReborn, { exact: true })).toBeVisible()
 
-    // Sizes outside the usual limits warn, but don't block.
-    await expect(dialog.getByText('Das Deck weicht von den üblichen Größen ab')).toBeVisible()
+    // A list of any size is fine (photos and speech often bring part of a deck): no size warning.
+    await expect(dialog.getByText('Das Deck weicht von den üblichen Größen ab')).toHaveCount(0)
 
     await dialog.getByLabel('Deckname').fill('Importiert')
     await page.screenshot({ path: '/tmp/pr-a-import-review.png' })

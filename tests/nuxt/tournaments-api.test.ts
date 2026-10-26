@@ -6,26 +6,32 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '../../server/db/schema'
 import { createDeck, deleteDeck, upsertDeckCard } from '../../server/utils/decks'
 import { seedBuiltinFormats } from '../../server/utils/rule-formats'
+import { addShareGrant } from '../../server/utils/sharing'
 import {
   addParticipant,
+  addParticipantDeck,
   completeRound,
   createNextRound,
   createTournament,
   deleteTournament,
   finishTournament,
   getTournamentDetail,
+  listParticipantDeckOptions,
   listTournaments,
-  registerParticipantDeck,
   removeParticipant,
+  removeParticipantDeck,
   reportMatchResult,
   startTournament,
   swapPairing,
   updateParticipant,
   updateTournament,
+  validateDeckEntryInput,
   validateParticipantInput,
   validateTournamentInput,
 } from '../../server/utils/tournaments'
 import {
+  DECK_NAME_MAX_LENGTH,
+  MAX_DECKS_PER_PARTICIPANT,
   MAX_PARTICIPANTS,
   MAX_PLANNED_ROUNDS,
   MIN_PARTICIPANTS_TO_START,
@@ -298,31 +304,41 @@ describe('deck registration', () => {
     return detail.participants.find(p => p.isSelf)!.id
   }
 
+  function playerParticipantId(detail: TournamentDetail) {
+    return detail.participants.find(p => p.linked && !p.isSelf)!.id
+  }
+
+  const ofParticipant = (detail: TournamentDetail, participantId: string) => detail.participants.find(p => p.id === participantId)!
+  const deckInput = (deckId: string) => ({ deckId, name: null }) as const
+  const nameInput = (name: string) => ({ deckId: null, name }) as const
+
   it('snapshots the organizer\'s deck, unaffected by later edits or deletion', () => {
     const deck = buildSmallDeck(db, 'user-a')
     let detail = getTournamentDetail(db, 'user-a', id)
     const participantId = organizerParticipantId(detail)
 
-    detail = registerParticipantDeck(db, 'user-a', id, participantId, deck.id)
-    const participant = detail.participants.find(p => p.id === participantId)!
-    expect(participant.deckSnapshot).not.toBeNull()
-    expect(participant.deckSnapshot!.sections.main).toHaveLength(3)
-    expect(participant.deckSnapshot!.capturedAt).toEqual(expect.any(String))
-    expect(participant.deckLegal).toBe(false)
-    expect(participant.deckIssueCount).toBeGreaterThan(0)
+    detail = addParticipantDeck(db, 'user-a', id, participantId, deckInput(deck.id))
+    const entry = ofParticipant(detail, participantId).decks[0]!
+    expect(entry.name).toBe('Kleines Deck')
+    expect(entry.hasList).toBe(true)
+    expect(entry.snapshot).not.toBeNull()
+    expect(entry.snapshot!.sections.main).toHaveLength(3)
+    expect(entry.snapshot!.capturedAt).toEqual(expect.any(String))
+    expect(entry.legal).toBe(false)
+    expect(entry.issueCount).toBeGreaterThan(0)
 
-    const snapshotBefore = JSON.stringify(participant.deckSnapshot)
+    const snapshotBefore = JSON.stringify(entry.snapshot)
 
     upsertDeckCard(db, 'user-a', deck.id, { catalogCardId: CARD.kuriboh, section: 'main', quantity: 2 })
     detail = getTournamentDetail(db, 'user-a', id)
-    const afterEdit = detail.participants.find(p => p.id === participantId)!
-    expect(JSON.stringify(afterEdit.deckSnapshot)).toBe(snapshotBefore)
+    expect(JSON.stringify(ofParticipant(detail, participantId).decks[0]!.snapshot)).toBe(snapshotBefore)
 
     deleteDeck(db, 'user-a', deck.id)
     detail = getTournamentDetail(db, 'user-a', id)
-    const afterDelete = detail.participants.find(p => p.id === participantId)!
+    const afterDelete = ofParticipant(detail, participantId).decks[0]!
     expect(afterDelete.deckId).toBeNull()
-    expect(JSON.stringify(afterDelete.deckSnapshot)).toBe(snapshotBefore)
+    expect(afterDelete.name).toBe('Kleines Deck')
+    expect(JSON.stringify(afterDelete.snapshot)).toBe(snapshotBefore)
   })
 
   it('is legal against a format with no rules', () => {
@@ -332,37 +348,138 @@ describe('deck registration', () => {
 
     let detail = getTournamentDetail(db, 'user-a', id)
     const participantId = organizerParticipantId(detail)
-    detail = registerParticipantDeck(db, 'user-a', id, participantId, deck.id)
+    detail = addParticipantDeck(db, 'user-a', id, participantId, deckInput(deck.id))
 
-    const participant = detail.participants.find(p => p.id === participantId)!
-    expect(participant.deckLegal).toBe(true)
-    expect(participant.deckIssueCount).toBe(0)
+    const entry = ofParticipant(detail, participantId).decks[0]!
+    expect(entry.legal).toBe(true)
+    expect(entry.issueCount).toBe(0)
   })
 
-  it('lets a linked participant register their own deck', () => {
+  it('lets a participant play several decks, in the order they were added, and take one off again', () => {
+    const first = buildSmallDeck(db, 'user-a', 'Erstes Deck')
+    const second = buildSmallDeck(db, 'user-a', 'Zweites Deck')
+    let detail = getTournamentDetail(db, 'user-a', id)
+    const participantId = organizerParticipantId(detail)
+
+    addParticipantDeck(db, 'user-a', id, participantId, deckInput(first.id))
+    addParticipantDeck(db, 'user-a', id, participantId, nameInput('Mein Hauptdeck'))
+    detail = addParticipantDeck(db, 'user-a', id, participantId, deckInput(second.id))
+
+    expect(ofParticipant(detail, participantId).decks.map(entry => entry.name)).toEqual(['Erstes Deck', 'Mein Hauptdeck', 'Zweites Deck'])
+
+    const middle = ofParticipant(detail, participantId).decks[1]!
+    detail = removeParticipantDeck(db, 'user-a', id, participantId, middle.id)
+    expect(ofParticipant(detail, participantId).decks.map(entry => entry.name)).toEqual(['Erstes Deck', 'Zweites Deck'])
+
+    // The positions are renumbered, so the next deck goes to the end.
+    detail = addParticipantDeck(db, 'user-a', id, participantId, nameInput('Drittes'))
+    expect(ofParticipant(detail, participantId).decks.map(entry => entry.name)).toEqual(['Erstes Deck', 'Zweites Deck', 'Drittes'])
+  })
+
+  it('takes a deck that is only a name, without a list, a verdict or a deck id', () => {
+    let detail = getTournamentDetail(db, 'user-a', id)
+    detail = addParticipantDeck(db, 'user-a', id, organizerParticipantId(detail), nameInput('Blauäugiger Drache'))
+
+    expect(ofParticipant(detail, organizerParticipantId(detail)).decks).toEqual([
+      { id: expect.any(String), name: 'Blauäugiger Drache', deckId: null, hasList: false, legal: null, issueCount: null, snapshot: null },
+    ])
+  })
+
+  it('validates what is sent: a deck or a name, never both or neither, and a name of a sensible length', () => {
+    expect(validateDeckEntryInput({ deckId: 'd1' })).toEqual({ deckId: 'd1', name: null })
+    expect(validateDeckEntryInput({ name: '  Mein Deck ' })).toEqual({ deckId: null, name: 'Mein Deck' })
+    expect(() => validateDeckEntryInput({})).toThrow(expect.objectContaining({ data: { code: 'invalid_body' } }))
+    expect(() => validateDeckEntryInput({ deckId: 'd1', name: 'x' })).toThrow(expect.objectContaining({ data: { code: 'invalid_body' } }))
+    expect(() => validateDeckEntryInput({ name: '   ' })).toThrow(expect.objectContaining({ data: { code: 'invalid_deck_name', params: { max: DECK_NAME_MAX_LENGTH } } }))
+    expect(() => validateDeckEntryInput({ name: 'x'.repeat(DECK_NAME_MAX_LENGTH + 1) })).toThrow(expect.objectContaining({ data: { code: 'invalid_deck_name', params: { max: DECK_NAME_MAX_LENGTH } } }))
+    expect(() => validateDeckEntryInput('nope')).toThrow(expect.objectContaining({ data: { code: 'invalid_body' } }))
+  })
+
+  it('limits the decks of one participant, and refuses the same deck twice', () => {
+    const deck = buildSmallDeck(db, 'user-a')
+    let detail = getTournamentDetail(db, 'user-a', id)
+    const participantId = organizerParticipantId(detail)
+
+    addParticipantDeck(db, 'user-a', id, participantId, deckInput(deck.id))
+    expect(() => addParticipantDeck(db, 'user-a', id, participantId, deckInput(deck.id)))
+      .toThrow(expect.objectContaining({ statusCode: 409, data: { code: 'deck_exists' } }))
+
+    for (let index = 1; index < MAX_DECKS_PER_PARTICIPANT; index += 1) {
+      detail = addParticipantDeck(db, 'user-a', id, participantId, nameInput(`Deck ${index}`))
+    }
+    expect(ofParticipant(detail, participantId).decks).toHaveLength(MAX_DECKS_PER_PARTICIPANT)
+    expect(() => addParticipantDeck(db, 'user-a', id, participantId, nameInput('Eins zu viel')))
+      .toThrow(expect.objectContaining({ statusCode: 409, data: { code: 'deck_limit', params: { max: MAX_DECKS_PER_PARTICIPANT } } }))
+  })
+
+  it('lets a linked participant put their own deck on their own row', () => {
     const deck = buildSmallDeck(db, 'user-b')
-    const detail = getTournamentDetail(db, 'user-a', id)
-    const participantId = detail.participants.find(p => p.linked && !p.isSelf)!.id
+    const participantId = playerParticipantId(getTournamentDetail(db, 'user-a', id))
 
-    const updated = registerParticipantDeck(db, 'user-b', id, participantId, deck.id)
-    expect(updated.participants.find(p => p.id === participantId)!.deckId).toBe(deck.id)
+    const updated = addParticipantDeck(db, 'user-b', id, participantId, deckInput(deck.id))
+    expect(ofParticipant(updated, participantId).decks[0]!.deckId).toBe(deck.id)
   })
 
-  it('forbids the organizer from registering a deck for another user\'s row', () => {
-    const deck = buildSmallDeck(db, 'user-a')
-    const detail = getTournamentDetail(db, 'user-a', id)
-    const participantId = detail.participants.find(p => p.linked && !p.isSelf)!.id
+  it('lets the organizer put a deck on a guest, from the organizer\'s own decks', () => {
+    const deck = buildSmallDeck(db, 'user-a', 'Gastdeck')
+    let detail = addParticipant(db, 'user-a', id, validateParticipantInput({ name: 'Gast Anton' }))
+    const guestId = detail.participants.find(p => !p.linked)!.id
 
-    expect(() => registerParticipantDeck(db, 'user-a', id, participantId, deck.id))
-      .toThrow(expect.objectContaining({ statusCode: 403, data: { code: 'foreign_deck_owner' } }))
+    expect(listParticipantDeckOptions(db, 'user-a', id, guestId)).toEqual({ source: 'own', items: [{ id: deck.id, name: 'Gastdeck' }] })
+    detail = addParticipantDeck(db, 'user-a', id, guestId, deckInput(deck.id))
+    expect(ofParticipant(detail, guestId).decks[0]!.name).toBe('Gastdeck')
   })
 
-  it('forbids a linked participant from registering a deck for another row', () => {
-    const deck = buildSmallDeck(db, 'user-a')
-    const detail = getTournamentDetail(db, 'user-a', id)
-    const organizerId = organizerParticipantId(detail)
+  it('offers the organizer only the decks another player has shared, and takes no others', () => {
+    const shared = buildSmallDeck(db, 'user-b', 'Geteiltes Deck')
+    const secret = buildSmallDeck(db, 'user-b', 'Geheimes Deck')
+    const participantId = playerParticipantId(getTournamentDetail(db, 'user-a', id))
 
-    expect(() => registerParticipantDeck(db, 'user-b', id, organizerId, deck.id))
+    // Nothing shared yet: nothing to pick, and a typed name is the way.
+    expect(listParticipantDeckOptions(db, 'user-a', id, participantId)).toEqual({ source: 'shared', items: [] })
+    expect(() => addParticipantDeck(db, 'user-a', id, participantId, deckInput(shared.id)))
+      .toThrow(expect.objectContaining({ statusCode: 400, data: { code: 'unknown_deck' } }))
+
+    addShareGrant(db, 'user-b', 'deck', shared.id, 'user-a')
+
+    expect(listParticipantDeckOptions(db, 'user-a', id, participantId)).toEqual({ source: 'shared', items: [{ id: shared.id, name: 'Geteiltes Deck' }] })
+    const updated = addParticipantDeck(db, 'user-a', id, participantId, deckInput(shared.id))
+    expect(ofParticipant(updated, participantId).decks[0]!.name).toBe('Geteiltes Deck')
+    expect(() => addParticipantDeck(db, 'user-a', id, participantId, deckInput(secret.id)))
+      .toThrow(expect.objectContaining({ statusCode: 400, data: { code: 'unknown_deck' } }))
+
+    // The player's own list is all of their decks.
+    expect(listParticipantDeckOptions(db, 'user-b', id, participantId).items.map(item => item.name)).toEqual(['Geheimes Deck', 'Geteiltes Deck'])
+  })
+
+  it('lets the organizer type a name for a player with an account', () => {
+    const participantId = playerParticipantId(getTournamentDetail(db, 'user-a', id))
+
+    const updated = addParticipantDeck(db, 'user-a', id, participantId, nameInput('Dark Magician'))
+    expect(ofParticipant(updated, participantId).decks.map(entry => entry.name)).toEqual(['Dark Magician'])
+  })
+
+  it('forbids a linked participant from touching the decks of another row', () => {
+    const deck = buildSmallDeck(db, 'user-b')
+    const organizerId = organizerParticipantId(getTournamentDetail(db, 'user-a', id))
+
+    expect(() => addParticipantDeck(db, 'user-b', id, organizerId, deckInput(deck.id)))
+      .toThrow(expect.objectContaining({ statusCode: 403, data: { code: 'organizer_only' } }))
+    expect(() => addParticipantDeck(db, 'user-b', id, organizerId, nameInput('Fremdes Deck')))
+      .toThrow(expect.objectContaining({ statusCode: 403, data: { code: 'organizer_only' } }))
+    expect(() => listParticipantDeckOptions(db, 'user-b', id, organizerId))
+      .toThrow(expect.objectContaining({ statusCode: 403, data: { code: 'organizer_only' } }))
+  })
+
+  it('does not take a deck off from a participant it is not on', () => {
+    const organizerId = organizerParticipantId(getTournamentDetail(db, 'user-a', id))
+    const detail = addParticipantDeck(db, 'user-a', id, organizerId, nameInput('Mein Deck'))
+    const entryId = ofParticipant(detail, organizerId).decks[0]!.id
+    const playerId = playerParticipantId(detail)
+
+    expect(() => removeParticipantDeck(db, 'user-a', id, playerId, entryId))
+      .toThrow(expect.objectContaining({ statusCode: 404, data: { code: 'unknown_deck_entry' } }))
+    expect(() => removeParticipantDeck(db, 'user-b', id, organizerId, entryId))
       .toThrow(expect.objectContaining({ statusCode: 403, data: { code: 'organizer_only' } }))
   })
 
@@ -371,7 +488,7 @@ describe('deck registration', () => {
     const detail = getTournamentDetail(db, 'user-a', id)
     const participantId = organizerParticipantId(detail)
 
-    expect(() => registerParticipantDeck(db, 'user-a', id, participantId, emptyDeck.id))
+    expect(() => addParticipantDeck(db, 'user-a', id, participantId, deckInput(emptyDeck.id)))
       .toThrow(expect.objectContaining({ statusCode: 400, data: { code: 'empty_deck' } }))
   })
 
@@ -380,18 +497,48 @@ describe('deck registration', () => {
     const detail = getTournamentDetail(db, 'user-a', id)
     const participantId = organizerParticipantId(detail)
 
-    expect(() => registerParticipantDeck(db, 'user-a', id, participantId, foreignDeck.id))
+    expect(() => addParticipantDeck(db, 'user-a', id, participantId, deckInput(foreignDeck.id)))
       .toThrow(expect.objectContaining({ statusCode: 400, data: { code: 'unknown_deck' } }))
   })
 
-  it('rejects registering a deck after the tournament has started', () => {
+  it('closes decks for a player once the tournament has started, but not for the organizer until it is finished', () => {
     const deck = buildSmallDeck(db, 'user-a')
+    const playerDeck = buildSmallDeck(db, 'user-b')
     const detail = getTournamentDetail(db, 'user-a', id)
     const participantId = organizerParticipantId(detail)
-    startTournament(db, 'user-a', id)
+    const playerId = playerParticipantId(detail)
+    let running = startTournament(db, 'user-a', id)
 
-    expect(() => registerParticipantDeck(db, 'user-a', id, participantId, deck.id))
+    expect(() => addParticipantDeck(db, 'user-b', id, playerId, deckInput(playerDeck.id)))
       .toThrow(expect.objectContaining({ statusCode: 409, data: { code: 'registration_closed' } }))
+
+    // The organizer can still enter or correct decks while it runs, for example after a deck check.
+    const updated = addParticipantDeck(db, 'user-a', id, participantId, deckInput(deck.id))
+    expect(ofParticipant(updated, participantId).decks).toHaveLength(1)
+
+    const entryId = ofParticipant(updated, participantId).decks[0]!.id
+    expect(ofParticipant(removeParticipantDeck(db, 'user-a', id, participantId, entryId), participantId).decks).toEqual([])
+
+    // A finished tournament is history.
+    running = reportBothMatches(db, id, running)
+    completeRound(db, 'user-a', id, running.rounds[0]!.id)
+    finishTournament(db, 'user-a', id)
+    expect(() => addParticipantDeck(db, 'user-a', id, participantId, nameInput('Zu spät')))
+      .toThrow(expect.objectContaining({ statusCode: 409, data: { code: 'tournament_finished' } }))
+  })
+
+  it('removes the decks with their participant and with the tournament', () => {
+    const participantId = playerParticipantId(getTournamentDetail(db, 'user-a', id))
+    addParticipantDeck(db, 'user-a', id, participantId, nameInput('Wird gelöscht'))
+    expect(db.select().from(schema.tournamentParticipantDeck).all()).toHaveLength(1)
+
+    removeParticipant(db, 'user-a', id, participantId)
+    expect(db.select().from(schema.tournamentParticipantDeck).all()).toHaveLength(0)
+
+    const otherId = organizerParticipantId(getTournamentDetail(db, 'user-a', id))
+    addParticipantDeck(db, 'user-a', id, otherId, nameInput('Auch weg'))
+    deleteTournament(db, 'user-a', id)
+    expect(db.select().from(schema.tournamentParticipantDeck).all()).toHaveLength(0)
   })
 })
 
@@ -868,22 +1015,24 @@ describe('deck snapshot visibility', () => {
 
     const deck = buildSmallDeck(db, 'user-a')
     const organizerParticipantId = getTournamentDetail(db, 'user-a', id).participants.find(p => p.isSelf)!.id
-    registerParticipantDeck(db, 'user-a', id, organizerParticipantId, deck.id)
+    addParticipantDeck(db, 'user-a', id, organizerParticipantId, { deckId: deck.id, name: null })
   })
 
-  it('hides the snapshot from other participants while running, and reveals it once finished', () => {
+  it('hides the decklist and the deck id from other participants while running, and reveals them once finished', () => {
     let detail = startTournament(db, 'user-a', id)
     const organizerRow = () => detail.participants.find(p => p.linked && p.name === 'User A')!
 
     detail = getTournamentDetail(db, 'user-b', id)
-    expect(organizerRow().deckSnapshot).toBeNull()
+    // The name and that there is a list are visible to everyone; the list and the deck id are not.
+    // (This tournament has no format, so there is no verdict either.)
+    expect(organizerRow().decks[0]).toMatchObject({ name: 'Kleines Deck', hasList: true, legal: null, deckId: null, snapshot: null })
 
     detail = reportBothMatches(db, id, detail)
     detail = completeRound(db, 'user-a', id, detail.rounds[0]!.id)
     finishTournament(db, 'user-a', id)
 
     detail = getTournamentDetail(db, 'user-b', id)
-    expect(organizerRow().deckSnapshot).not.toBeNull()
+    expect(organizerRow().decks[0]!.snapshot).not.toBeNull()
   })
 })
 

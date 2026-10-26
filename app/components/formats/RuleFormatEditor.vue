@@ -47,6 +47,10 @@ const emit = defineEmits<{
   saved: [format: { id: string, name: string }]
 }>()
 
+// Exposed before the first `await` of this async setup, or a parent's template ref
+// is created without it. `replaceRulesFrom` is defined further down.
+defineExpose({ replaceRulesFrom })
+
 const { t } = useI18n()
 const count = useCount()
 const apiError = useApiError()
@@ -78,6 +82,8 @@ interface EditableFilter {
   releasedAfter: string
   region: 'tcg' | 'ocg'
   nameContains: string
+  /** Phrases of the card text, separated by commas (one of them is enough). */
+  textContains: string
 }
 
 interface EditableRule {
@@ -93,6 +99,11 @@ interface EditableRule {
   maxCopies: number
   label: string
   filter: EditableFilter
+  /** The exception's name part is edited; whatever else it holds (card ids …) is kept as it is. */
+  exceptName: string
+  exceptRest: CardFilter
+  /** Where the rule came from when a rulebook import added it (see `replaceRulesFrom`); never saved. */
+  origin?: string
 }
 
 function emptyFilter(): EditableFilter {
@@ -112,6 +123,7 @@ function emptyFilter(): EditableFilter {
     releasedAfter: '',
     region: 'tcg',
     nameContains: '',
+    textContains: '',
   }
 }
 
@@ -129,6 +141,8 @@ function emptyRule(kind: RuleKind): EditableRule {
     maxCopies: 0,
     label: '',
     filter: emptyFilter(),
+    exceptName: '',
+    exceptRest: {},
   }
 }
 
@@ -185,6 +199,12 @@ function toEditable(rule: Rule): EditableRule {
         releasedAfter: filter.releasedAfter ?? '',
         region: filter.region ?? 'tcg',
         nameContains: filter.nameContains ?? '',
+        textContains: (filter.textContains ?? []).join(', '),
+      }
+      if (rule.except) {
+        const { nameContains, ...rest } = rule.except
+        draft.exceptName = nameContains ?? ''
+        draft.exceptRest = rest
       }
       break
     }
@@ -232,6 +252,10 @@ function toCardFilter(draft: EditableFilter): CardFilter {
   if (draft.nameContains.trim()) {
     filter.nameContains = draft.nameContains.trim()
   }
+  const phrases = draft.textContains.split(',').map(phrase => phrase.trim()).filter(phrase => phrase !== '')
+  if (phrases.length > 0) {
+    filter.textContains = phrases
+  }
 
   return filter
 }
@@ -265,6 +289,10 @@ function toRule(draft: EditableRule): Rule {
       }
       if (draft.label.trim()) {
         rule.label = draft.label.trim()
+      }
+      const except: CardFilter = { ...draft.exceptRest, ...(draft.exceptName.trim() ? { nameContains: draft.exceptName.trim() } : {}) }
+      if (Object.keys(except).length > 0) {
+        rule.except = except
       }
       return rule
     }
@@ -352,6 +380,19 @@ function onCardsResolved(cards: Array<{ id: number, name: string }>) {
   for (const card of cards) {
     cardNames[String(card.id)] = card.name
   }
+}
+
+/**
+ * Replaces the rules a rulebook import added earlier under the same `origin`
+ * (the choice of a hand-trap definition) with new ones, and keeps everything
+ * else the user typed. The rules are not saved before the user saves the format.
+ */
+function replaceRulesFrom(origin: string, newRules: Rule[], names: Record<string, string>) {
+  rules.value = [
+    ...rules.value.filter(rule => rule.origin !== origin),
+    ...newRules.map(rule => ({ ...toEditable(rule), origin })),
+  ]
+  Object.assign(cardNames, names)
 }
 
 // --- Option lists ----------------------------------------------------------
@@ -768,6 +809,29 @@ async function save() {
                 :aria-label="t('formats.editor.nameContains')"
               />
             </div>
+
+            <div class="flex flex-wrap gap-3">
+              <UInput
+                v-model="rule.filter.textContains"
+                class="w-full sm:w-96"
+                :disabled="readonly"
+                :placeholder="t('formats.editor.textContains')"
+                :aria-label="t('formats.editor.textContains')"
+              />
+              <UInput
+                v-model="rule.exceptName"
+                class="w-full sm:w-64"
+                :disabled="readonly"
+                :placeholder="t('formats.editor.exceptName')"
+                :aria-label="t('formats.editor.exceptName')"
+              />
+            </div>
+            <p
+              v-if="rule.filter.textContains.trim() !== ''"
+              class="text-xs text-muted"
+            >
+              {{ t('formats.editor.textContainsHint') }}
+            </p>
           </div>
         </li>
       </ul>

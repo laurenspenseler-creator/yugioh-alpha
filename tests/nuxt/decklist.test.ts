@@ -415,6 +415,29 @@ describe('parseDecklist: text recipe', () => {
     expect(parsed.format).toBe('text')
     expect(parsed.sections).toEqual({ main: [], extra: [], side: [] })
   })
+
+  it('reads a bulleted list with Markdown headers, as a chat assistant writes it', () => {
+    const parsed = parseDecklist([
+      '* 3× Kuriboh',
+      '- 1x Sangan',
+      '• 2 Jinzo',
+      '',
+      '**Zauber (2)**',
+      '',
+      '* 1× Raigeki',
+      '',
+      '## Fallen (1)',
+      '* 2× Spiegelkraft',
+      '',
+      '**Extra Deck (1):**',
+      '* 1× Stardust Dragon',
+    ].join('\n'))
+
+    expect(parsed.sections.main.map(entry => [entry.name, entry.quantity])).toEqual([
+      ['Kuriboh', 3], ['Sangan', 1], ['Jinzo', 2], ['Raigeki', 1], ['Spiegelkraft', 2],
+    ])
+    expect(parsed.sections.extra.map(entry => [entry.name, entry.quantity])).toEqual([['Stardust Dragon', 1]])
+  })
 })
 
 describe('countEntryLines', () => {

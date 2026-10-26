@@ -1,0 +1,134 @@
+Classic Plus — Regelwerk für den automatisierten
+Kartendurchlauf
+Aufgabe
+Beurteile jede Karte der Datenbank ausschließlich nach den unten stehenden Regeln.
+Ausgabeformat pro Karte:
+Kartenname | 3 / 2 / 1 / VERBOTEN | Regelnummer | auslösende Textstelle
+Die auslösende Textstelle ist ein wörtlicher Ausschnitt aus dem Kartentext. Ohne sie ist
+das Urteil nicht nachprüfbar. Treffen mehrere Regeln zu, nenne alle — nach der
+Prüfreihenfolge entscheidet die zuerst zutreffende.
+Arbeitsregeln
+1 . Nie aus dem Gedächtnis urteilen. Grundlage ist der Kartentext aus der Datenbank,
+nicht Vorwissen über die Karte, ihre Turniergeschichte oder ihren Status auf offiziellen
+Listen.
+2 . Konamis Verbots- und Limitierungsliste ist irrelevant. Sie darf kein Urteil
+beeinflussen, weder als Bestätigung noch als Widerspruch.
+3 . Keine Karte namentlich verbieten oder limitieren. Jedes Urteil folgt aus einer Regel.
+Passt keine Regel, steht die Karte auf 3.
+4 . Keine Regel erfinden, erweitern, verengen oder glattbügeln , auch nicht, wenn ein
+Ergebnis unpassend wirkt. Ein Ergebnis, das falsch aussieht, ist ein Befund und wird
+gemeldet, nicht korrigiert.
+5 . Die Begriffe „Floodgate", „Handtrap", „Powerspell", „Boardwipe" und „Burn" nur
+in der unten definierten Bedeutung verwenden , nie umgangssprachlich. Bei Regel 3
+immer den Prüfschritt mitnennen.
+6 . Zweite Ausgabeliste anlegen — die Lückenliste. Alle Karten, die kein Urteil
+bekommen haben und in ihrem Text eines dieser Wörter enthalten: verdopple,
+verdreifache, halbiere, zusätzlicher Angriff, zweiter Angriff, noch einmal angreifen,
+stattdessen, überspringe, unberührt, alle Karten, alle Monster, so viele wie möglich,
+kann nicht . Dort stecken die Karten, die eine Regel auf einem nicht benannten Weg
+umgehen.
+7 . Dritte Ausgabeliste — Zweifelsfälle. Jede Karte, bei der die Entscheidung zwischen
+zwei Ergebnissen nicht eindeutig aus dem Kartentext folgt, mit einer Zeile Begründung.
+Lieber zu viele als zu wenige.
+Formatrahmen
+Brett und Zonen nach Stand 2005: keine Extra-Monsterzonen, keine Pendelzonen, eine
+gemeinsame Feldzone für beide Spieler.
+Kartentexte und deren Auslegung nach der aktuellen Konami-Datenbank.
+Extra Deck maximal 10 Karten. Main Deck 40–50 Karten. Kein Side Deck.
+Der Startspieler zieht in seinem ersten Spielzug nicht.
+Prüfreihenfolge: von oben nach unten, die erste zutreffende Regel gilt. Verbot schlägt
+immer Limit.
+Alles, was keine Regel trifft, ist auf 3 spielbar.
+Querschnittsregeln
+Häufigkeitsmodifikator. Wird eine Karte durch eine Regel limitiert und kann eine einzelne
+Kopie den betreffenden Effekt im selben Spielzug mehr als einmal aktivieren, gilt
+stattdessen Verbot . Nur für aktivierte Effekte (Zünd-, Auslöse-, Schnelleffekte), nicht für
+Dauereffekte — die erfasst Regel 3.
+Stapelregel. Trifft eine Karte gleichzeitig Regel 9(a) und Regel 6(b) , gilt Verbot .
+Die elf Regeln
+1 — VERBOTEN
+Synchro-, Xyz-, Pendel- und Linkmonster.
+2 — VERBOTEN
+Karten, die „Synchro", „Link", „Pendel" oder „XYZ" im Effekttext erwähnen.
+3 — FLOODGATES
+Ein Floodgate ist ein Dauereffekt, der eine Handlungsklasse des Gegners einschränkt — ob
+durch Verbot, Verzögerung, Kosten oder Zwang, ist unerheblich.
+Handlungsklassen sind unter anderem: beschwören, Karten aktivieren, angreifen, Effekte
+nutzen, Karten zwischen Zonen bewegen, Kampfposition wählen.
+Prüfschritte von oben, der erste zutreffende gilt:
+1 . Hängt die Wirkung an einem Vergleich der Spielfeldzustände beider Spieler ? →
+VERBOTEN
+2 . Hängt die Fortdauer an etwas, das der Gegner mit einer regulären Spielhandlung
+loswird — angreifen (Monster), eine eigene Spielfeldzauberkarte spielen
+(Spielfeldzauber), oder eine benannte offene Karte entfernen, ohne die sich die Sperre
+selbst zerstört ? → LIMIT 2 Eine Karte, die nur durch gezieltes Zauber-/Fallen-Removal
+verschwindet, zählt hier nicht — dafür muss der Gegner einen Deckplatz für eine Karte
+opfern, die sonst nichts tut. 2b. Entwertet die Sperre selbst die Handlung, mit der ihr
+Träger beseitigt werden müsste, geht der Anker auf LIMIT 1 statt Limit 2.
+3 . Erfasst die Sperre nur einen durch ein Kartenmerkmal definierten Teil einer
+Handlungsklasse (Stufe, ATK, Typ, Eigenschaft) ? → LIMIT 1
+4 . Sonst → VERBOTEN
+4 — HANDTRAPS
+Eine Handtrap ist ein Monstereffekt, der von der Hand aus im Spielzug des Gegners
+aktiviert werden kann .
+VERBOTEN , wenn er eine Aktion des Gegners annulliert oder verhindert, oder eine Karte
+aus einer beliebigen Zone entfernt, ausgenommen diese Karte selbst .
+Ausnahme, die dem Verbot vorgeht: Effekte, die ausschließlich in der Battle Phase
+oder gegen Kampfschaden wirken, sind erlaubt und unlimitiert.
+5 — LIMIT 1
+Ziehkarten. Suchen zählt nicht als Ziehen.
+Ziehen greift auf ungespielte Ressourcen zu, Wiederherstellung auf verbrauchte . Karten,
+die Verlorenes aus dem Friedhof auf die Hand zurückholen, erzeugen rechnerisch
+Kartenvorteil, aber keinen Zuwachs — sie fallen nicht unter Regel 5.
+6 — SCHADEN, LIMIT 1
+(a) Effektschaden als primäre Funktion. Schaden ist primär, wenn die Karte Schaden
+zufügt, ohne dafür den Zustand des Spielfelds zu verändern . Das bloße Ablesen des
+Spielfelds (Karten zählen) ist keine Veränderung. Wird der Schaden dadurch ausgelöst,
+dass eine Karte zerstört, beschworen oder ein Kampf ausgetragen wird, ist er
+Nebenprodukt. Schaden, den der Kontrolleur sich selbst zufügt, zählt nicht.
+(b) Vervielfachung von Kampfschaden oder ATK. Addition ist keine Vervielfachung —
+feste Zuschläge, auch große, fallen nicht darunter.
+7 — PREISUMGEHUNG, LIMIT 1
+Karten, die Spielfeldpräsenz verschaffen, ohne den regulären Preis dafür zu zahlen:
+(a) die Kontrolle über Karten übernehmen, die der Gegner kontrolliert
+(b) Monster aus einem Friedhof oder aus der verbannten Zone auf das Spielfeld
+zurückholen. Das gilt auch, wenn ein Monster sich selbst zurückholt. Auf die Hand
+zurückholen zählt nicht.
+(c) ein Monster aus dem Extra Deck auf das Spielfeld bringen, ohne das auf ihm
+aufgeführte Material vollständig abzugeben. Dass die Beschwörung als
+Fusionsbeschwörung behandelt wird, ändert daran nichts. Führt das Monster gar kein
+Material auf und ist ausschließlich über eine bestimmte Karte beschwörbar, ist das seine
+reguläre Beschwörungsmethode und keine Abkürzung.
+(d) für eine Fusionsbeschwörung Material aus dem Deck verwenden. Material aus
+Hand, Feld oder Friedhof zählt nicht.
+Entschieden wird ausschließlich über (a) bis (d). Die Überschrift ist Erklärung, keine Regel.
+8 — MASSENREMOVAL, LIMIT 1
+Karten, die mehr als 1 Karte des Gegners vom Spielfeld, aus der Hand oder vom Deck
+entfernen können — zerstören, abwerfen, auf den Friedhof legen, verbannen, auf Hand oder
+Deck zurück, als Tribut. Der Wortlaut ist egal.
+Es zählt das Potenzial , nicht ein konkreter Spielstand.
+Was der aktivierende Spieler selbst als Kosten, Material oder Tribut abgibt, zählt nicht.
+Der Friedhof steht bewusst nicht in der Zonenliste.
+Regel 8 gilt nicht für Extra-Deck-Monster.
+9 — SCHUTZ
+Karten, die bewirken, dass ein Monster einen der folgenden Zustände hat — unabhängig
+davon, ob die Karte selbst das betroffene Monster ist :
+(a) nicht durch Karteneffekte zerstörbar, nicht als Ziel wählbar, oder von Karteneffekten
+unberührt → LIMIT 1
+(b) nicht durch Kampf zerstörbar → LIMIT 2
+10 — LIMIT 1
+Karten, die etwas annullieren. Sammelregel ohne Aufspaltung in Aktivierung / Effekt /
+Beschwörung.
+11 — RESSOURCENVERWEIGERUNG
+Karten, die dem Gegner seine Draw Phase, Standby Phase, Main Phase oder seine reguläre
+Normalbeschwörung nehmen.
+LIMIT 1 als einmaliger Effekt.
+VERBOTEN , wenn sie das in aufeinanderfolgenden Spielzügen wiederholt tun können.
+Was der Kontrolleur sich selbst als Kosten auferlegt, zählt nicht.
+Die Battle Phase steht bewusst nicht in dieser Liste.
+Bekannter Bruch — nicht reparieren
+Regel 8 gilt nicht für Extra-Deck-Monster, weil ein Kopienlimit dort nichts steuert: Extra-
+Deck-Karten werden nicht gezogen, der Spieler hat in jedem Spiel Zugriff auf alle zehn.
+Dasselbe Argument gilt für Regel 9 und Regel 6(b), wurde dort aber nicht angewandt.
+Das ist eine bewusste Entscheidung und kein Versehen. Nicht vereinheitlichen, nicht
+angleichen, nicht kommentieren — außer in der Zweifelsfall-Liste.

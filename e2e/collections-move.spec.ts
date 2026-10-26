@@ -156,6 +156,9 @@ test.describe('collections built from the inventory', () => {
 
     const panel = page.locator('#deck-add-panel')
     const row = (name: string) => panel.getByRole('listitem').filter({ hasText: name })
+    // The panel lists the whole catalog by default; "Quelle" belongs to the inventory view.
+    await expect(panel.getByRole('combobox', { name: 'Quelle' })).toHaveCount(0)
+    await panel.getByRole('checkbox', { name: 'Nur aus dem Inventar anzeigen' }).check()
     await expect(panel.getByRole('combobox', { name: 'Quelle' })).toContainText('Alle Sammlungen')
     await expect(row(CARD.darkMagician)).toContainText('Besitz: 3')
     await expect(row(CARD.potOfGreed)).toBeVisible()

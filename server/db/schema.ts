@@ -310,6 +310,28 @@ export const ownedCardRelations = relations(ownedCard, ({ one }) => ({
   }),
 }))
 
+// Files a user keeps in their inventory (ADR 0033): spreadsheets, receipts,
+// scans, anything. The bytes live on disk under `<db dir>/files/<user_id>/<id>`
+// (server/utils/inventory-files.ts); this row is the listing. Always private.
+export const inventoryFile = sqliteTable(
+  'inventory_file',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    // The name the file had on the user's machine, shown and used for downloads.
+    name: text('name').notNull(),
+    // Derived from the extension, never from what the browser claimed.
+    contentType: text('content_type').notNull(),
+    size: integer('size').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  table => [
+    index('idx_inventory_file_user').on(table.userId, table.createdAt),
+  ],
+)
+
 // Rule formats (see docs/adr/0005-rule-format-model.md).
 //
 // A format is a named list of typed rule predicates stored as JSON and
@@ -598,13 +620,14 @@ export const tournamentParticipant = sqliteTable(
     // Display name inside this tournament. Seeded from `user.name` for
     // linked participants; never an email.
     name: text('name').notNull(),
-    // The registered deck, or NULL. `deck_snapshot` is the authority — this
-    // is only a back-reference so "open the deck" can work while it exists.
+    // Legacy, no longer read or written (ADR 0039): a participant's decks live in
+    // `tournament_participant_deck` (several per player, or just a name), and
+    // migration 0020 copied the one deck of each row there. The columns stay
+    // because SQLite can only drop a foreign-key column by rebuilding the table,
+    // which would cascade-delete every match.
     deckId: text('deck_id')
       .references(() => deck.id, { onDelete: 'set null' }),
     deckSnapshot: text('deck_snapshot', { mode: 'json' }).$type<TournamentDeckSnapshot>(),
-    // Legality against the tournament's format at registration time.
-    // NULL = no deck registered, or the tournament has no format.
     deckLegal: integer('deck_legal', { mode: 'boolean' }),
     deckIssueCount: integer('deck_issue_count'),
     // Left the tournament: past results count, no further pairings.
@@ -625,6 +648,42 @@ export const tournamentParticipant = sqliteTable(
     // SQLite treats NULLs as distinct in a unique index, so any number of
     // guest rows coexist while one app user can join a tournament only once.
     uniqueIndex('idx_tournament_participant_unique_user').on(table.tournamentId, table.userId),
+  ],
+)
+
+// The decks a participant plays (ADR 0039): one row per deck, in the order they
+// were added. A row is either a frozen decklist (`deck_snapshot`, copied from a
+// deck like the former single deck was) or just a name the organizer typed
+// ("Blue-Eyes", for a guest whose list isn't in the app).
+export const tournamentParticipantDeck = sqliteTable(
+  'tournament_participant_deck',
+  {
+    id: text('id').primaryKey(),
+    participantId: text('participant_id')
+      .notNull()
+      .references(() => tournamentParticipant.id, { onDelete: 'cascade' }),
+    // Denormalized so the detail loads every deck of a tournament in one query.
+    tournamentId: text('tournament_id')
+      .notNull()
+      .references(() => tournament.id, { onDelete: 'cascade' }),
+    // The deck's name, or the text that was typed.
+    name: text('name').notNull(),
+    // The deck the snapshot was copied from, or NULL (name only, or the deck is gone).
+    deckId: text('deck_id')
+      .references(() => deck.id, { onDelete: 'set null' }),
+    // NULL = a name only. The snapshot is the authority, never the deck row.
+    deckSnapshot: text('deck_snapshot', { mode: 'json' }).$type<TournamentDeckSnapshot>(),
+    // Legality against the tournament's format at registration time.
+    // NULL = a name only, or the tournament has no format.
+    deckLegal: integer('deck_legal', { mode: 'boolean' }),
+    deckIssueCount: integer('deck_issue_count'),
+    // 0, 1, 2 … in the order the decks were added.
+    position: integer('position').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  table => [
+    index('idx_tournament_participant_deck_participant').on(table.participantId, table.position),
+    index('idx_tournament_participant_deck_tournament').on(table.tournamentId),
   ],
 )
 
@@ -692,10 +751,16 @@ export const tournamentRelations = relations(tournament, ({ one, many }) => ({
   matches: many(tournamentMatch),
 }))
 
-export const tournamentParticipantRelations = relations(tournamentParticipant, ({ one }) => ({
+export const tournamentParticipantRelations = relations(tournamentParticipant, ({ one, many }) => ({
   tournament: one(tournament, { fields: [tournamentParticipant.tournamentId], references: [tournament.id] }),
   user: one(user, { fields: [tournamentParticipant.userId], references: [user.id] }),
   deck: one(deck, { fields: [tournamentParticipant.deckId], references: [deck.id] }),
+  decks: many(tournamentParticipantDeck),
+}))
+
+export const tournamentParticipantDeckRelations = relations(tournamentParticipantDeck, ({ one }) => ({
+  participant: one(tournamentParticipant, { fields: [tournamentParticipantDeck.participantId], references: [tournamentParticipant.id] }),
+  deck: one(deck, { fields: [tournamentParticipantDeck.deckId], references: [deck.id] }),
 }))
 
 export const tournamentRoundRelations = relations(tournamentRound, ({ one, many }) => ({

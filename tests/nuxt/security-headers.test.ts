@@ -1,7 +1,7 @@
 // Security headers (ADR 0029): the hash-based CSP for rendered HTML.
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { contentSecurityPolicy, inlineScriptHashes } from '../../server/utils/security-headers'
+import { contentSecurityPolicy, inlineScriptHashes, STATIC_SECURITY_HEADERS } from '../../server/utils/security-headers'
 
 function sha256(content: string) {
   return `'sha256-${createHash('sha256').update(content).digest('base64')}'`
@@ -41,8 +41,24 @@ describe('contentSecurityPolicy', () => {
     const policy = contentSecurityPolicy([sha256(CONFIG_SCRIPT)])
     const scriptSrc = policy.split('; ').find(directive => directive.startsWith('script-src'))
 
-    expect(scriptSrc).toBe(`script-src 'self' ${sha256(CONFIG_SCRIPT)}`)
+    expect(scriptSrc).toBe(`script-src 'self' 'wasm-unsafe-eval' ${sha256(CONFIG_SCRIPT)}`)
     expect(scriptSrc).not.toContain('unsafe-inline')
+    // WebAssembly may compile (speech and OCR), but strings are never evaluated as code.
+    expect(scriptSrc).not.toMatch(/'unsafe-eval'/)
+  })
+
+  it('lets the page download the speech model and OCR language data, and nothing else', () => {
+    const policy = contentSecurityPolicy([])
+    const connectSrc = policy.split('; ').find(directive => directive.startsWith('connect-src'))
+
+    expect(connectSrc).toBe(`connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://tessdata.projectnaptha.com`)
+    // The model hosts are for data: they are not a source of scripts.
+    expect(policy.split('; ').find(directive => directive.startsWith('script-src'))).not.toContain('huggingface')
+  })
+
+  it('allows the microphone on the app\'s own pages only', () => {
+    expect(STATIC_SECURITY_HEADERS['permissions-policy']).toContain('microphone=(self)')
+    expect(STATIC_SECURITY_HEADERS['permissions-policy']).toContain('geolocation=()')
   })
 
   it('allows YGOPRODeck card images and photo previews', () => {

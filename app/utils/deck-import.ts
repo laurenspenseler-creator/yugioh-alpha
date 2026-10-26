@@ -2,10 +2,9 @@
 // preview's matches into rows, sorting each resolved card into the section
 // its type allows, and building the `POST /api/decks` payload. Kept out of
 // the components so the section and merge rules can be unit tested.
-import { DECK_LIMITS, defaultSectionForCard, DECK_SECTIONS, MAX_DECK_CARD_QUANTITY } from '~~/shared/deck-sections'
+import { defaultSectionForCard, DECK_SECTIONS, MAX_DECK_CARD_QUANTITY } from '~~/shared/deck-sections'
 import type { DeckSection } from '~~/shared/deck-sections'
 import type { DecklistFormat } from '~~/shared/decklist'
-import type { DeckWarning } from '~~/shared/rule-formats'
 import { createEntryRow, isEntryRowResolved, selectedCandidate } from '~/utils/card-entry'
 import type { EntryRow, EntrySuggestResult } from '~/utils/card-entry'
 
@@ -69,46 +68,6 @@ export function importCounts(rows: DeckImportRow[]): Record<DeckSection, number>
     }
   }
   return counts
-}
-
-/**
- * The usual deck sizes the import exceeds or misses (`DECK_LIMITS`), in the
- * shape of the deck editor's structural warnings so the same texts render them.
- * Informational: the deck is created anyway.
- */
-export function importSizeWarnings(counts: Record<DeckSection, number>): DeckWarning[] {
-  const warnings: DeckWarning[] = []
-  const cards = (count: number) => `${count} ${count === 1 ? 'card' : 'cards'}`
-
-  if (counts.main < DECK_LIMITS.mainMin) {
-    warnings.push({
-      code: 'main_below_min',
-      params: { section: 'main', count: counts.main, min: DECK_LIMITS.mainMin },
-      message: `The Main Deck has ${cards(counts.main)}; the usual minimum is ${DECK_LIMITS.mainMin}.`,
-    })
-  }
-  if (counts.main > DECK_LIMITS.mainMax) {
-    warnings.push({
-      code: 'main_above_max',
-      params: { section: 'main', count: counts.main, max: DECK_LIMITS.mainMax },
-      message: `The Main Deck has ${cards(counts.main)}; the usual maximum is ${DECK_LIMITS.mainMax}.`,
-    })
-  }
-  if (counts.extra > DECK_LIMITS.extraMax) {
-    warnings.push({
-      code: 'extra_above_max',
-      params: { section: 'extra', count: counts.extra, max: DECK_LIMITS.extraMax },
-      message: `The Extra Deck has ${cards(counts.extra)}; the usual maximum is ${DECK_LIMITS.extraMax}.`,
-    })
-  }
-  if (counts.side > DECK_LIMITS.sideMax) {
-    warnings.push({
-      code: 'side_above_max',
-      params: { section: 'side', count: counts.side, max: DECK_LIMITS.sideMax },
-      message: `The Side Deck has ${cards(counts.side)}; the usual maximum is ${DECK_LIMITS.sideMax}.`,
-    })
-  }
-  return warnings
 }
 
 /**

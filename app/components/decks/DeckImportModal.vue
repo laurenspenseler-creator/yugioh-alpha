@@ -9,6 +9,7 @@
 import { DECK_NAME_MAX_LENGTH, DECK_SECTIONS } from '~~/shared/deck-sections'
 import type { DeckSection } from '~~/shared/deck-sections'
 import { summarizeEntryRows } from '~/utils/card-entry'
+import { appendCardLines } from '~/utils/card-lines'
 import {
   buildImportCards,
   createImportRows,
@@ -16,7 +17,6 @@ import {
   IMPORT_TEXT_MAX_LENGTH,
   importCounts,
   importCoverCardId,
-  importSizeWarnings,
   MAX_IMPORT_CARDS,
   rowsInSection,
 } from '~/utils/deck-import'
@@ -30,6 +30,8 @@ interface FormatItem {
 
 const props = defineProps<{
   open: boolean
+  /** The deck's name when the list brings none (a file's name), instead of the generic one: "Deck von Anton". */
+  defaultName?: string
 }>()
 
 const emit = defineEmits<{
@@ -40,7 +42,6 @@ const emit = defineEmits<{
 const { t, n } = useI18n()
 const count = useCount()
 const apiError = useApiError()
-const validationText = useValidationText()
 const { formatName, sortFormats } = useFormatLabel()
 
 const openProxy = computed({
@@ -93,9 +94,14 @@ watch(() => props.open, (open) => {
 const summary = computed(() => summarizeEntryRows(rows.value))
 const unresolvedCount = computed(() => summary.value.unsicher + summary.value.ohneTreffer)
 const counts = computed(() => importCounts(rows.value))
-const warnings = computed(() => importSizeWarnings(counts.value))
 const cards = computed(() => buildImportCards(rows.value))
 const canCreate = computed(() => cards.value.length > 0 && unresolvedCount.value === 0 && deckName.value.trim() !== '')
+
+/** Cards read from photos or said aloud join the list in the box. */
+function onCardLines(lines: string[]) {
+  text.value = appendCardLines(text.value, lines)
+  errorMessage.value = ''
+}
 
 async function onFile(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
@@ -140,7 +146,7 @@ async function analyze() {
     coverPasscode.value = preview.cover
     detectedFormat.value = preview.format
     if (deckName.value.trim() === '') {
-      deckName.value = (fileStem || t('decks.import.defaultName')).slice(0, DECK_NAME_MAX_LENGTH)
+      deckName.value = (fileStem || props.defaultName || t('decks.import.defaultName')).slice(0, DECK_NAME_MAX_LENGTH)
     }
     step.value = 'review'
   }
@@ -246,6 +252,12 @@ async function create() {
           <span class="text-xs text-muted">{{ t('decks.import.file.hint') }}</span>
         </div>
 
+        <!-- Photos and speech write card lines into the box above; the review below is the same. -->
+        <div class="space-y-3 border-t border-default pt-3">
+          <CardsPhotoImport @lines="onCardLines($event.lines)" />
+          <CardsSpeechInput @lines="onCardLines" />
+        </div>
+
         <p
           v-if="errorMessage"
           role="alert"
@@ -308,25 +320,6 @@ async function create() {
           <span class="text-warning">{{ t('quickEntry.summary.unsicher', { count: n(summary.unsicher, 'integer') }) }}</span>
           <span class="text-error">{{ t('quickEntry.summary.ohne_treffer', { count: n(summary.ohneTreffer, 'integer') }) }}</span>
         </div>
-
-        <UAlert
-          v-if="warnings.length > 0"
-          color="warning"
-          variant="subtle"
-          icon="i-lucide-triangle-alert"
-          :title="t('decks.import.sizeWarningTitle')"
-        >
-          <template #description>
-            <ul class="list-inside list-disc space-y-0.5">
-              <li
-                v-for="warning in warnings"
-                :key="warning.code"
-              >
-                {{ validationText(warning) }}
-              </li>
-            </ul>
-          </template>
-        </UAlert>
 
         <div
           v-for="section in DECK_SECTIONS"

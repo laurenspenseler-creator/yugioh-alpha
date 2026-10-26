@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { CardKind } from '~~/shared/card-kind'
+import type { InventoryKind } from '~~/shared/deck-breakdown'
 import type { CardFacetOptions } from '~/components/card/CardFacetFilters.vue'
 
 export interface InventorySearchFilters {
@@ -13,9 +14,12 @@ export interface InventorySearchFilters {
 
 withDefaults(defineProps<{
   facets: CardFacetOptions
+  /** Copies per card kind, shown as chips in a row under the filters; they also toggle the "Kartenart" filter. */
+  kindCounts?: Array<{ kind: InventoryKind, count: number }>
   /** The sort select; only "Galerie" sorts ("Liste" stays "recently changed first"). */
   showSort?: boolean
 }>(), {
+  kindCounts: () => [],
   showSort: true,
 })
 
@@ -29,6 +33,12 @@ const sortItems = computed(() => [
   { label: t('inventory.search.sort.quantity'), value: 'quantity' },
   { label: t('inventory.search.sort.newest'), value: 'newest' },
 ])
+
+function toggleKind(kind: CardKind) {
+  filters.value.kind = filters.value.kind.includes(kind)
+    ? filters.value.kind.filter(selected => selected !== kind)
+    : [...filters.value.kind, kind]
+}
 
 function resetFilters() {
   // Mutate the shared filters object in place (rather than reassigning
@@ -64,6 +74,13 @@ function resetFilters() {
         @click="resetFilters"
       />
     </div>
+
+    <!-- Ten chips are more than fit beside the filters: a row of their own, filled edge to edge. -->
+    <InventoryKindCounts
+      :kinds="kindCounts"
+      :active="filters.kind"
+      @toggle="toggleKind"
+    />
 
     <div
       v-if="showSort"

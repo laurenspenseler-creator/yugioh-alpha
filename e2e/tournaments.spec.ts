@@ -92,15 +92,24 @@ test.describe('tournaments', () => {
 
     // --- Register the organizer's own deck -----------------------------------
     const organizerRow = participantRow(page, organizer.name)
-    await organizerRow.getByRole('button', { name: 'Deck anmelden' }).click()
+    await organizerRow.getByRole('button', { name: 'Deck hinzufügen' }).click()
 
-    // exact: true — otherwise this also matches the "Deck anmelden" dialog title.
-    await page.getByLabel('Deck', { exact: true }).click()
+    // The dialog (ADR 0039): pick one of the app's decks and add it, then close.
+    await page.getByLabel('Deck aus der App wählen').click()
     await page.getByRole('option', { name: 'Turnierdeck' }).click()
-    await page.getByRole('button', { name: 'Anmelden' }).click()
+    await page.getByRole('button', { name: 'Hinzufügen' }).click()
+    await page.getByRole('button', { name: 'Fertig' }).click()
 
     await expect(organizerRow.getByText('Turnierdeck')).toBeVisible()
     await expect(organizerRow.getByText('Nicht legal')).toBeVisible()
+
+    // The organizer also types a deck name for a guest: no list, so no verdict.
+    const aliceRow = participantRow(page, 'Alice')
+    await aliceRow.getByRole('button', { name: 'Deck hinzufügen' }).click()
+    await page.getByLabel('Oder Deckname eintippen').fill('Blauäugiger Drache')
+    await page.getByRole('button', { name: 'Eintragen' }).click()
+    await page.getByRole('button', { name: 'Fertig' }).click()
+    await expect(aliceRow.getByText('Blauäugiger Drache')).toBeVisible()
 
     // --- Start the tournament -------------------------------------------------
     await page.getByRole('button', { name: 'Turnier starten' }).click()
@@ -124,10 +133,7 @@ test.describe('tournaments', () => {
     await page.getByRole('button', { name: 'Nächste Runde' }).click()
     await expect(page.getByRole('heading', { name: 'Runde 2' })).toBeVisible()
 
-    const round2Table1 = matchRow(page, 1)
-    await round2Table1.getByLabel(`Spiele ${organizer.name}`).fill('2')
-    await round2Table1.getByLabel('Spiele Bob').fill('1')
-    await round2Table1.getByRole('button', { name: 'Ergebnis speichern' }).click()
+    await matchRow(page, 1).getByRole('button', { name: `${organizer.name} gewinnt 2:1` }).click()
 
     await matchRow(page, 2).getByRole('button', { name: '1:2' }).click()
 
@@ -265,16 +271,17 @@ test.describe('tournaments', () => {
 
     // B registers their own deck during registration.
     const bRow = participantRow(bPage, participant.name)
-    await bRow.getByRole('button', { name: 'Deck anmelden' }).click()
-    await bPage.getByLabel('Deck', { exact: true }).click()
+    await bRow.getByRole('button', { name: 'Deck hinzufügen' }).click()
+    await bPage.getByLabel('Deck aus der App wählen').click()
     await bPage.getByRole('option', { name: 'B-Deck' }).click()
-    await bPage.getByRole('button', { name: 'Anmelden' }).click()
+    await bPage.getByRole('button', { name: 'Hinzufügen' }).click()
+    await bPage.getByRole('button', { name: 'Fertig' }).click()
     await expect(bRow.getByText('B-Deck')).toBeVisible()
     await expect(bPage.getByText('Melde dein Deck an, bevor das Turnier startet.')).toHaveCount(0)
 
-    // B cannot register a deck for the organizer's row: no button on it.
+    // B cannot put a deck on the organizer's row: no button on it.
     const organizerRowForB = participantRow(bPage, organizer.name)
-    await expect(organizerRowForB.getByRole('button', { name: /Deck an/ })).toHaveCount(0)
+    await expect(organizerRowForB.getByRole('button', { name: /Deck (hinzufügen|ändern)|Decks ändern/ })).toHaveCount(0)
 
     await bContext.close()
   })
@@ -436,11 +443,10 @@ test.describe('tournaments', () => {
     await expect(quickResults).toHaveText(['2:0', '2:1', '1:2', '0:2'])
     await expect(matchRow(page, 2)).toContainText('Spielfrei')
     await expect(matchRow(page, 2)).toContainText('ohne Wertung')
-    // Equal games are not a result: "Ergebnis speichern" stays off, and there is no draw button.
+    // A match always has a winner: no draw button, and no manual score fields to type 1:1 into.
     await expect(matchRow(page, 1).getByRole('button', { name: 'Unentschieden' })).toHaveCount(0)
-    await matchRow(page, 1).getByLabel('Spiele Alice').fill('1')
-    await matchRow(page, 1).getByLabel('Spiele Bob').fill('1')
-    await expect(matchRow(page, 1).getByRole('button', { name: 'Ergebnis speichern' })).toBeDisabled()
+    await expect(matchRow(page, 1).getByLabel('Spiele Alice')).toHaveCount(0)
+    await expect(matchRow(page, 1).getByRole('button', { name: 'Ergebnis speichern' })).toHaveCount(0)
 
     await matchRow(page, 1).getByRole('button', { name: 'Alice gewinnt 2:1' }).click()
     await expect(matchRow(page, 1)).toContainText('2:1')

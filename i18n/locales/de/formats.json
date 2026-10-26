@@ -59,6 +59,7 @@
         "matching": "Karten mit {filter}: {copies}",
         "notMatching": "Karten ohne {filter}: {copies}",
         "labelled": "{label} — {rule}",
+        "except": "{rule}, außer {except}",
         "copies": {
           "forbidden": "verboten",
           "limited": "limitiert (max. 1)",
@@ -84,6 +85,7 @@
         "releasedBefore": "erschienen vor dem {date} ({region})",
         "releasedAfter": "erschienen nach dem {date} ({region})",
         "nameContains": "Name enthält \"{text}\"",
+        "textContains": "Kartentext enthält {values}",
         "all": "alle Karten"
       }
     },
@@ -134,7 +136,114 @@
     },
     "new": {
       "title": "Neues Format",
-      "description": "Lege Deckgrößen, Kopienlimits und eigene Regeln fest."
+      "description": "Lege Deckgrößen, Kopienlimits und eigene Regeln fest – oder lass sie aus einem Regelwerk als PDF oder Text erzeugen."
+    },
+    "pdf": {
+      "title": "Aus PDF oder Text erstellen",
+      "description": "Lade die Regeln eines Formats als PDF hoch oder füge den Text ein. Die App liest die Regeln, baut daraus ein Format und sagt dir, was sie davon prüfen kann – und was nicht.",
+      "pick": "PDF auswählen",
+      "removeFile": "Andere Datei wählen",
+      "dropHint": "oder hierher ziehen. Nur PDFs mit Text (keine Scans), höchstens {max} MB.",
+      "tooLarge": "Das PDF ist zu groß (höchstens {max} MB).",
+      "notPdf": "Das ist kein PDF.",
+      "textLabel": "Oder Regeltext einfügen",
+      "textHint": "Wird ein PDF gewählt, gilt das PDF.",
+      "textPlaceholder": "z. B. Main Deck: 40–50 Karten, höchstens 3 Kopien pro Karte, kein Side Deck …",
+      "analyze": "Regeln auswerten",
+      "analyzing": "Werte aus …",
+      "failed": "Die Regeln konnten nicht ausgewertet werden.",
+      "except": "Ausnahme: {except}",
+      "why": "Warum nicht:",
+      "source": "Aus dem Regelwerk: „{text}“",
+      "result": {
+        "title": "So hat die App die Regeln gelesen",
+        "rules": "{count} Regel erzeugt | {count} Regeln erzeugt",
+        "decisions": "{count} Entscheidung offen | {count} Entscheidungen offen",
+        "notCheckable": "{count} Punkt nicht prüfbar | {count} Punkte nicht prüfbar",
+        "next": "Die erzeugten Regeln stehen unten im Editor. Prüfe sie, ergänze, was fehlt, und speichere das Format."
+      },
+      "group": {
+        "applied": "Das setzt die App um",
+        "decision": "Hier musst du dich entscheiden",
+        "decisionHint": "Das Regelwerk sagt etwas, das mehrere Bedeutungen haben kann. Wähle, was gelten soll.",
+        "unsupported": "Das kann die App nicht prüfen",
+        "unsupportedHint": "Diese Punkte bleiben im Regelwerk stehen, werden aber bei der Deckprüfung nicht abgefragt. Bei den meisten hilft es, die gemeinten Karten einzeln als Regel „Einzelne Karten“ einzutragen.",
+        "unclear": "Das hat die App nicht verstanden",
+        "unclearHint": "Diese Sätze passten zu keiner bekannten Regel und wurden nicht übernommen.",
+        "description": "Spielablauf",
+        "descriptionHint": "Das sind keine Deckregeln (Lebenspunkte, Zugfolge, Ablauf …). Sie stehen in der Beschreibung des Formats.",
+        "info": "Hinweis"
+      },
+      "handtrap": {
+        "question": "Was zählt als Handtrap?",
+        "open": "Solange nichts gewählt ist, gilt die Handtrap-Regel nicht.",
+        "helpMark": "?",
+        "showDefinition": "Definition von „{name}“ anzeigen",
+        "option": {
+          "classic-plus": {
+            "label": "Classic-Plus-Definition",
+            "definition": "Eine Handtrap ist ein Monstereffekt, der von der Hand aus im Spielzug des Gegners aktiviert werden kann. Verboten ist er, wenn er eine Aktion des Gegners annulliert oder verhindert oder eine Karte aus einer beliebigen Zone entfernt (außer diese Karte selbst). Effekte, die nur in der Battle Phase oder gegen Kampfschaden wirken, sind erlaubt. Umgesetzt als feste Kartenliste."
+          },
+          "restrictive": {
+            "label": "Restriktiver",
+            "definition": "Alle Monster, deren Text sagt, dass sie außerhalb deiner eigenen Main Phase aus der Hand gespielt werden können: Karte abwerfen, aus der Hand schicken oder als Schnelleffekt beschwören, im Zug des Gegners, in der Battle Phase oder als Antwort. Egal, was der Effekt bewirkt. Die Liste entsteht aus dem Kartentext und kann einzelne Karten zu viel oder zu wenig enthalten."
+          },
+          "own": {
+            "label": "Eigene Definition",
+            "definition": "Du legst selbst fest, was eine Handtrap ist. Schreibe die Definition in dein Regelwerk (PDF oder Text) und lade es noch einmal hoch."
+          }
+        },
+        "added": "{count} Karte als verboten eingetragen (siehe Regeln unten). | {count} Karten als verboten eingetragen (siehe Regeln unten).",
+        "ownHint": "Schreibe deine Definition ins Regelwerk (was genau zählt als Handtrap?) und lade es noch einmal hoch. Bis dahin gilt die Handtrap-Regel nicht.",
+        "failed": "Die Karten für diese Definition konnten nicht geladen werden."
+      },
+      "finding": {
+        "size": { "text": "{section}: {min}–{max} Karten" },
+        "limitMin": { "text": "{section}: mindestens {min} Karten" },
+        "limitMax": { "text": "{section}: höchstens {max} Karten" },
+        "limitBoth": { "text": "{section}: mindestens {min}, höchstens {max} Karten" },
+        "no_side": { "text": "Kein Side Deck" },
+        "copies": { "text": "Höchstens {max} Kopien pro Karte" },
+        "extra_fusion_only": { "text": "Extra Deck: nur Fusionsmonster (Synchro, Xyz und Link sind dort gesperrt)" },
+        "modern_summons": { "text": "Gesperrt: Monster vom Typ {terms}" },
+        "gemini": { "text": "Gesperrt: Zwillingsmonster (Gemini)" },
+        "effects_limited": { "text": "Karten mit Effekt: höchstens {max}× pro Karte" },
+        "banlist": { "text": "Es gilt die Banliste: {source}" },
+        "card_list": { "text": "{status}: {found} von {total} genannten Karten im Katalog gefunden" },
+        "text_mention": { "text": "Gesperrt: Karten, in deren Kartentext {terms} steht" },
+        "instant_win": { "text": "Gesperrt: Karten, in deren Text steht, dass jemand das Duell gewinnt (Instant Win)" },
+        "receiver": { "text": "Gesperrt: Empfänger-Monster (Tuner)" },
+        "handtrap": { "text": "Handtraps sind verboten" },
+        "sleeves": {
+          "text": "Regel zu Kartenhüllen",
+          "why": "Kartenhüllen sieht man am Spieltisch, nicht im Deck. Die App kennt sie nicht und kann sie nicht prüfen."
+        },
+        "effect_class": {
+          "text": "Regel „{topic}“: Karten werden nach ihrer Wirkung eingeschränkt",
+          "why": "Welche Karten dazu zählen, hängt vom Effekt ab – und den liest die App bewusst nicht. Nenne die betroffenen Karten einzeln („Einzelne Karten“) oder nimm eine fertige Liste."
+        },
+        "banlist_unknown": {
+          "text": "Es gilt eine Banliste, aber der Text sagt nicht welche",
+          "why": "Die App kennt TCG, OCG, GOAT, Edison und Classic Plus. Wähle im Editor die passende als Regel „Banliste“ – oder trage die Karten einzeln ein."
+        },
+        "card_names_missing": {
+          "text": "{count} Karte nicht im Katalog gefunden: {names} | {count} Karten nicht im Katalog gefunden: {names}",
+          "why": "Der Name passt zu keiner Karte eindeutig (Tippfehler oder anderer Name). Füge die Karten im Editor unter „Einzelne Karten“ von Hand hinzu."
+        },
+        "rule_invalid": {
+          "text": "Eine Regel ({kind}) hat die Prüfung nicht bestanden",
+          "why": "Die Werte widersprechen sich oder liegen außerhalb dessen, was die App erlaubt. Die Regel wurde weggelassen."
+        },
+        "too_many_rules": {
+          "text": "Es sind mehr als {max} Regeln entstanden",
+          "why": "Ein Format darf höchstens {max} Regeln haben. Der Rest wurde weggelassen."
+        },
+        "not_understood": {
+          "text": "Nicht verstanden",
+          "why": "Der Satz passt zu keiner Regel, die die App kennt. Steckt eine Deckregel darin, lege sie im Editor von Hand an."
+        },
+        "builtin_exists": { "text": "„{name}“ gibt es schon als eingebautes Format. Du findest es unter Formate und kannst es dort klonen – die eingebaute Version kennt auch Regeln, die ein Text nicht abbildet." }
+      }
     },
     "detail": {
       "fallbackTitle": "Format",
@@ -192,6 +301,9 @@
         "ocg": "OCG-Datum"
       },
       "nameContains": "Name enthält",
+      "textContains": "Kartentext enthält (Komma = oder)",
+      "textContainsHint": "Gesucht wird im englischen Kartentext, nach ganzen Wörtern und ohne auf Groß- und Kleinschreibung zu achten. Ein Treffer genügt.",
+      "exceptName": "Ausnahme: Name enthält",
       "addRule": "Regel hinzufügen",
       "addRuleLabel": "Regel hinzufügen: {kind}",
       "check": {

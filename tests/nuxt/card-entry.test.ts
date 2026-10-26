@@ -684,6 +684,25 @@ describe('quick capture resolution of deck lists', () => {
     expect(results.every(result => result.candidates.length === 0)).toBe(true)
   })
 
+  it('adds up a card named twice, also spelled differently and with other cards in between (dictation)', () => {
+    const results = suggestForRequest(db, parseSuggestRequest({ items: ['Kuriboh', 'Dark Magician', 'Kuribo', 'Dark Magician', 'Kuriboh'] }))
+
+    expect(results.map(result => [result.input.quantity, result.candidates[0]!.cardId])).toEqual([
+      [3, CATALOG_FIXTURE_IDS.kuriboh],
+      [2, CATALOG_FIXTURE_IDS.darkMagician],
+    ])
+  })
+
+  it('keeps lines apart that are other cards, or the same card in another printing (set code)', () => {
+    const results = suggestForRequest(db, parseSuggestRequest({ items: ['Dark Magician', 'Dark Magician (SDY-006)', 'Kuriboh'] }))
+
+    expect(results.map(result => [result.input.quantity, result.input.setCode ?? null, result.candidates[0]!.cardId])).toEqual([
+      [1, null, CATALOG_FIXTURE_IDS.darkMagician],
+      [1, 'SDY-006', CATALOG_FIXTURE_IDS.darkMagician],
+      [1, null, CATALOG_FIXTURE_IDS.kuriboh],
+    ])
+  })
+
   it('counts two "7 Colored Fish" lines as 7 + 7 copies of one card after the lookup', () => {
     const results = lookup('7 Colored Fish\n7 Colored Fish')
 

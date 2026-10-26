@@ -71,7 +71,7 @@ test.describe('Schnellerfassung', () => {
     await registerAndLogin(page)
     await page.goto('/inventory/quick-entry')
 
-    await expect(page.getByText('Karten per Foto? Nutze den Assistenten')).toBeVisible()
+    await expect(page.getByText('Mehr als eine Liste? Nutze den Assistenten')).toBeVisible()
     await page.getByRole('link', { name: 'Zum Assistenten' }).click()
     await expect(page).toHaveURL(/\/assistant/)
   })

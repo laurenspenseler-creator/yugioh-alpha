@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted.
+Accepted. Amended by [ADR 0040](0040-on-device-photo-and-speech-input.md): microphone and
+camera for the app's own pages, `'wasm-unsafe-eval'` for the OCR and speech engines, and
+the model hosts in `connect-src`.
 
 ## Context
 

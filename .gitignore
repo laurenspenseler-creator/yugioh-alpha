@@ -24,6 +24,9 @@ node_modules
 # Local card image assets (large, generated/copied from YGO Omega)
 public/assets
 
+# Run-time files of the on-device speech and photo reading (scripts/ai-assets.mjs)
+public/ai
+
 # Logs
 logs
 *.log

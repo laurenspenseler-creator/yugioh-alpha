@@ -6,8 +6,11 @@ import {
 } from '~/utils/card-entry'
 import type { EntryRow, EntrySuggestResult } from '~/utils/card-entry'
 import { countEntryLines } from '~~/shared/decklist'
+import { appendCardLines } from '~/utils/card-lines'
 import { mergeSavedCopies } from '~/utils/saved-copies'
 import type { SavedCopy } from '~/utils/saved-copies'
+import { readCardCandidates, SPREADSHEET_MAX_LINES, SpreadsheetError } from '~/utils/spreadsheet-list'
+import type { SheetCandidate } from '~/utils/spreadsheet-list'
 
 usePageTitle('quickEntry.title')
 
@@ -95,6 +98,118 @@ async function submitList() {
     listText.value = ''
   }
 }
+
+// --- Datei -----------------------------------------------------------------
+
+// An Excel / CSV / text file read in the browser into card lines. The review
+// queue holds MAX_ENTRY_ROWS rows, so a long file goes in step by step.
+const FILE_ACCEPT = '.xlsx,.xlsm,.csv,.tsv,.txt,.ydk'
+
+const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
+const fileLines = ref<string[]>([])
+const fileInfo = ref<{ name: string, total: number, skipped: number, truncated: boolean } | null>(null)
+const isReadingFile = ref(false)
+
+const queueFull = computed(() => rows.value.length >= MAX_ENTRY_ROWS)
+const fileNotes = computed(() => {
+  const info = fileInfo.value
+  if (!info) {
+    return []
+  }
+  const remaining = fileLines.value.length
+  return [
+    remaining > 0 ? t('quickEntry.file.remaining', { count: n(remaining, 'integer') }, remaining) : '',
+    info.skipped > 0 ? t('quickEntry.file.skipped', { count: n(info.skipped, 'integer') }, info.skipped) : '',
+    info.truncated ? t('quickEntry.file.truncated', { max: n(SPREADSHEET_MAX_LINES, 'integer') }) : '',
+    remaining > 0 && queueFull.value ? t('quickEntry.file.queueFirst') : '',
+  ].filter(note => note !== '')
+})
+
+async function loadFileLines() {
+  while (fileLines.value.length > 0 && rows.value.length < MAX_ENTRY_ROWS) {
+    const take = Math.min(MAX_ENTRY_LINES, MAX_ENTRY_ROWS - rows.value.length, fileLines.value.length)
+    await requestSuggestions({ text: fileLines.value.slice(0, take).join('\n') })
+    if (errorMessage.value !== '') {
+      // The lines stay, so "Nächste Zeilen laden" can try again.
+      return
+    }
+    fileLines.value = fileLines.value.slice(take)
+  }
+}
+
+function startFile(name: string, result: SheetCandidate) {
+  fileChoices.value = null
+  fileLines.value = result.lines
+  // A workbook with several sheets: say which one the cards came from.
+  fileInfo.value = {
+    name: result.sheetName ? `${name} · ${result.sheetName}` : name,
+    total: result.lines.length,
+    skipped: result.skipped,
+    truncated: result.truncated,
+  }
+  return loadFileLines()
+}
+
+// A workbook with several card sheets: the user picks one, nothing is read before.
+const fileChoices = ref<{ name: string, candidates: SheetCandidate[] } | null>(null)
+
+function offerFile(name: string, candidates: SheetCandidate[]) {
+  if (candidates.length === 1) {
+    return startFile(name, candidates[0]!)
+  }
+  fileLines.value = []
+  fileInfo.value = null
+  fileChoices.value = { name, candidates }
+  return Promise.resolve()
+}
+
+async function onListFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  // So the same file can be picked again after it was changed.
+  input.value = ''
+  if (!file) {
+    return
+  }
+
+  errorMessage.value = ''
+  isReadingFile.value = true
+  try {
+    await offerFile(file.name, await readCardCandidates(file, file.name))
+  }
+  catch (error) {
+    fileLines.value = []
+    fileInfo.value = null
+    fileChoices.value = null
+    errorMessage.value = t(`quickEntry.file.errors.${error instanceof SpreadsheetError ? error.code : 'unreadable'}`)
+  }
+  finally {
+    isReadingFile.value = false
+  }
+}
+
+// --- Fotos und Sprache -----------------------------------------------------
+
+// Cards read from photos (ADR 0040) go into the review table like a file's lines.
+function onPhotoLines(result: { lines: string[] }) {
+  return startFile(t('quickEntry.photo.sourceName'), { lines: result.lines, skipped: 0, header: false, sheetName: null, truncated: false })
+}
+
+// Cards said aloud join the list, so they can be corrected before "Karten erkennen".
+function onSpokenLines(lines: string[]) {
+  listText.value = appendCardLines(listText.value, lines)
+  errorMessage.value = ''
+}
+
+// A file the user chose on /inventory/files ("Karten importieren").
+const handoff = useQuickEntryHandoff()
+onMounted(async () => {
+  const pending = handoff.value
+  if (pending) {
+    handoff.value = null
+    await offerFile(pending.name, pending.candidates)
+  }
+})
 
 // --- Speichern -------------------------------------------------------------
 
@@ -191,8 +306,85 @@ function onSaved(result: { created: number, merged: number }) {
           :disabled="tooManyLines"
           @click="submitList"
         />
+
+        <div class="flex flex-wrap items-center gap-3 border-t border-default pt-3">
+          <input
+            ref="fileInput"
+            type="file"
+            class="sr-only"
+            tabindex="-1"
+            :accept="FILE_ACCEPT"
+            :aria-label="t('quickEntry.file.button')"
+            @change="onListFile"
+          >
+          <UButton
+            icon="i-lucide-file-spreadsheet"
+            color="neutral"
+            variant="outline"
+            :label="t('quickEntry.file.button')"
+            :loading="isReadingFile"
+            @click="() => fileInput?.click()"
+          />
+          <p class="min-w-0 flex-1 basis-64 text-xs text-muted">
+            {{ t('quickEntry.file.hint') }}
+          </p>
+        </div>
+
+        <!-- Photos go straight to the review table; dictation writes into the list above. -->
+        <div class="border-t border-default pt-3">
+          <CardsPhotoImport @lines="onPhotoLines" />
+        </div>
+        <div class="border-t border-default pt-3">
+          <CardsSpeechInput @lines="onSpokenLines" />
+        </div>
       </div>
     </div>
+
+    <UAlert
+      v-if="fileChoices"
+      color="neutral"
+      variant="subtle"
+      icon="i-lucide-file-spreadsheet"
+      :title="t('quickEntry.file.chooseTitle', { name: fileChoices.name })"
+      :description="t('quickEntry.file.chooseDescription')"
+    >
+      <template #actions>
+        <UButton
+          v-for="candidate in fileChoices.candidates"
+          :key="candidate.sheetName ?? ''"
+          size="xs"
+          color="neutral"
+          variant="outline"
+          class="tap-target"
+          :label="t('quickEntry.file.sheetOption', { sheet: candidate.sheetName, count: n(candidate.lines.length, 'integer') }, candidate.lines.length)"
+          :loading="isSuggesting"
+          @click="startFile(fileChoices.name, candidate)"
+        />
+      </template>
+    </UAlert>
+
+    <UAlert
+      v-if="fileInfo"
+      color="neutral"
+      variant="subtle"
+      icon="i-lucide-file-spreadsheet"
+      :title="t('quickEntry.file.summary', { name: fileInfo.name, count: n(fileInfo.total, 'integer') }, fileInfo.total)"
+      :description="fileNotes.join(' ')"
+    >
+      <template #actions>
+        <UButton
+          v-if="fileLines.length > 0"
+          size="xs"
+          color="neutral"
+          variant="outline"
+          class="tap-target"
+          :label="t('quickEntry.file.loadMore')"
+          :loading="isSuggesting"
+          :disabled="queueFull"
+          @click="loadFileLines"
+        />
+      </template>
+    </UAlert>
 
     <UAlert
       v-if="errorMessage"

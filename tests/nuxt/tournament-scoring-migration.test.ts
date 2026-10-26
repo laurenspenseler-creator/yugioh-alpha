@@ -110,7 +110,8 @@ describe('migration 0018: scoring, bye scoring and withdrawn participants (ADR 0
   it('keeps a legacy tournament\'s standings exactly as they were: 3/0 points and a bye counted as a win', () => {
     const sqlite = databaseBeforeScoring()
     seedLegacyTournament(sqlite)
-    applyMigrations(sqlite, entry => entry.idx === SCORING_MIGRATION)
+    // The reader is today's, so it needs every later migration too (the decks table of 0020).
+    applyMigrations(sqlite, entry => entry.idx >= SCORING_MIGRATION)
 
     const detail = getTournamentDetail(drizzle(sqlite, { schema }), 'user-a', 't-legacy')
 

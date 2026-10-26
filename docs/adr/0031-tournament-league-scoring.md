@@ -30,8 +30,9 @@ Tester feedback after the first real tournaments:
 1. **No draws.** A match always has a winner. The API rejects `{ draw: true }`
    and equal game counts (including 0:0) with `draws_not_allowed` (400); the
    UI offers the four best-of-3 outcomes as quick buttons (2:0, 2:1, 1:2, 0:2,
-   scores read A:B, each button named after the winning side) and disables
-   "Ergebnis speichern" for equal counts. Draws already stored stay readable:
+   scores read A:B, each button named after the winning side). Their manual
+   score fields with "Ergebnis speichern" were removed on tester feedback, so
+   the buttons are the only way to report a result in the UI. Draws already stored stay readable:
    the standings still score a stored draw as one point each, and the match row
    still labels it. `tournament_match.is_draw` is kept for exactly that.
 2. **`tournament.scoring`: `'games'` | `'match'`.** `games` awards 3 for a win

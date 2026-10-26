@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LocationQueryRaw } from 'vue-router'
 import { isCardKind } from '~~/shared/card-kind'
+import type { InventoryKind } from '~~/shared/deck-breakdown'
 import { UNASSIGNED_COLLECTION_ID } from '~~/shared/inventory'
 import type { InventorySearchFilters } from '~/components/inventory/InventorySearchPanel.vue'
 import type { MoveEntry } from '~/components/inventory/MoveCopiesModal.vue'
@@ -414,8 +415,17 @@ function openAdd(card: CatalogCard) {
   isEntryOpen.value = true
 }
 
+// Copies per card kind for the chips beside the filters; scoped like the page
+// (all cards, one collection, or the copies without one).
+const { data: kindCountsData, refresh: refreshKindCounts } = await useFetch<{ kinds: Array<{ kind: InventoryKind, count: number }>, total: number }>('/api/inventory/kind-counts', {
+  query: computed(() => ({ collectionId: collectionId.value || undefined })),
+  headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
+  default: () => ({ kinds: [], total: 0 }),
+})
+const kindCounts = computed(() => kindCountsData.value?.kinds ?? [])
+
 async function refreshAll() {
-  await Promise.all([refresh(), refreshCollections(), refreshSearch(), refreshFacets()])
+  await Promise.all([refresh(), refreshCollections(), refreshSearch(), refreshFacets(), refreshKindCounts()])
 }
 
 // After each write in the detail panel: one refresh of everything behind it
@@ -599,6 +609,13 @@ async function onMoved() {
 
       <template #actions>
         <UButton
+          to="/inventory/files"
+          icon="i-lucide-folder-open"
+          color="neutral"
+          variant="outline"
+          :label="t('inventory.actions.files')"
+        />
+        <UButton
           :to="{ path: '/inventory/quick-entry', query: activeCollection ? { collectionId: activeCollection.id } : undefined }"
           icon="i-lucide-zap"
           color="neutral"
@@ -675,6 +692,7 @@ async function onMoved() {
     <InventorySearchPanel
       v-model:filters="filters"
       :facets="facets"
+      :kind-counts="kindCounts"
       :show-sort="mode === 'gallery'"
     />
 

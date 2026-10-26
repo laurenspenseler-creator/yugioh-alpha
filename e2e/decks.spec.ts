@@ -276,8 +276,7 @@ test.describe('deckbuilder at 1024px', () => {
     await expect(page.getByRole('combobox', { name: 'Format' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Karten hinzufügen', exact: true })).toBeHidden()
 
-    // --- "Mehr laden" in the add panel (#31) ----------------------------------
-    await page.getByRole('checkbox', { name: 'Auch Katalogkarten anzeigen' }).click()
+    // --- "Mehr laden" in the add panel (#31): it lists the whole catalog by default ----
     const countLine = page.getByText(/^\s*12 von \d+ Karten\s*$/)
     await expect(countLine).toBeVisible()
     const total = Number((await countLine.textContent())!.match(/von (\d+)/)![1])

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
+import { DOMWrapper, enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import TournamentDetailPage from '~/pages/tournaments/[id].vue'
@@ -7,6 +7,7 @@ import type {
   TournamentDeckSnapshot,
   TournamentDetail,
   TournamentMatchDto,
+  TournamentParticipantDeckDto,
   TournamentParticipantDto,
   TournamentRoundDto,
   TournamentStandingRow,
@@ -42,12 +43,22 @@ function participant(overrides: Partial<TournamentParticipantDto> = {}): Tournam
     dropped: false,
     withdrawn: false,
     seed: 1,
-    deckId: null,
-    deckName: null,
-    deckLegal: null,
-    deckIssueCount: null,
-    deckSnapshot: null,
+    decks: [],
     createdAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  }
+}
+
+/** One deck of a participant: a registered list that fails its format, unless overridden. */
+function deckEntry(overrides: Partial<TournamentParticipantDeckDto> = {}): TournamentParticipantDeckDto {
+  return {
+    id: 'd-1',
+    name: 'Turnierdeck',
+    deckId: 'deck-1',
+    hasList: true,
+    legal: false,
+    issueCount: 2,
+    snapshot: null,
     ...overrides,
   }
 }
@@ -186,39 +197,25 @@ describe('tournament detail page — organizer, registration', () => {
 
   it('shows the add-participant form and a legality badge with issue count', async () => {
     state.tournament = tournamentDetail({
-      participants: [
-        participant({
-          deckId: 'deck-1',
-          deckName: 'Turnierdeck',
-          deckLegal: false,
-          deckIssueCount: 2,
-        }),
-      ],
+      participants: [participant({ decks: [deckEntry()] })],
     })
 
     const component = await mountSuspended(TournamentDetailPage)
     const text = component.text()
 
     expect(text).toContain('Teilnehmer hinzufügen')
-    expect(text).toContain('Deck ändern')
+    expect(text).toContain('Decks ändern')
     expect(text).toContain('Nicht legal')
     expect(text).toContain('2 Regelverstöße')
   })
 
   it('keeps showing the registered deck name and legality badge once the underlying deck is deleted', async () => {
-    // deck.deck_id is ON DELETE SET NULL: deckId goes null but the
-    // snapshot-derived deckName/deckLegal/deckIssueCount survive. The panel
-    // must key off deckName, not deckId, or a deleted deck silently drops
-    // out of a running/finished tournament's participant list.
+    // tournament_participant_deck.deck_id is ON DELETE SET NULL: deckId goes
+    // null but the snapshot-derived name and verdict survive. The panel must
+    // key off the entry, not deckId, or a deleted deck silently drops out of a
+    // running/finished tournament's participant list.
     state.tournament = tournamentDetail({
-      participants: [
-        participant({
-          deckId: null,
-          deckName: 'Turnierdeck',
-          deckLegal: false,
-          deckIssueCount: 2,
-        }),
-      ],
+      participants: [participant({ decks: [deckEntry({ deckId: null })] })],
     })
 
     const component = await mountSuspended(TournamentDetailPage)
@@ -228,9 +225,69 @@ describe('tournament detail page — organizer, registration', () => {
     expect(text).toContain('Nicht legal')
     expect(text).toContain('2 Regelverstöße')
     expect(text).not.toContain('Kein Deck')
-    // deckId is null, so there is nothing left to preselect — the button
-    // still reads "Deck ändern" because the participant is registered.
-    expect(text).toContain('Deck ändern')
+    expect(text).toContain('Decks ändern')
+  })
+
+  it('shows several decks of one player in the middle of the row, told apart by a slash, and a typed name without a badge', async () => {
+    state.tournament = tournamentDetail({
+      participants: [participant({
+        decks: [
+          deckEntry({ id: 'd-1', name: 'Blue-Eyes', hasList: true, legal: true, issueCount: 0, deckId: 'deck-1' }),
+          deckEntry({ id: 'd-2', name: 'Dark Magician', hasList: false, legal: null, issueCount: null, deckId: null }),
+        ],
+      })],
+    })
+
+    const component = await mountSuspended(TournamentDetailPage)
+    const decks = component.find('[data-testid="participant-decks"]')
+
+    // The listed deck has a legality badge, the typed name has none, and a slash sits between them.
+    expect(decks.text()).toBe('Blue-EyesLegal/Dark Magician')
+    expect(decks.element.parentElement!.classList.contains('sm:text-center')).toBe(true)
+  })
+
+  it('lets the organizer open the deck dialog from "Kein Deck" for a guest, and offers a typed name', async () => {
+    state.tournament = tournamentDetail({
+      participants: [participant(), participant({ id: 'p-2', name: 'Gast Anton', linked: false, isSelf: false })],
+    })
+    const fetchMock = vi.fn(() => Promise.resolve({ source: 'own', items: [{ id: 'deck-9', name: 'Mein Deck' }] }))
+    vi.stubGlobal('$fetch', fetchMock)
+
+    const component = await mountSuspended(TournamentDetailPage)
+    const noDeck = component.findAll('button').filter(button => button.text() === 'Kein Deck')
+    expect(noDeck).toHaveLength(2)
+
+    await noDeck[1]!.trigger('click')
+    await flushPromises()
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/tournaments/t-1/participants/p-2/deck-options')
+    // The dialog is teleported to <body>.
+    const dialog = new DOMWrapper(document.body)
+    expect(dialog.text()).toContain('Decks von Gast Anton')
+    expect(dialog.text()).toContain('Noch kein Deck eingetragen.')
+    expect(dialog.find('input[aria-label="Oder Deckname eintippen"]').exists()).toBe(true)
+  })
+
+  it('offers a deck from photos, speech or a list in the deck dialog and hands over to the deck import', async () => {
+    state.tournament = tournamentDetail({
+      participants: [participant(), participant({ id: 'p-2', name: 'Gast Anton', linked: false, isSelf: false })],
+    })
+    vi.stubGlobal('$fetch', vi.fn(() => Promise.resolve({ source: 'own', items: [] })))
+
+    const component = await mountSuspended(TournamentDetailPage)
+    await component.findAll('button').filter(button => button.text() === 'Kein Deck')[1]!.trigger('click')
+    await flushPromises()
+
+    const dialog = new DOMWrapper(document.body)
+    const importButton = dialog.findAll('button').find(button => button.text() === 'Deck aus Fotos, Sprache oder Liste anlegen')
+    expect(importButton).toBeDefined()
+
+    await importButton!.trigger('click')
+    await flushPromises()
+
+    // The decks dialog steps aside for the deck import, which names the deck after the participant.
+    expect(document.body.textContent).toContain('Deck importieren')
+    expect(document.body.textContent).not.toContain('Decks von Gast Anton')
   })
 })
 
@@ -243,7 +300,7 @@ describe('tournament detail page — mobile cards and legends (#28)', () => {
     const component = await mountSuspended(TournamentDetailPage)
 
     expect(component.text()).toContain('„Konto“: Spieler mit eigenem Benutzerkonto')
-    expect(component.text()).toContain('Gäste ohne Konto verwaltet die Turnierleitung.')
+    expect(component.text()).toContain('Die Turnierleitung trägt Decks für alle ein.')
   })
 
   it('omits the "Konto" legend when every participant is a guest', async () => {
@@ -262,11 +319,11 @@ describe('tournament detail page — mobile cards and legends (#28)', () => {
 
   it('gives the row deck button a 44px touch target', async () => {
     state.tournament = tournamentDetail({
-      participants: [participant({ deckId: 'deck-1', deckName: 'Turnierdeck' })],
+      participants: [participant({ decks: [deckEntry()] })],
     })
 
     const component = await mountSuspended(TournamentDetailPage)
-    const deckButton = component.findAll('button').find(button => button.text() === 'Deck ändern')
+    const deckButton = component.findAll('button').find(button => button.text() === 'Decks ändern')
 
     expect(deckButton?.classes()).toContain('tap-target')
   })
@@ -284,9 +341,7 @@ describe('tournament detail page — mobile cards and legends (#28)', () => {
     const buttonByText = (label: string) => component.findAll('button').find(button => button.text() === label)
 
     expect(buttonByText('2:0')?.classes()).toContain('tap-target')
-    expect(buttonByText('Ergebnis speichern')?.classes()).toContain('tap-target')
     expect(buttonByText('Paarungen tauschen')?.classes()).toContain('tap-target')
-    expect(component.find('[aria-label="Spiele Organizer"]').classes()).toContain('tap-target')
   })
 
   it('spells out S-N-U in a visible legend, as an abbreviation title and in the phone card', async () => {
@@ -322,7 +377,7 @@ describe('tournament detail page — organizer, running', () => {
     })
   }
 
-  it('shows the current round, table, names and result inputs', async () => {
+  it('shows the current round, table, names and the quick result buttons', async () => {
     state.tournament = runningTournament()
 
     const component = await mountSuspended(TournamentDetailPage)
@@ -332,8 +387,8 @@ describe('tournament detail page — organizer, running', () => {
     expect(text).toContain('Tisch 1')
     expect(text).toContain('Organizer')
     expect(text).toContain('Alice')
-    expect(component.find('[aria-label="Spiele Organizer"]').exists()).toBe(true)
-    expect(component.find('[aria-label="Spiele Alice"]').exists()).toBe(true)
+    expect(component.find('button[aria-label="Organizer gewinnt 2:0"]').exists()).toBe(true)
+    expect(component.find('button[aria-label="Alice gewinnt 0:2"]').exists()).toBe(true)
   })
 
   it('disables "Runde abschließen" while a result is missing', async () => {
@@ -444,9 +499,9 @@ describe('tournament detail page — participant role', () => {
     expect(text).toContain('Du nimmst an diesem Turnier teil')
     expect(text).toContain('Melde dein Deck an, bevor das Turnier startet.')
 
-    // One "Deck anmelden" button in the reminder banner, one on Alice's own row.
-    const deckButtons = component.findAll('button').filter(button => button.text() === 'Deck anmelden')
-    expect(deckButtons).toHaveLength(2)
+    // One "Deck hinzufügen" button in the reminder banner, one on Alice's own row
+    // (and none on the organizer's row: a player only manages their own).
+    expect(component.findAll('button').filter(button => button.text() === 'Deck hinzufügen')).toHaveLength(2)
   })
 
   it('does not show the deck reminder once the participant has registered a deck', async () => {
@@ -455,7 +510,7 @@ describe('tournament detail page — participant role', () => {
       selfParticipantId: 'p-2',
       participants: [
         participant({ id: 'p-1', name: 'Organizer', isSelf: false }),
-        participant({ id: 'p-2', name: 'Alice', isSelf: true, deckId: 'deck-1', deckName: 'Alice-Deck' }),
+        participant({ id: 'p-2', name: 'Alice', isSelf: true, decks: [deckEntry({ name: 'Alice-Deck', legal: null, issueCount: null })] }),
       ],
     })
 
@@ -463,8 +518,8 @@ describe('tournament detail page — participant role', () => {
     const text = component.text()
 
     expect(text).not.toContain('Melde dein Deck an, bevor das Turnier startet.')
-    expect(component.findAll('button').filter(button => button.text() === 'Deck anmelden')).toHaveLength(0)
-    expect(component.findAll('button').filter(button => button.text() === 'Deck ändern')).toHaveLength(1)
+    expect(component.findAll('button').filter(button => button.text() === 'Deck hinzufügen')).toHaveLength(0)
+    expect(component.findAll('button').filter(button => button.text() === 'Decks ändern')).toHaveLength(1)
   })
 })
 
@@ -604,19 +659,17 @@ describe('tournament detail page — deck snapshot issues', () => {
   it('renders issueDetails through the validation catalogue', async () => {
     state.tournament = tournamentDetail({
       participants: [participant({
-        deckId: 'deck-1',
-        deckName: 'Turnierdeck',
-        deckLegal: false,
-        deckIssueCount: 2,
-        deckSnapshot: snapshot({
-          legal: false,
-          issueCount: 2,
-          issues: ['Main Deck has 10 cards; at least 40 are required.', 'Pot of Greed is forbidden in this format.'],
-          issueDetails: [
-            { severity: 'error', code: 'deck_size_min', message: 'Main Deck has 10 cards; at least 40 are required.', params: { section: 'main', count: 10, min: 40 } },
-            { severity: 'error', code: 'card_forbidden', message: 'Pot of Greed is forbidden in this format.', params: { cardId: 55144522, cardName: 'Pot of Greed' } },
-          ],
-        }),
+        decks: [deckEntry({
+          snapshot: snapshot({
+            legal: false,
+            issueCount: 2,
+            issues: ['Main Deck has 10 cards; at least 40 are required.', 'Pot of Greed is forbidden in this format.'],
+            issueDetails: [
+              { severity: 'error', code: 'deck_size_min', message: 'Main Deck has 10 cards; at least 40 are required.', params: { section: 'main', count: 10, min: 40 } },
+              { severity: 'error', code: 'card_forbidden', message: 'Pot of Greed is forbidden in this format.', params: { cardId: 55144522, cardName: 'Pot of Greed' } },
+            ],
+          }),
+        })],
       })],
     })
 
@@ -631,25 +684,19 @@ describe('tournament detail page — deck snapshot issues', () => {
   it('still renders the stored strings of a snapshot taken before issueDetails existed', async () => {
     state.tournament = tournamentDetail({
       participants: [participant({
-        deckId: 'deck-1',
-        deckName: 'Turnierdeck',
-        deckLegal: false,
-        deckIssueCount: 1,
-        deckSnapshot: snapshot({
-          legal: false,
+        decks: [deckEntry({
           issueCount: 1,
-          issues: ['Topf der Gier ist in diesem Format verboten.'],
-        }),
+          snapshot: snapshot({
+            legal: false,
+            issueCount: 1,
+            issues: ['Topf der Gier ist in diesem Format verboten.'],
+          }),
+        })],
       })],
     })
 
     const component = await mountWithOpenPopovers()
     expect(component.text()).toContain('1 Regelverstoß')
-    // Same text as the former hard-coded `Intl.DateTimeFormat('de-DE', …)`.
-    const registeredAt = new Intl.DateTimeFormat('de-DE', {
-      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-    }).format(new Date('2026-09-12T11:13:52.000Z'))
-    expect(component.text()).toContain(`Angemeldet am ${registeredAt}`)
     expect(component.text()).toContain('Topf der Gier ist in diesem Format verboten.')
   })
 })
@@ -663,11 +710,7 @@ describe('tournament detail page — English', () => {
       format: { id: 'advanced', name: 'Advanced', isBuiltin: true },
       participants: [
         participant({
-          deckId: 'deck-1',
-          deckName: 'Turnierdeck',
-          deckLegal: false,
-          deckIssueCount: 2,
-          deckSnapshot: snapshot({ legal: false, issueCount: 2, issues: [] }),
+          decks: [deckEntry({ snapshot: snapshot({ legal: false, issueCount: 2, issues: [] }) })],
         }),
         participant({ id: 'p-2', name: 'Alice', isSelf: false, linked: false, dropped: true }),
       ],
@@ -697,15 +740,14 @@ describe('tournament detail page — English', () => {
     expect(text).toContain('Participants (2)')
     expect(text).toContain('Not legal')
     expect(text).toContain('2 rule violations')
-    expect(text).toContain('Registered on 09/12/2026')
     expect(text).toContain('Dropped')
     expect(text).toContain('“Account”: Player with their own user account')
 
     expect(text).toContain('Rounds')
     expect(text).toContain('Swap pairings')
     expect(text).toContain('Table 1')
-    expect(text).toContain('Save result')
-    expect(component.find('[aria-label="Games won by Organizer"]').exists()).toBe(true)
+    expect(component.find('button[aria-label="Organizer wins 2:0"]').exists()).toBe(true)
+    expect(text).not.toContain('Save result')
 
     expect(text).toContain('Standings')
     expect(text).toContain('66.7%')
@@ -766,20 +808,16 @@ describe('tournament detail page — scoring, results and league table (ADR 0031
     expect(component.find('button[aria-label="Alice gewinnt 1:2"]').exists()).toBe(true)
   })
 
-  it('keeps "Ergebnis speichern" disabled for equal game counts', async () => {
+  it('reports a result only through the quick buttons: no manual score fields and no save button', async () => {
     state.tournament = runningDetail()
 
     const component = await mountSuspended(TournamentDetailPage)
-    const save = () => component.findAll('button').find(button => button.text() === 'Ergebnis speichern')!
-    expect(save().attributes('disabled')).toBeDefined()
 
-    await component.find('[aria-label="Spiele Organizer"]').setValue('1')
-    await component.find('[aria-label="Spiele Alice"]').setValue('1')
-    expect(save().attributes('disabled')).toBeDefined()
-    expect(save().attributes('title')).toBe(component.vm.$t('errors.api.draws_not_allowed'))
-
-    await component.find('[aria-label="Spiele Alice"]').setValue('2')
-    expect(save().attributes('disabled')).toBeUndefined()
+    expect(component.find('[aria-label="Spiele Organizer"]').exists()).toBe(false)
+    expect(component.find('[aria-label="Spiele Alice"]').exists()).toBe(false)
+    expect(component.find('input[type="number"]').exists()).toBe(false)
+    expect(component.findAll('button').some(button => button.text() === 'Ergebnis speichern')).toBe(false)
+    expect(component.findAll('button').filter(button => /^\d:\d$/.test(button.text())).map(button => button.text())).toEqual(['2:0', '2:1', '1:2', '0:2'])
   })
 
   it('shows the games-scoring legend and S-N (no draws) for a Swiss tournament', async () => {

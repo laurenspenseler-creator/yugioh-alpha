@@ -13,6 +13,8 @@ const SET_CODE_PARENTHESIZED = new RegExp(`\\((${SET_CODE_SOURCE})\\)`, 'i')
 const PASSCODE_EXACT = /^\d{8}$/
 // A line that is only a quantity ("3", "3x") names no card at all.
 const QUANTITY_ONLY = /^\d{1,3}\s*[x×*]?$/i
+// "* ", "- ", "• " in front of a line (Markdown / chat lists); the bullet needs a space after it.
+const LIST_BULLET = /^(?:[*•·▪◦►‣–—-]+\s+)+/
 
 export interface ParsedEntryLine {
   /** The line exactly as the user/OCR/speech produced it. */
@@ -51,8 +53,9 @@ export function parseEntryLine(line: string): ParsedEntryLine {
   }
 
   // Tabs and commas act as field separators (pasted spreadsheet columns),
-  // never as part of a card name.
-  let rest = line.replace(/[\t,;]+/g, ' ').replace(/\s+/g, ' ').trim()
+  // never as part of a card name. A list bullet ("* 3× Kuriboh", "- Kuriboh")
+  // from a Markdown or chat-written list is not part of the line either.
+  let rest = line.replace(/[\t,;]+/g, ' ').replace(/\s+/g, ' ').trim().replace(LIST_BULLET, '')
   let quantity = 1
 
   const leadingMultiplier = rest.match(/^(\d{1,3})\s*[x×*]\s*(.+)$/i)

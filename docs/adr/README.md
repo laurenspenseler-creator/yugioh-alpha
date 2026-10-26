@@ -40,3 +40,11 @@ mark the old as superseded.
 | [0030](0030-edison-format.md) | Edison as a built-in format with a static banlist | Accepted |
 | [0031](0031-tournament-league-scoring.md) | Tournament scoring, byes, no draws, league tables and withdrawing | Accepted |
 | [0032](0032-collections-built-by-moving-copies.md) | Collections are built by moving copies out of the inventory | Accepted |
+| [0033](0033-inventory-files.md) | Files kept with the inventory | Accepted |
+| [0034](0034-card-list-from-spreadsheet.md) | Card lists from spreadsheets are read in the browser | Accepted |
+| [0035](0035-desktop-app.md) | A desktop app with its own server and local data | Accepted |
+| [0036](0036-phone-connects-to-the-desktop-app.md) | A phone connects to the desktop app over the home network | Accepted |
+| [0037](0037-format-from-a-rulebook.md) | A format is created from a written rulebook, and the app says what it can check | Accepted |
+| [0038](0038-card-text-filters-and-handtrap-definitions.md) | Card-text filters, exceptions, and what "hand traps" means | Accepted |
+| [0039](0039-decks-of-tournament-participants.md) | Several decks per tournament participant, set by the organizer | Accepted |
+| [0040](0040-on-device-photo-and-speech-input.md) | Photo and speech input run on the device, without an account or key | Accepted |

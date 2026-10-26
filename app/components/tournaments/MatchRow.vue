@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BYE_GAMES, MAX_GAMES_PER_MATCH } from '~~/shared/tournaments'
+import { BYE_GAMES } from '~~/shared/tournaments'
 import type { ByeScoring, TournamentDetail, TournamentMatchDto } from '~~/shared/tournaments'
 
 const props = defineProps<{
@@ -24,15 +24,11 @@ const { t } = useI18n()
 const apiError = useApiError()
 
 const isEditing = ref(!props.match.reported)
-const gamesA = ref(props.match.gamesA)
-const gamesB = ref(props.match.gamesB)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
 watch(() => props.match, (match) => {
   isEditing.value = !match.reported
-  gamesA.value = match.gamesA
-  gamesB.value = match.gamesB
 }, { deep: true })
 
 async function submitResult(a: number, b: number) {
@@ -59,33 +55,12 @@ async function submitResult(a: number, b: number) {
   }
 }
 
-/** `v-model.number` leaves a cleared input as `""`; treat that as 0 rather than posting it. */
-function saveForm() {
-  const a = typeof gamesA.value === 'number' ? gamesA.value : 0
-  const b = typeof gamesB.value === 'number' ? gamesB.value : 0
-  submitResult(a, b)
-}
-
 /**
- * A match always has a winner (ADR 0031), so equal game counts cannot be
- * saved: that covers the fresh, never-touched 0:0 form (#33) as well as 1:1.
- * The server rejects them too (`draws_not_allowed`); the quick buttons below
- * are the normal way to report a result and are never gated by this.
+ * The quick buttons are the only way to report a result (a match always has a
+ * winner, ADR 0031): A wins 2:0 / 2:1, then B wins 1:2 / 0:2 (scores always read A:B).
+ * The manual score fields were dropped on tester feedback; the server still
+ * accepts any valid score.
  */
-const isTie = computed(() => {
-  const a = typeof gamesA.value === 'number' ? gamesA.value : 0
-  const b = typeof gamesB.value === 'number' ? gamesB.value : 0
-  return a === b
-})
-const isUntouchedZeroZero = computed(() => isTie.value && !gamesA.value && !gamesB.value)
-const saveTitle = computed(() => {
-  if (!isTie.value) {
-    return undefined
-  }
-  return isUntouchedZeroZero.value ? t('tournaments.match.enterResultFirst') : t('errors.api.draws_not_allowed')
-})
-
-/** The quick buttons: A wins 2:0 / 2:1, then B wins 1:2 / 0:2 (scores always read A:B). */
 const quickScores = {
   a: [[2, 0], [2, 1]],
   b: [[1, 2], [0, 2]],
@@ -238,11 +213,9 @@ function onChipClick(slot: 'a' | 'b') {
         />
       </template>
 
-      <!-- Quick buttons first and primary: they are the normal path for
-           reporting a result (#33). The manual score fields + save button
-           come after, for the rarer best-of-3-with-games case. Two groups
-           that wrap independently, so the 44px touch targets (#28) stack
-           into two tidy lines on a phone instead of one ragged one. -->
+      <!-- The quick buttons report a result (#33). Two groups that wrap
+           independently, so the 44px touch targets (#28) stack into two tidy
+           lines on a phone instead of one ragged one. -->
       <template v-else-if="canEdit">
         <div
           v-for="side in (['a', 'b'] as const)"
@@ -259,41 +232,6 @@ function onChipClick(slot: 'a' | 'b') {
             class="tap-target max-sm:flex-auto"
             :loading="isSubmitting"
             @click="submitResult(scoreA, scoreB)"
-          />
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <UInput
-            v-model.number="gamesA"
-            type="number"
-            min="0"
-            :max="MAX_GAMES_PER_MATCH"
-            size="xs"
-            class="w-16"
-            :ui="{ base: 'tap-target' }"
-            :aria-label="t('tournaments.match.gamesOf', { name: match.participantAName })"
-          />
-          <span class="text-muted">:</span>
-          <UInput
-            v-model.number="gamesB"
-            type="number"
-            min="0"
-            :max="MAX_GAMES_PER_MATCH"
-            size="xs"
-            class="w-16"
-            :ui="{ base: 'tap-target' }"
-            :aria-label="t('tournaments.match.gamesOf', { name: match.participantBName ?? '' })"
-          />
-          <UButton
-            size="xs"
-            color="neutral"
-            variant="outline"
-            :label="t('tournaments.match.saveResult')"
-            class="tap-target"
-            :disabled="isTie"
-            :title="saveTitle"
-            :loading="isSubmitting"
-            @click="saveForm"
           />
         </div>
       </template>

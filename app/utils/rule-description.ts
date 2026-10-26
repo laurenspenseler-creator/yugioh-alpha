@@ -113,6 +113,9 @@ export function describeCardFilter(i18n: RuleDescriptionI18n, filter: CardFilter
   if (filter.nameContains) {
     parts.push(t('formats.rule.cardFilter.nameContains', { text: filter.nameContains }))
   }
+  if (filter.textContains?.length) {
+    parts.push(t('formats.rule.cardFilter.textContains', { values: either(filter.textContains.map(phrase => `"${phrase}"`)) }))
+  }
 
   return parts.length > 0 ? parts.join(', ') : t('formats.rule.cardFilter.all')
 }
@@ -151,7 +154,10 @@ export function describeRule(i18n: RuleDescriptionI18n, rule: Rule, options?: De
       return t(isOfficialBanlist(rule.source) ? 'formats.rule.banlist' : 'formats.rule.houseBanlist', { source: banlistSourceLabel(rule.source) })
     case 'filter': {
       const params = { filter: describeCardFilter(i18n, rule.filter, options), copies: copiesLabel(i18n, rule.maxCopies) }
-      const body = t(rule.match === 'matching' ? 'formats.rule.filter.matching' : 'formats.rule.filter.notMatching', params)
+      const selected = t(rule.match === 'matching' ? 'formats.rule.filter.matching' : 'formats.rule.filter.notMatching', params)
+      const body = rule.except
+        ? t('formats.rule.filter.except', { rule: selected, except: describeCardFilter(i18n, rule.except, options) })
+        : selected
       const label = options?.label ?? rule.label
       return label ? t('formats.rule.filter.labelled', { label, rule: body }) : body
     }

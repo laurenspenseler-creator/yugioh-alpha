@@ -65,6 +65,7 @@ export function loadCardDataForValidation(db: Db, cardIds: number[]): Map<number
       level: catalogCard.level,
       atk: catalogCard.atk,
       def: catalogCard.def,
+      desc: catalogCard.desc,
       banlistInfo: catalogCard.banlistInfo,
       tcgDate: catalogCard.tcgDate,
       ocgDate: catalogCard.ocgDate,

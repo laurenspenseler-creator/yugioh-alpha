@@ -171,6 +171,42 @@ collections are built by moving copies out of it, per deck if wanted
       inventory and the deck builder; "Effekt" includes Flip, Tuner, Spirit,
       Toon, Union and Gemini monsters, the exact "Typ" stays as the finer
       filter.
+- [x] "Dateien" in the inventory (`/inventory/files`): upload spreadsheets,
+      receipts, scans and other files, list them, open a PDF, image or text file
+      in the browser, download anything else, delete
+      ([ADR 0033](adr/0033-inventory-files.md)).
+- [x] Card lists from Excel or CSV: "Excel- oder CSV-Datei einlesen" in the quick
+      capture and "Karten importieren" on a stored file. Read in the browser into
+      the usual review table; a workbook with several card sheets asks which one
+      ([ADR 0034](adr/0034-card-list-from-spreadsheet.md)).
+- [x] Desktop app for Windows (`desktop/`): Electron with the app's own server and
+      local data, installer `YGO Alpha Setup.exe`
+      ([ADR 0035](adr/0035-desktop-app.md)).
+- [x] Connect a phone to the desktop app over the Wi-Fi: "Mit Handy verbinden"
+      with a switch, a QR code and an invite code for new accounts
+      ([ADR 0036](adr/0036-phone-connects-to-the-desktop-app.md)).
+- [x] Create a format from a written rulebook: "Aus PDF oder Text erstellen" on
+      `/formats/new` reads a PDF or pasted text, fills the editor and lists what
+      the rule engine enforces, what it can't check (and why) and what it
+      didn't understand ([ADR 0037](adr/0037-format-from-a-rulebook.md)).
+- [x] Tester feedback, round 2: a "Pendel" chip between Xyz and Link in the
+      inventory, chips filling the row; card-text rules, exceptions and the hand-trap
+      choice in the rulebook import ([ADR 0038](adr/0038-card-text-filters-and-handtrap-definitions.md));
+      several decks per tournament participant, set by the organizer, deck names
+      centered in the row ([ADR 0039](adr/0039-decks-of-tournament-participants.md));
+      `pnpm dev:phone` to open the dev server on a phone in the same Wi-Fi.
+- [x] Photos (several at once) and speech for deck import, quick capture, the files
+      page and a tournament participant's deck check, running on the device without
+      an account or key ([ADR 0040](adr/0040-on-device-photo-and-speech-input.md)).
+      Recognition is good, not perfect: the review table stays.
+- [x] Tester feedback, rounds 3 and 4: no size warning in the deck import; photos read with
+      a better set of passes, in English and German, and cards lying on their side turned
+      upright; dictated names found by letters and sound; a card named twice is two copies;
+      the ten kind chips always in one row, Pendel included.
+- [ ] Stronger photo reading with a vision model as an option (the assistant's API
+      key, for example a free Gemini tier), next to the on-device reading.
+- [ ] Install the phone's view as a real PWA: needs HTTPS (a trusted local
+      certificate or a tunnel such as Tailscale).
 
 ### Phase 2: Faster Card Entry
 
@@ -201,8 +237,10 @@ images, without a model in the loop, is still open and depends on the locally
 cached card images that [ADR 0001](adr/0001-card-catalog-data-model.md) lists
 as follow-up work.
 
-Voice input is currently not offered: Web Speech dictation in the chat
-composer was removed because it didn't work reliably; it's open again.
+Voice input: Web Speech dictation in the chat composer was removed because it
+didn't work reliably. Dictation of card lists is back, running on the device
+(Whisper in the browser), in the quick entry and the deck import
+([ADR 0040](adr/0040-on-device-photo-and-speech-input.md)).
 
 Tester-Feedback Sept 2026 (done): after saving, the quick entry keeps a
 "gerade gespeichert" panel (card, copies, collection) that moves exactly those

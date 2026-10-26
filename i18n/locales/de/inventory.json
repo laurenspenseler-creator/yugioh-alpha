@@ -10,7 +10,60 @@
     },
     "actions": {
       "quickEntry": "Schnellerfassung",
-      "addCard": "Karte hinzufügen"
+      "addCard": "Karte hinzufügen",
+      "files": "Dateien"
+    },
+    "kinds": {
+      "label": "Karten nach Art",
+      "filterBy": "{kind}: {count} Karten, nach dieser Kartenart filtern"
+    },
+    "files": {
+      "title": "Dateien",
+      "description": "Lege Tabellen, Belege, Scans und andere Dateien zu deinem Inventar ab. Nur du siehst sie.",
+      "back": "Zurück zum Inventar",
+      "count": "{count} Datei | {count} Dateien",
+      "usage": "{used} von {max} belegt",
+      "upload": {
+        "label": "Dateien hochladen",
+        "dropzone": "Dateien hierher ziehen oder auswählen",
+        "hint": "Excel, CSV, PDF, Bilder und mehr · höchstens {max} pro Datei",
+        "uploading": "Wird hochgeladen …",
+        "success": "{count} Datei hochgeladen | {count} Dateien hochgeladen",
+        "tooLargeLocal": "„{name}“ ist größer als {max} MB."
+      },
+      "photos": {
+        "title": "Karten aus Fotos hinzufügen",
+        "description": "Statt eine Datei abzulegen: Fotos von Karten auswerten lassen und ins Inventar eintragen. Du prüfst die Karten, bevor etwas gespeichert wird. Die Fotos selbst werden nicht aufbewahrt."
+      },
+      "list": {
+        "label": "Deine Dateien",
+        "added": "Hinzugefügt am {date}"
+      },
+      "actions": {
+        "open": "Öffnen",
+        "download": "Herunterladen",
+        "delete": "Löschen",
+        "importCards": "Karten importieren",
+        "importCardsLabel": "Karten aus {name} ins Inventar importieren",
+        "openLabel": "{name} öffnen",
+        "downloadLabel": "{name} herunterladen",
+        "deleteLabel": "{name} löschen"
+      },
+      "delete": {
+        "title": "Datei löschen?",
+        "description": "„{name}“ wird endgültig gelöscht.",
+        "confirm": "Löschen",
+        "cancel": "Abbrechen",
+        "done": "Datei gelöscht."
+      },
+      "empty": {
+        "title": "Noch keine Dateien",
+        "description": "Lade deine erste Datei hoch, zum Beispiel eine Excel-Tabelle mit deiner Sammlung."
+      },
+      "loadFailed": "Die Dateien konnten nicht geladen werden.",
+      "uploadFailed": "Der Upload hat nicht geklappt.",
+      "deleteFailed": "Die Datei konnte nicht gelöscht werden.",
+      "importFailed": "Die Datei konnte nicht geladen werden."
     },
     "view": {
       "list": "Liste",

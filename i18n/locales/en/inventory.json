@@ -10,7 +10,60 @@
     },
     "actions": {
       "quickEntry": "Quick entry",
-      "addCard": "Add card"
+      "addCard": "Add card",
+      "files": "Files"
+    },
+    "kinds": {
+      "label": "Cards by kind",
+      "filterBy": "{kind}: {count} cards, filter by this card kind"
+    },
+    "files": {
+      "title": "Files",
+      "description": "Keep spreadsheets, receipts, scans and other files with your inventory. Only you can see them.",
+      "back": "Back to inventory",
+      "count": "{count} file | {count} files",
+      "usage": "{used} of {max} used",
+      "upload": {
+        "label": "Upload files",
+        "dropzone": "Drop files here or choose them",
+        "hint": "Excel, CSV, PDF, images and more · up to {max} per file",
+        "uploading": "Uploading …",
+        "success": "{count} file uploaded | {count} files uploaded",
+        "tooLargeLocal": "“{name}” is larger than {max} MB."
+      },
+      "photos": {
+        "title": "Add cards from photos",
+        "description": "Instead of storing a file: have photos of cards read and put into the inventory. You check the cards before anything is saved. The photos themselves are not kept."
+      },
+      "list": {
+        "label": "Your files",
+        "added": "Added {date}"
+      },
+      "actions": {
+        "open": "Open",
+        "download": "Download",
+        "delete": "Delete",
+        "importCards": "Import cards",
+        "importCardsLabel": "Import the cards from {name} into the inventory",
+        "openLabel": "Open {name}",
+        "downloadLabel": "Download {name}",
+        "deleteLabel": "Delete {name}"
+      },
+      "delete": {
+        "title": "Delete file?",
+        "description": "“{name}” will be deleted for good.",
+        "confirm": "Delete",
+        "cancel": "Cancel",
+        "done": "File deleted."
+      },
+      "empty": {
+        "title": "No files yet",
+        "description": "Upload your first file, for example an Excel sheet with your collection."
+      },
+      "loadFailed": "The files could not be loaded.",
+      "uploadFailed": "The upload failed.",
+      "deleteFailed": "The file could not be deleted.",
+      "importFailed": "The file could not be loaded."
     },
     "view": {
       "list": "List",

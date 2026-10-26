@@ -7,6 +7,7 @@ import type { DecklistEntry } from '../../shared/decklist'
 import { DECK_SECTIONS } from '../../shared/deck-sections'
 import type { useDb } from '../db'
 import { catalogCard, catalogCardTranslation, catalogPrinting } from '../db/schema'
+import { closestCards } from './card-fragments'
 import { primaryImageUrlSql } from './card-image-sql'
 import { activeCatalogCard, escapedLike, escapeLikeTerm } from './card-name-search'
 import { resolvePasscode } from './card-passcode'
@@ -24,6 +25,12 @@ export const MAX_ENTRY_TEXT_LENGTH = 20_000
 const CANDIDATE_POOL_LIMIT = 200
 /** Fuzzy candidates below this similarity are noise and get dropped. */
 const MIN_FUZZY_SCORE = 0.3
+/** Without a candidate this close, the names of the whole catalog are compared by their letters too (`closestCards`). */
+const LETTER_SEARCH_BELOW = 0.85
+/** A name found by its letters must be at least this similar to count. */
+const MIN_LETTER_SEARCH_SCORE = 0.5
+/** Two lines whose best candidate is the same card, at least this similar, are one row with their copies added. */
+const MERGE_BY_CARD_MIN_SCORE = 0.6
 const DEFAULT_SUGGEST_LIMIT = 5
 const MAX_SUGGEST_LIMIT = 20
 
@@ -49,7 +56,7 @@ export interface EntrySuggestResult {
 
 /**
  * The shared name folding (`foldCardName`, ADR 0015): lowercase, no accents,
- * `ß` → `ss`, no spaces or punctuation, so "Number 39: Utopia",
+ * `ÃŸ` â†’ `ss`, no spaces or punctuation, so "Number 39: Utopia",
  * "number 39 utopia" and "NUMBER39UTOPIA" compare equal and bigram
  * similarity is not dominated by punctuation/whitespace noise. The same
  * form is stored in `name_search`, so the German pool can compare in SQL.
@@ -78,7 +85,7 @@ function bigrams(value: string): Map<string, number> {
 }
 
 /**
- * Sørensen–Dice coefficient over character bigrams (0..1). Hand-rolled on
+ * SÃ¸rensenâ€“Dice coefficient over character bigrams (0..1). Hand-rolled on
  * purpose: it is a few lines, dependency-free, and tolerant enough for the
  * single-character OCR/speech slips we care about ("Dark Magican",
  * "Blue Eyes White Dragen").
@@ -345,7 +352,7 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
   }
 
   const query = parsed.query.trim()
-  // A bare passcode/set code carries no name information — skip the name
+  // A bare passcode/set code carries no name information â€” skip the name
   // search entirely instead of scanning the catalog for "SDY-006".
   const skipNameSearch = query === ''
     || parsed.passcode !== undefined
@@ -362,7 +369,7 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
   const containsPattern = `%${escaped}%`
 
   // One scan per line: whole-query patterns plus a few token patterns. The
-  // ordering keeps the pool useful rather than arbitrary — whole-query hits
+  // ordering keeps the pool useful rather than arbitrary â€” whole-query hits
   // first, then the names closest in length to the query, which is what a
   // bigram-similar name looks like. No join and no grouping, so this stays
   // a plain table scan; display data is fetched for the ranked ids only.
@@ -399,9 +406,12 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
 
   // The German pool: scored against the German name with the same match
   // levels; `remember` keeps whichever language matched better.
-  const germanQuery = normalizeCardName(query)
-  if (germanQuery !== '') {
-    const germanTokens = [...new Set(tokenize(query).map(normalizeCardName).filter(token => token.length >= 3))]
+  for (const germanSpelling of [query, ...germanNameVariants(query)]) {
+    const germanQuery = normalizeCardName(germanSpelling)
+    if (germanQuery === '') {
+      continue
+    }
+    const germanTokens = [...new Set(tokenize(germanSpelling).map(normalizeCardName).filter(token => token.length >= 3))]
     for (const row of selectGermanCards(db, germanQuery, germanTokens, CANDIDATE_POOL_LIMIT)) {
       const { nameDeSearch, ...candidate } = row
       const scored = scoreName(candidate, germanQuery, nameDeSearch)
@@ -411,7 +421,36 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
     }
   }
 
+  // A word that was misheard or misread ("Goldzarkofack" for Gold-Sarkophag) shares no
+  // word with the name, so the lookups above find nothing close; the letters of the whole
+  // catalog tell. Only when nothing is a near-sure match yet.
+  const bestScore = Math.max(0, ...[...byCardId.values()].map(candidate => candidate.score))
+  if (bestScore < LETTER_SEARCH_BELOW) {
+    const near = closestCards(db, query, limit).filter(hit => hit.score >= MIN_LETTER_SEARCH_SCORE && (byCardId.get(hit.cardId)?.score ?? 0) < hit.score)
+    if (near.length > 0) {
+      const scores = new Map(near.map(hit => [hit.cardId, hit.score]))
+      for (const row of selectCards(db, inArray(catalogCard.id, near.map(hit => hit.cardId)), near.length)) {
+        remember({ ...row, score: scores.get(row.cardId)!, matchedBy: 'fuzzy' })
+      }
+    }
+  }
+
   return byCardId
+}
+
+// Official German names shorten or compound what a typed or chat-written list
+// spells as a plain adjective: "BlauÃ¤ugiger w. Drache" for "weiÃŸer Drache",
+// "Gold-Sarkophag" for "Goldener Sarkophag".
+const GERMAN_NAME_VARIANTS: ReadonlyArray<readonly [RegExp, string]> = [
+  [/(?<![\p{L}])wei(?:ÃŸ|ss)(?:er|e|en|es|em)?(?![\p{L}])/giu, 'w.'],
+  [/(?<![\p{L}])golden(?:er|e|en|es|em)?(?![\p{L}])/giu, 'gold'],
+]
+
+/** The query respelled the way official German names do, one variant per rule that applies. */
+function germanNameVariants(query: string): string[] {
+  return GERMAN_NAME_VARIANTS
+    .map(([pattern, replacement]) => query.replace(pattern, replacement))
+    .filter(variant => variant !== query)
 }
 
 /** Match level and score of one name (already folded) against the folded query. */
@@ -458,7 +497,9 @@ export function suggestCatalogMatches(
  */
 export function resolveEntryLine(db: Db, parsed: ParsedEntryLine): ParsedEntryLine {
   const rawLine = parsed.raw.replace(/\s+/g, ' ').trim()
-  if (rawLine === '' || (parsed.quantity === 1 && rawLine.toLowerCase() === parsed.query.toLowerCase())) {
+  // Nothing was stripped from the line (no count, no set code): there is nothing to take back, and
+  // a quantity above 1 is the sum of equal lines ("Kuriboh" said twice), which must stay.
+  if (rawLine === '' || rawLine.toLowerCase() === parsed.query.toLowerCase()) {
     return parsed
   }
 
@@ -571,7 +612,7 @@ export function parseSuggestRequest(body: unknown): SuggestRequest {
 /** Runs the catalog lookup for a validated request: one result per typed line. */
 export function suggestForRequest(db: Db, request: SuggestRequest): EntrySuggestResult[] {
   // Repeated lines ("3x Kuriboh" twice, a pasted list with duplicates) are a
-  // common case and each lookup scans the catalog — do it once per query.
+  // common case and each lookup scans the catalog â€” do it once per query.
   const cache = new Map<string, EntryCandidate[]>()
 
   const results = request.lines.map((line) => {
@@ -587,11 +628,18 @@ export function suggestForRequest(db: Db, request: SuggestRequest): EntrySuggest
   })
 
   // "3 Name" lines were only merged when identical (a bare leading count may
-  // be part of a name); now that every line is resolved, equal cards merge.
+  // be part of a name); now that every line is resolved, equal cards merge. Lines
+  // that are spelled differently but are the same card merge too ("Kuribo" said
+  // twice, once heard as "Kuriboh"), wherever in the list they stand: a card named
+  // twice is two copies.
   const merged = new Map<string, EntrySuggestResult>()
   for (const result of results) {
     const { input } = result
-    const key = input.passcode !== undefined ? `p:${input.passcode}` : `n:${input.query.toLowerCase()}|${input.setCode ?? ''}`
+    const top = result.candidates[0]
+    const sameCard = top && top.score >= MERGE_BY_CARD_MIN_SCORE && input.setCode === undefined
+    const key = input.passcode !== undefined
+      ? `p:${input.passcode}`
+      : sameCard ? `c:${top.cardId}` : `n:${input.query.toLowerCase()}|${input.setCode ?? ''}`
     const existing = merged.get(key)
     if (existing) {
       existing.input = { ...existing.input, quantity: Math.min(MAX_ENTRY_QUANTITY, existing.input.quantity + input.quantity) }

@@ -17,6 +17,8 @@ export const RULE_FORMAT_DESCRIPTION_MAX_LENGTH = 500
 export const MAX_RULES_PER_FORMAT = 50
 /** Hard cap on any id/string list inside a card filter. */
 export const MAX_FILTER_ENTRIES = 200
+/** Hard cap on the phrases of a card-text filter (`textContains`). */
+export const MAX_TEXT_PHRASES = 20
 /** Copies of one catalog card across main + extra + side when no `copies` rule is set. */
 export const DEFAULT_MAX_COPIES = 3
 /** Highest per-card limit a `copies` rule may set (server check and editor input). */
@@ -51,6 +53,12 @@ export interface CardFilter {
   /** Which release date the date predicates read. Defaults to 'tcg'. */
   region?: 'tcg' | 'ocg'
   nameContains?: string
+  /**
+   * The card's (English) text contains one of these words or phrases, whole
+   * words and ignoring case ("Synchro", "wins the Duel"). A card without a
+   * text matches none. See ADR 0038.
+   */
+  textContains?: string[]
 }
 
 export type CardStatusName = 'forbidden' | 'limited' | 'semi_limited'
@@ -69,7 +77,12 @@ export type Rule =
    * from their own lists (`loadCardDataForValidation`, ADR 0030, ADR 0022).
    */
   | { kind: 'banlist', source: BanlistSource }
-  | { kind: 'filter', match: FilterMatch, filter: CardFilter, maxCopies: FilterMaxCopies, label?: string }
+  /**
+   * `except` lifts the rule for cards it matches ("no hand traps except
+   * Kuriboh"): the rule applies to the cards selected by `match` + `filter`
+   * that `except` does not match.
+   */
+  | { kind: 'filter', match: FilterMatch, filter: CardFilter, maxCopies: FilterMaxCopies, label?: string, except?: CardFilter }
 
 export interface RuleSet {
   rules: Rule[]
@@ -138,6 +151,8 @@ export interface ValidationCardData {
   level?: number | null
   atk?: number | null
   def?: number | null
+  /** The English card text, for `textContains` (ADR 0038). */
+  desc?: string | null
   banlistInfo?: BanlistInfo | null
   tcgDate?: string | null
   ocgDate?: string | null
@@ -270,6 +285,34 @@ function includesIgnoreCase(values: string[] | undefined, value: string | null |
   return values.some(entry => entry.toLowerCase() === needle)
 }
 
+const phraseExpressions = new Map<string, RegExp>()
+
+/**
+ * Whether `text` contains one of `phrases` as whole words, ignoring case and
+ * the kind of white space: "Link" is in "Link Monster" and "Link-3" but not in
+ * "Linkuriboh". No phrases means no condition; a missing text matches none.
+ */
+function mentionsPhrase(text: string | null | undefined, phrases: string[] | undefined): boolean {
+  if (!phrases || phrases.length === 0) {
+    return true
+  }
+  if (!text) {
+    return false
+  }
+  return phrases.some((phrase) => {
+    let expression = phraseExpressions.get(phrase)
+    if (!expression) {
+      if (phraseExpressions.size > 500) {
+        phraseExpressions.clear()
+      }
+      const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')
+      expression = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, 'iu')
+      phraseExpressions.set(phrase, expression)
+    }
+    return expression.test(text)
+  })
+}
+
 function withinRange(value: number | null | undefined, min?: number, max?: number): boolean {
   if (min === undefined && max === undefined) {
     return true
@@ -367,6 +410,10 @@ export function matchesCardFilter(filter: CardFilter, card: ValidationCardData):
     if (!card.name.toLowerCase().includes(filter.nameContains.toLowerCase())) {
       return false
     }
+  }
+
+  if (!mentionsPhrase(card.desc, filter.textContains)) {
+    return false
   }
 
   return true
@@ -469,7 +516,8 @@ function capsForCard(rules: Rule[], card: ValidationCardData): CapCandidate[] {
 
     if (rule.kind === 'filter') {
       const matches = matchesCardFilter(rule.filter, card)
-      const applies = rule.match === 'matching' ? matches : !matches
+      const selected = rule.match === 'matching' ? matches : !matches
+      const applies = selected && !(rule.except && matchesCardFilter(rule.except, card))
       if (applies) {
         caps.push({
           maxCopies: rule.maxCopies,
@@ -811,6 +859,14 @@ function validateCardFilter(input: unknown): CardFilter {
     }
   }
 
+  const textContains = optionalStringList(input.textContains ?? input.text_contains, 'filter.textContains')
+  if (textContains) {
+    if (textContains.length > MAX_TEXT_PHRASES) {
+      fail(`filter.textContains must have at most ${MAX_TEXT_PHRASES} entries`)
+    }
+    filter.textContains = textContains
+  }
+
   return filter
 }
 
@@ -899,6 +955,13 @@ function validateRule(input: unknown, index: number): Rule {
           rule.label = label
         }
       }
+      // An empty exception would match every card and switch the rule off: drop it.
+      if (input.except !== undefined && input.except !== null) {
+        const except = validateCardFilter(input.except)
+        if (Object.keys(except).length > 0) {
+          rule.except = except
+        }
+      }
       return rule
     }
   }
@@ -935,8 +998,8 @@ export function referencedCardIds(ruleSet: RuleSet): number[] {
         ids.add(id)
       }
     }
-    if (rule.kind === 'filter' && rule.filter.cardIds) {
-      for (const id of rule.filter.cardIds) {
+    if (rule.kind === 'filter') {
+      for (const id of [...(rule.filter.cardIds ?? []), ...(rule.except?.cardIds ?? [])]) {
         ids.add(id)
       }
     }

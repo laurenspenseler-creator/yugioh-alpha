@@ -3,5 +3,11 @@ allowBuilds:
   '@prisma/client': false
   better-sqlite3: true
   esbuild: true
+  # The in-browser speech and OCR libraries (ADR 0040) run their WebAssembly
+  # builds; the native ONNX runtime and sharp they also list are never used.
+  onnxruntime-node: false
+  protobufjs: false
+  sharp: false
+  tesseract.js: false
   unrs-resolver: true
   vue-demi: true

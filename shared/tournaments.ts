@@ -69,6 +69,10 @@ export const DEFAULT_WIN_GAMES = 2
 export const POINTS_LOSS = 0
 /** Deck snapshot keeps at most this many rule-violation messages. */
 export const MAX_SNAPSHOT_ISSUES = 10
+/** Decks one participant can play in a tournament (several are common: a main deck and a second one). */
+export const MAX_DECKS_PER_PARTICIPANT = 5
+/** The longest deck name typed in for a participant. */
+export const DECK_NAME_MAX_LENGTH = 60
 
 // --- Deck snapshot ---------------------------------------------------------
 
@@ -131,16 +135,45 @@ export interface TournamentParticipantDto {
    */
   withdrawn: boolean
   seed: number
+  /** The decks this participant plays, in the order they were added; empty = none yet. */
+  decks: TournamentParticipantDeckDto[]
+  createdAt: string
+}
+
+/** One deck of a participant (ADR 0039): a registered decklist or just a name. */
+export interface TournamentParticipantDeckDto {
+  id: string
+  /** The deck's name, or the text that was typed. */
+  name: string
+  /**
+   * The deck the list was copied from, while it exists and the caller may open
+   * it (the organizer and the owner of the row); otherwise null.
+   */
   deckId: string | null
-  deckName: string | null
-  deckLegal: boolean | null
-  deckIssueCount: number | null
+  /** True when a decklist was registered; false for a name only. Anyone can see this. */
+  hasList: boolean
+  /** Against the tournament's format when it was registered; null = a name only, or no format. */
+  legal: boolean | null
+  issueCount: number | null
   /**
    * Full decklist. Visible to the organizer, to the owner of the row, and to
    * everyone once the tournament is finished; otherwise null.
    */
-  deckSnapshot: TournamentDeckSnapshot | null
-  createdAt: string
+  snapshot: TournamentDeckSnapshot | null
+}
+
+/** A deck the caller can put on a participant, for the deck dialog's list. */
+export interface TournamentDeckOption {
+  id: string
+  name: string
+}
+
+/** Whose decks `TournamentDeckOptions` lists, and why that may be fewer than all of them. */
+export type TournamentDeckOptionsSource = 'own' | 'shared'
+
+export interface TournamentDeckOptions {
+  source: TournamentDeckOptionsSource
+  items: TournamentDeckOption[]
 }
 
 export interface TournamentMatchDto {
@@ -244,7 +277,7 @@ export const TOURNAMENT_ERROR_CODES = [
   'invalid_body', 'invalid_name', 'invalid_description', 'invalid_pairing_system',
   'invalid_scoring', 'invalid_bye_scoring', 'invalid_planned_rounds', 'unknown_format', 'invalid_participant', 'user_not_found',
   'unknown_deck', 'empty_deck', 'invalid_result', 'invalid_swap',
-  'organizer_only', 'foreign_deck_owner',
+  'organizer_only', 'invalid_deck_name', 'deck_limit', 'deck_exists', 'unknown_deck_entry',
   'not_enough_participants', 'too_many_participants', 'participant_exists',
   'registration_closed', 'tournament_started', 'tournament_finished', 'invalid_status',
   'round_not_complete', 'round_completed', 'results_missing', 'results_reported',

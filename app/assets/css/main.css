@@ -57,6 +57,9 @@
   --color-frame-synchro: #e4e6ee;
   --color-frame-xyz: #2a2a36;
   --color-frame-link: #2f6db5;
+  /* Only for the "Pendel" chip of the inventory (a pendulum card itself is split frame + spell):
+     a light turquoise, brighter and bluer than the spell green. */
+  --color-frame-pendulum: #5cd8e6;
   --color-frame-spell: #1d9a86;
   --color-frame-trap: #bf4a86;
   --color-frame-token: #9aa0ae;
@@ -339,6 +342,7 @@
   [data-frame="synchro"] { --frame: var(--color-frame-synchro); }
   [data-frame="xyz"] { --frame: var(--color-frame-xyz); }
   [data-frame="link"] { --frame: var(--color-frame-link); }
+  [data-frame="pendulum"] { --frame: var(--color-frame-pendulum); }
   [data-frame="spell"] { --frame: var(--color-frame-spell); }
   [data-frame="trap"] { --frame: var(--color-frame-trap); }
   [data-frame="token"] { --frame: var(--color-frame-token); }

@@ -86,7 +86,13 @@ const HEADER_LINE = /^[#!]?\s*(\p{L}[\p{L} -]*?)\s*(?:[:([]\s*\d+\s*[)\]]?)?\s*:
 
 /** The deck section a header line opens (`Monster`, `#extra`, `Side Deck:` …), else `null`. */
 export function parseSectionHeader(line: string): DeckSection | null {
-  const match = HEADER_LINE.exec(line.trim())
+  // Chat-written lists dress headers up: "**Zauber (14)**", "## Fallen", "- Extra Deck (1)".
+  const cleaned = line.trim()
+    .replace(/^[-*•]\s+/, '')
+    .replace(/^#{2,6}\s*/, '')
+    .replace(/^[*_]+|[*_]+$/g, '')
+    .trim()
+  const match = HEADER_LINE.exec(cleaned)
   if (!match) {
     return null
   }

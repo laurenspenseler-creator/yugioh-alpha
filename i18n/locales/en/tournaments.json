@@ -159,12 +159,13 @@
     "participants": {
       "title": "Participants ({count})",
       "accountBadge": "Account",
-      "accountHint": "Player with their own user account – registers their own deck. The organizer manages guests without an account.",
-      "accountLegend": "“Account”: Player with their own user account – registers their own deck. The organizer manages guests without an account.",
+      "accountHint": "Player with their own user account – can register their own deck. The organizer enters decks for everyone.",
+      "accountLegend": "“Account”: Player with their own user account – can register their own deck. The organizer enters decks for everyone.",
       "deckReminder": "Register your deck before the tournament starts.",
-      "registerDeck": "Register deck",
-      "changeDeck": "Change deck",
-      "managesOwnDeck": "Registers their own deck",
+      "registerDeck": "Add deck",
+      "changeDeck": "Change decks",
+      "editDecksOf": "Edit the decks of {name}",
+      "deckSeparator": "/",
       "add": {
         "byEmail": "By email",
         "asGuest": "As guest",
@@ -183,7 +184,6 @@
       "showIssues": "Show rule violations for {name}",
       "issuesTitle": "Rule violations",
       "issueCount": "{count} rule violation | {count} rule violations",
-      "registeredAt": "Registered on {date}",
       "optionsFor": "Options for {name}",
       "menu": {
         "rename": "Rename",
@@ -215,16 +215,36 @@
         "withdrawFailed": "The standings status couldn't be changed."
       }
     },
-    "deckRegistration": {
-      "title": "Register deck",
-      "deck": "Deck",
-      "checking": "Checking the rules …",
-      "counts": "{count} card (Main {main}, Extra {extra}, Side {side}) | {count} cards (Main {main}, Extra {extra}, Side {side})",
-      "checkedOnRegistration": "The rules are checked on registration.",
-      "noFormat": "This tournament has no required format.",
-      "copyHint": "Your deck is copied when you register it. Later changes to the deck don't affect the tournament.",
-      "submit": "Register",
-      "saveFailed": "The deck couldn't be registered."
+    "decksDialog": {
+      "title": "Decks of {name}",
+      "current": "Registered decks",
+      "none": "No deck registered yet.",
+      "nameOnly": "name only",
+      "remove": "Remove {name}",
+      "limit": "A player can have at most {max} decks.",
+      "pick": {
+        "label": "Choose a deck from the app",
+        "placeholder": "Choose a deck",
+        "add": "Add",
+        "none": "You have no decks to add yet.",
+        "noneShared": "{name} hasn't shared any decks with you yet. Decks are private until their owner shares them. Type the deck's name below instead.",
+        "ownHint": "Your decks. The decklist is copied when you add it and checked against the format; later changes to the deck don't affect the tournament.",
+        "sharedHint": "You only see the decks {name} has shared with you; all others are private. The decklist is copied when you add it and checked against the format."
+      },
+      "import": {
+        "button": "Create a deck from photos, speech or a list",
+        "hint": "For a deck that is not in the app yet: photos of the cards, something said aloud or a list. It is created as a new deck in your account (you check the cards first) and added here, checked against the tournament's format.",
+        "deckName": "Deck of {name}"
+      },
+      "name": {
+        "label": "Or type a deck name",
+        "placeholder": "e.g. Blue-Eyes White Dragon",
+        "add": "Add name"
+      },
+      "done": "Done",
+      "loadFailed": "The decks couldn't be loaded.",
+      "addFailed": "The deck couldn't be added.",
+      "removeFailed": "The deck couldn't be removed."
     },
     "rounds": {
       "title": "Rounds",
@@ -250,9 +270,6 @@
       "draw": "Draw",
       "win": "{name} wins",
       "editResult": "Change result",
-      "saveResult": "Save result",
-      "enterResultFirst": "Enter a result first",
-      "gamesOf": "Games won by {name}",
       "saveFailed": "The result couldn't be saved.",
       "byeNoPoints": "not scored",
       "winBy": "{name} wins {score}",

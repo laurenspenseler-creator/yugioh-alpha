@@ -4,7 +4,7 @@ import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { CardFacetFilters, USelect, USelectMenu } from '#components'
 import RuleFormatEditor from '~/components/formats/RuleFormatEditor.vue'
 import { DEFAULT_MAX_COPIES, MAX_COPIES_RULE } from '~~/shared/rule-formats'
-import type { RuleSet } from '~~/shared/rule-formats'
+import type { Rule, RuleSet } from '~~/shared/rule-formats'
 import { selectWithOption } from './fixtures/select-wrapper'
 import { setTestLocale } from './fixtures/locale'
 
@@ -227,6 +227,68 @@ describe('rule format editor', () => {
         },
       },
     ]])
+  })
+
+  it('keeps a card-text rule and its exception through editing and saving (ADR 0038)', async () => {
+    const fetchMock = stubFetch(() => Promise.resolve({ id: 'own-1', name: 'Mein Format' }))
+    const rule: Rule = {
+      kind: 'filter',
+      match: 'matching',
+      filter: { textContains: ['win the Duel', 'wins the Duel'] },
+      maxCopies: 0,
+      label: 'Instant Win',
+      // The card ids are not editable here, but they must survive the round trip.
+      except: { nameContains: 'Exodia', cardIds: [33396948] },
+    }
+
+    const component = await mountSuspended(RuleFormatEditor, {
+      props: { initialValues: { id: 'own-1', name: 'Mein Format', description: null, rules: { rules: [rule] } } },
+    })
+
+    expect((component.find('input[aria-label="Kartentext enthält (Komma = oder)"]').element as HTMLInputElement).value).toBe('win the Duel, wins the Duel')
+    expect((component.find('input[aria-label="Ausnahme: Name enthält"]').element as HTMLInputElement).value).toBe('Exodia')
+    expect(component.find('[data-testid="rule-summary-0"]').text()).toContain('Kartentext enthält "win the Duel" oder "wins the Duel"')
+    expect(component.find('[data-testid="rule-summary-0"]').text()).toContain('außer Karte #33396948, Name enthält "Exodia"')
+
+    await component.find('input[aria-label="Kartentext enthält (Komma = oder)"]').setValue('win the Duel ,  loses the Duel')
+    await component.find('input[aria-label="Ausnahme: Name enthält"]').setValue('')
+    await component.findAll('button').find(button => button.text().includes('Speichern'))!.trigger('click')
+    await flushPromises()
+
+    expect(formatCalls(fetchMock)[0]![1]).toMatchObject({
+      method: 'PATCH',
+      body: {
+        rules: {
+          rules: [{
+            kind: 'filter',
+            match: 'matching',
+            filter: { textContains: ['win the Duel', 'loses the Duel'] },
+            maxCopies: 0,
+            label: 'Instant Win',
+            except: { cardIds: [33396948] },
+          }],
+        },
+      },
+    })
+  })
+
+  it('replaces the rules of an import by origin and leaves the other rules alone', async () => {
+    const component = await mountSuspended(RuleFormatEditor, {
+      props: { initialValues: { name: 'Import', description: null, rules: { rules: [{ kind: 'copies', maxCopies: 2 }] } } },
+    })
+    const editor = component.vm as unknown as { replaceRulesFrom: (origin: string, rules: Rule[], names: Record<string, string>) => void }
+
+    editor.replaceRulesFrom('handtraps', [{ kind: 'card_status', status: 'forbidden', cardIds: [55144522] }], { 55144522: 'Pot of Greed' })
+    await flushPromises()
+    expect(component.findAll('[data-testid^="rule-summary-"]').map(summary => summary.text())).toEqual(['Höchstens 2 Kopien pro Karte', 'Verboten: Pot of Greed'])
+
+    editor.replaceRulesFrom('handtraps', [{ kind: 'card_status', status: 'limited', cardIds: [55144522] }], {})
+    await flushPromises()
+    expect(component.findAll('[data-testid^="rule-summary-"]').map(summary => summary.text())).toEqual(['Höchstens 2 Kopien pro Karte', 'Limitiert (1): Pot of Greed'])
+
+    editor.replaceRulesFrom('handtraps', [], {})
+    await flushPromises()
+    expect(component.findAll('[data-testid^="rule-summary-"]').map(summary => summary.text())).toEqual(['Höchstens 2 Kopien pro Karte'])
   })
 
   it('previews the unsaved rules against one of the user\'s decks', async () => {

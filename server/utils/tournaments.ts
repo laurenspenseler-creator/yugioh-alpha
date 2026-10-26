@@ -13,10 +13,12 @@ import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import type { useDb } from '../db'
 import {
+  deck,
   ruleFormat,
   tournament,
   tournamentMatch,
   tournamentParticipant,
+  tournamentParticipantDeck,
   tournamentRound,
   user,
 } from '../db/schema'
@@ -25,6 +27,7 @@ import type { RuleSet } from '../../shared/rule-formats'
 import { getDeckDetail } from './decks'
 import { loadCardDataForValidation } from './deck-validation'
 import { requireAssignableFormat } from './rule-formats'
+import { grantedResourceIds } from './sharing'
 import { pairRound } from '../../shared/tournament-pairing'
 import type { Pairing, PairingParticipant } from '../../shared/tournament-pairing'
 import { computeStandings } from '../../shared/tournament-standings'
@@ -32,9 +35,11 @@ import type { StandingsMatch, StandingsOptions, StandingsParticipant } from '../
 import {
   BYE_GAMES,
   BYE_SCORINGS,
+  DECK_NAME_MAX_LENGTH,
   DEFAULT_BYE_SCORING,
   DEFAULT_SCORING,
   DEFAULT_WIN_GAMES,
+  MAX_DECKS_PER_PARTICIPANT,
   MAX_GAMES_PER_MATCH,
   MAX_PARTICIPANTS,
   MAX_PLANNED_ROUNDS,
@@ -53,6 +58,7 @@ import type {
   ByeScoring,
   PairingSystem,
   ScoringSystem,
+  TournamentDeckOptions,
   TournamentDeckSnapshot,
   TournamentDeckSnapshotCard,
   TournamentDetail,
@@ -61,6 +67,7 @@ import type {
   TournamentListItem,
   TournamentListResponse,
   TournamentMatchDto,
+  TournamentParticipantDeckDto,
   TournamentParticipantDto,
   TournamentRole,
   TournamentRoundDto,
@@ -397,19 +404,35 @@ export function validateParticipantUpdateInput(body: unknown): ParticipantUpdate
   return patch
 }
 
-export function validateDeckRegistrationInput(body: unknown): { deckId: string | null } {
+/**
+ * A deck for a participant: either one of the app's decks (`deckId`) or only a
+ * name the caller typed (`name`), never both and never neither (ADR 0039).
+ */
+export type DeckEntryInput = { deckId: string, name: null } | { deckId: null, name: string }
+
+export function validateDeckEntryInput(body: unknown): DeckEntryInput {
   if (!isRecord(body)) {
     badRequest('invalid_body', 'Request body must be an object')
   }
 
-  const raw = body.deckId
-  if (raw === null || raw === undefined) {
-    return { deckId: null }
+  const hasDeckId = body.deckId !== undefined && body.deckId !== null
+  const hasName = body.name !== undefined && body.name !== null
+  if (hasDeckId === hasName) {
+    badRequest('invalid_body', 'Send either deckId or name')
   }
-  if (typeof raw !== 'string' || raw.trim().length === 0) {
-    badRequest('invalid_body', 'deckId must be a string or null')
+
+  if (hasDeckId) {
+    if (typeof body.deckId !== 'string' || body.deckId.trim().length === 0) {
+      badRequest('invalid_body', 'deckId must be a string')
+    }
+    return { deckId: body.deckId, name: null }
   }
-  return { deckId: raw }
+
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  if (name.length === 0 || name.length > DECK_NAME_MAX_LENGTH) {
+    badRequest('invalid_deck_name', `name must be 1-${DECK_NAME_MAX_LENGTH} characters`, { max: DECK_NAME_MAX_LENGTH })
+  }
+  return { deckId: null, name }
 }
 
 /**
@@ -653,12 +676,26 @@ function byeMatchValues(byeScoring: ByeScoring, participantAId: string, now: Dat
 
 function toParticipantDto(
   participant: typeof tournamentParticipant.$inferSelect,
+  deckRows: Array<typeof tournamentParticipantDeck.$inferSelect>,
   callerUserId: string,
   role: TournamentRole,
   tournamentStatus: TournamentStatus,
 ): TournamentParticipantDto {
   const isSelf = participant.userId !== null && participant.userId === callerUserId
   const canSeeSnapshot = role === 'organizer' || isSelf || tournamentStatus === 'finished'
+
+  const decks: TournamentParticipantDeckDto[] = deckRows.map(deckRow => ({
+    id: deckRow.id,
+    // The name and the verdict stay populated (snapshot-derived, they survive the
+    // deck being deleted); what a caller who may not open the list doesn't get is
+    // the identifier of the deck and the list itself (#3).
+    name: deckRow.name,
+    deckId: canSeeSnapshot ? deckRow.deckId : null,
+    hasList: deckRow.deckSnapshot !== null,
+    legal: deckRow.deckLegal,
+    issueCount: deckRow.deckIssueCount,
+    snapshot: canSeeSnapshot ? deckRow.deckSnapshot ?? null : null,
+  }))
 
   return {
     id: participant.id,
@@ -668,14 +705,7 @@ function toParticipantDto(
     dropped: participant.dropped,
     withdrawn: participant.withdrawn,
     seed: participant.seed,
-    // Don't hand out a deck id for a snapshot the caller cannot open (#3):
-    // deckName/deckLegal/deckIssueCount stay populated (snapshot-derived),
-    // only the identifier of a resource the caller can't read is withheld.
-    deckId: canSeeSnapshot ? participant.deckId : null,
-    deckName: participant.deckSnapshot?.name ?? null,
-    deckLegal: participant.deckLegal,
-    deckIssueCount: participant.deckIssueCount,
-    deckSnapshot: canSeeSnapshot ? participant.deckSnapshot ?? null : null,
+    decks,
     createdAt: participant.createdAt.toISOString(),
   }
 }
@@ -710,6 +740,18 @@ function buildTournamentDetail(
 
   const participantById = new Map(participants.map(p => [p.id, p]))
   const withdrawnIds = new Set(participants.filter(p => p.withdrawn).map(p => p.id))
+
+  const decksByParticipant = new Map<string, Array<typeof tournamentParticipantDeck.$inferSelect>>()
+  for (const deckRow of db
+    .select()
+    .from(tournamentParticipantDeck)
+    .where(eq(tournamentParticipantDeck.tournamentId, row.id))
+    .orderBy(asc(tournamentParticipantDeck.position))
+    .all()) {
+    const list = decksByParticipant.get(deckRow.participantId) ?? []
+    list.push(deckRow)
+    decksByParticipant.set(deckRow.participantId, list)
+  }
 
   const matchesByRound = new Map<string, typeof matches>()
   for (const match of matches) {
@@ -798,7 +840,7 @@ function buildTournamentDetail(
     organizerName: organizer?.name ?? '',
     role,
     selfParticipantId,
-    participants: participants.map(p => toParticipantDto(p, userId, role, row.status)),
+    participants: participants.map(p => toParticipantDto(p, decksByParticipant.get(p.id) ?? [], userId, role, row.status)),
     rounds: roundDtos,
     currentRound: currentRoundDto,
     standings,
@@ -1244,58 +1286,172 @@ export function removeParticipant(db: Db, userId: string, id: string, participan
   return getTournamentDetail(db, userId, id)
 }
 
-export function registerParticipantDeck(
-  db: Db,
-  userId: string,
-  id: string,
-  participantId: string,
-  deckId: string | null,
-): TournamentDetail {
-  const { row, role } = requireTournamentRow(db, userId, id)
-  assertStatus(row, ['registration'], 'registration_closed')
+// --- Participants' decks (ADR 0039) ------------------------------------------
 
+/**
+ * Whose decks the caller may put on a participant. A player's own row and a
+ * guest's or the organizer's own row take the caller's decks. The organizer
+ * can also pick for another player with an account, but only among the decks
+ * that player has shared with them: a deck is private until its owner says
+ * otherwise (ADR 0005), and being added to a tournament isn't that.
+ */
+function deckSourceFor(
+  db: Db,
+  callerUserId: string,
+  role: TournamentRole,
+  participant: typeof tournamentParticipant.$inferSelect,
+): { ownerUserId: string, source: TournamentDeckOptions['source'], onlyIds: Set<string> | null } {
+  if (participant.userId === callerUserId) {
+    return { ownerUserId: callerUserId, source: 'own', onlyIds: null }
+  }
+  if (role !== 'organizer') {
+    forbidden('organizer_only', 'Only the organizer can do this')
+  }
+  if (participant.userId === null) {
+    return { ownerUserId: callerUserId, source: 'own', onlyIds: null }
+  }
+  return { ownerUserId: participant.userId, source: 'shared', onlyIds: grantedResourceIds(db, callerUserId, participant.userId, 'deck') }
+}
+
+/** The organizer manages decks until the tournament is over; a player only while it is open. */
+function assertCanManageDecks(row: { status: TournamentStatus }, role: TournamentRole): void {
+  if (role === 'organizer') {
+    assertStatus(row, ['registration', 'running'])
+  }
+  else {
+    assertStatus(row, ['registration'], 'registration_closed')
+  }
+}
+
+function requireParticipantRow(db: Db, tournamentId: string, participantId: string) {
   const participant = db
     .select()
     .from(tournamentParticipant)
-    .where(and(eq(tournamentParticipant.id, participantId), eq(tournamentParticipant.tournamentId, id)))
+    .where(and(eq(tournamentParticipant.id, participantId), eq(tournamentParticipant.tournamentId, tournamentId)))
     .get()
   if (!participant) {
     notFound()
   }
+  return participant
+}
 
-  let deckOwnerUserId: string
-  if (participant.userId === userId) {
-    deckOwnerUserId = userId
-  }
-  else if (role === 'organizer' && participant.userId === null) {
-    deckOwnerUserId = userId
-  }
-  else if (role === 'organizer') {
-    forbidden('foreign_deck_owner', 'This participant registers their own deck')
-  }
-  else {
-    forbidden('organizer_only', 'Only the organizer can do this')
-  }
+/** The decks the caller can put on this participant: all of their own, or the ones shared with them. */
+export function listParticipantDeckOptions(db: Db, userId: string, id: string, participantId: string): TournamentDeckOptions {
+  const { role } = requireTournamentRow(db, userId, id)
+  const participant = requireParticipantRow(db, id, participantId)
+  const source = deckSourceFor(db, userId, role, participant)
 
-  const now = new Date()
+  const rows = db
+    .select({ id: deck.id, name: deck.name })
+    .from(deck)
+    .where(and(eq(deck.userId, source.ownerUserId), source.onlyIds ? inArray(deck.id, [...source.onlyIds]) : undefined))
+    .orderBy(asc(deck.name))
+    .all()
+
+  return { source: source.source, items: rows }
+}
+
+/**
+ * Adds a deck to a participant: a copy of one of the app's decks (frozen, and
+ * checked against the tournament's format) or just a name.
+ */
+export function addParticipantDeck(
+  db: Db,
+  userId: string,
+  id: string,
+  participantId: string,
+  input: DeckEntryInput,
+): TournamentDetail {
+  const { row, role } = requireTournamentRow(db, userId, id)
+  assertCanManageDecks(row, role)
+
+  const participant = requireParticipantRow(db, id, participantId)
+  const source = deckSourceFor(db, userId, role, participant)
+
+  const existing = db
+    .select({ deckId: tournamentParticipantDeck.deckId })
+    .from(tournamentParticipantDeck)
+    .where(eq(tournamentParticipantDeck.participantId, participantId))
+    .orderBy(asc(tournamentParticipantDeck.position))
+    .all()
+  if (existing.length >= MAX_DECKS_PER_PARTICIPANT) {
+    conflict('deck_limit', 'This participant plays the most decks allowed', { max: MAX_DECKS_PER_PARTICIPANT })
+  }
 
   // buildDeckSnapshot reads through getDeckDetail/loadCardDataForValidation
   // against `db` (not a transaction handle) and may throw a validation error
   // (unknown_deck/empty_deck); resolve it before opening the transaction that
   // guards the actual writes.
-  const write = deckId === null
-    ? { deckId: null, deckSnapshot: null, deckLegal: null, deckIssueCount: null }
-    : (() => {
-        const format = loadTournamentFormat(db, row)
-        const { snapshot, legal, issueCount } = buildDeckSnapshot(db, deckOwnerUserId, deckId, format)
-        return { deckId, deckSnapshot: snapshot, deckLegal: legal, deckIssueCount: issueCount }
-      })()
+  let values: Pick<typeof tournamentParticipantDeck.$inferInsert, 'name' | 'deckId' | 'deckSnapshot' | 'deckLegal' | 'deckIssueCount'>
+  if (input.deckId === null) {
+    values = { name: input.name, deckId: null, deckSnapshot: null, deckLegal: null, deckIssueCount: null }
+  }
+  else {
+    if (source.onlyIds && !source.onlyIds.has(input.deckId)) {
+      badRequest('unknown_deck', 'Deck not found')
+    }
+    if (existing.some(entry => entry.deckId === input.deckId)) {
+      conflict('deck_exists', 'This deck is already on the participant')
+    }
+    const { snapshot, legal, issueCount } = buildDeckSnapshot(db, source.ownerUserId, input.deckId, loadTournamentFormat(db, row))
+    values = { name: snapshot.name, deckId: input.deckId, deckSnapshot: snapshot, deckLegal: legal, deckIssueCount: issueCount }
+  }
 
+  const now = new Date()
   db.transaction((tx) => {
     const txDb = tx as unknown as Db
 
-    txDb.update(tournamentParticipant).set({ ...write, updatedAt: now })
-      .where(eq(tournamentParticipant.id, participantId)).run()
+    txDb.insert(tournamentParticipantDeck).values({
+      id: randomUUID(),
+      participantId,
+      tournamentId: id,
+      ...values,
+      position: existing.length,
+      createdAt: now,
+    }).run()
+
+    txDb.update(tournament).set({ updatedAt: now }).where(eq(tournament.id, id)).run()
+  })
+
+  return getTournamentDetail(db, userId, id)
+}
+
+/** Takes one deck off a participant; the others keep their order. */
+export function removeParticipantDeck(
+  db: Db,
+  userId: string,
+  id: string,
+  participantId: string,
+  entryId: string,
+): TournamentDetail {
+  const { row, role } = requireTournamentRow(db, userId, id)
+  assertCanManageDecks(row, role)
+
+  const participant = requireParticipantRow(db, id, participantId)
+  deckSourceFor(db, userId, role, participant)
+
+  const now = new Date()
+  db.transaction((tx) => {
+    const txDb = tx as unknown as Db
+
+    const deleted = txDb
+      .delete(tournamentParticipantDeck)
+      .where(and(eq(tournamentParticipantDeck.id, entryId), eq(tournamentParticipantDeck.participantId, participantId)))
+      .returning({ id: tournamentParticipantDeck.id })
+      .all()
+    if (deleted.length === 0) {
+      fail(404, 'unknown_deck_entry', 'Deck not found on this participant')
+    }
+
+    txDb
+      .select({ id: tournamentParticipantDeck.id })
+      .from(tournamentParticipantDeck)
+      .where(eq(tournamentParticipantDeck.participantId, participantId))
+      .orderBy(asc(tournamentParticipantDeck.position))
+      .all()
+      .forEach((entry, index) => {
+        txDb.update(tournamentParticipantDeck).set({ position: index }).where(eq(tournamentParticipantDeck.id, entry.id)).run()
+      })
 
     txDb.update(tournament).set({ updatedAt: now }).where(eq(tournament.id, id)).run()
   })

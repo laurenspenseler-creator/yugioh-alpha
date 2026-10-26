@@ -144,7 +144,10 @@ const sourceType = ref('')
 // "Quelle": '' = every collection, else a collection id or `UNASSIGNED_COLLECTION_ID`.
 const sourceCollectionId = ref('')
 const sourceAttribute = ref('')
-const includeCatalog = ref(false)
+// The panel lists every card by default; "Nur aus dem Inventar anzeigen"
+// narrows it to the owned ones (tester feedback: nothing to click to see all cards).
+const inventoryOnly = ref(false)
+const includeCatalog = computed(() => !inventoryOnly.value)
 const sourceInText = ref(false)
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined
@@ -209,12 +212,17 @@ const { data: ownedQuantities } = await useFetch<Record<string, number>>('/api/i
   default: () => ({}),
 })
 
-// The facet lists come from the inventory (the default source); in catalog
-// mode they stay a useful shortlist rather than the full catalog vocabulary.
-const { data: facets } = await useFetch<SearchFacets>('/api/inventory/search/facets', {
+// The type and attribute lists follow the source: the owned cards' values for
+// "Nur aus dem Inventar anzeigen", the whole catalog's otherwise.
+const { data: inventoryFacets } = await useFetch<SearchFacets>('/api/inventory/search/facets', {
   headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
   default: () => ({ types: [], attributes: [] }),
 })
+const { data: catalogFacets } = await useFetch<SearchFacets>('/api/catalog/facets', {
+  headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
+  default: () => ({ types: [], attributes: [] }),
+})
+const facets = computed(() => (includeCatalog.value ? catalogFacets.value : inventoryFacets.value))
 
 // --- Rule format + live validation ----------------------------------------
 
@@ -1271,10 +1279,22 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
                   :aria-label="t('decks.editor.addPanel.searchLabel')"
                   class="w-full"
                 />
+                <!-- Right under the search: what the list searches in and which
+                     cards it lists (tester feedback). -->
+                <div class="space-y-1.5">
+                  <UCheckbox
+                    v-model="sourceInText"
+                    :label="t('decks.editor.addPanel.inText')"
+                  />
+                  <UCheckbox
+                    v-model="inventoryOnly"
+                    :label="t('decks.editor.addPanel.inventoryOnly')"
+                  />
+                </div>
                 <USelect
+                  v-if="inventoryOnly"
                   v-model="sourceSelection"
                   :items="sourceOptions"
-                  :disabled="includeCatalog"
                   :aria-label="t('decks.editor.addPanel.source')"
                   class="w-full"
                 />
@@ -1296,14 +1316,6 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
                     class="col-span-2"
                   />
                 </div>
-                <UCheckbox
-                  v-model="sourceInText"
-                  :label="t('decks.editor.addPanel.inText')"
-                />
-                <UCheckbox
-                  v-model="includeCatalog"
-                  :label="t('decks.editor.addPanel.includeCatalog')"
-                />
               </div>
 
               <p class="mt-3 shrink-0 text-xs text-muted">
@@ -1328,11 +1340,18 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
                 </div>
 
                 <p
+                  v-else-if="sourceCards.length === 0 && !inventoryOnly"
+                  class="text-sm text-muted"
+                >
+                  {{ t('decks.editor.addPanel.empty') }}
+                </p>
+
+                <p
                   v-else-if="sourceCards.length === 0"
                   class="text-sm text-muted"
                 >
                   <i18n-t
-                    keypath="decks.editor.addPanel.empty"
+                    keypath="decks.editor.addPanel.emptyInventory"
                     scope="global"
                   >
                     <template #link>

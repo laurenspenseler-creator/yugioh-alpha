@@ -56,8 +56,11 @@ export const pwaOptions: ModuleOptions = {
     // No HTML: there is no static page to cache, see the note above.
     globPatterns: ['**/*.{js,css,svg,png,ico,webmanifest}'],
     // public/assets holds the local card image set (tens of thousands of
-    // files, several GB). It must never end up in the precache manifest.
-    globIgnores: ['assets/**'],
+    // files, several GB). It must never end up in the precache manifest. The
+    // same goes for public/ai (ADR 0040): the OCR and speech engines and the
+    // speech model are tens of MB and only fetched when someone uses photo or
+    // speech input; the browser's HTTP cache keeps them after that.
+    globIgnores: ['assets/**', 'ai/**'],
     // No navigation fallback, in dev or prod. It must be '' and not null or
     // left out: @vite-pwa/nuxt replaces a missing or null value with '/' in
     // dev (`?? '/'`), and in dev vite-plugin-pwa then precaches `/` and
