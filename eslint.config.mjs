@@ -15,6 +15,9 @@ const VUE_FILES = ['app/**/*.vue']
 const [pluginSetup, jsonSetup] = vueI18n.configs['flat/base']
 
 export default withNuxt(
+  // The desktop app (desktop/, ADR 0035) is its own package; its build folder
+  // holds a copy of the whole production server.
+  { name: 'app/ignores', ignores: ['desktop/**'] },
   pluginSetup,
   { ...jsonSetup, files: LOCALE_FILES },
   {

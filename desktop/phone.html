@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Mit dem Handy verbinden</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 22px 24px 28px; background: #0a0a1a; color: #e5e7eb; font: 14px/1.5 system-ui, "Segoe UI", sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 20px; letter-spacing: .01em; }
+  p { margin: 8px 0; }
+  .muted { color: #9ca3af; }
+  .status { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #6b7280; }
+  .dot.on { background: #22c55e; box-shadow: 0 0 8px #22c55e88; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 8px; padding: 9px 16px; color: #fff; background: #6d5df6; }
+  button.secondary { background: #1f2037; color: #e5e7eb; }
+  button:disabled { opacity: .55; cursor: default; }
+  .panel { margin-top: 16px; padding: 16px; border-radius: 12px; background: #12132a; border: 1px solid #23244a; }
+  .qr { display: flex; gap: 18px; align-items: center; }
+  .qr img { width: 160px; height: 160px; border-radius: 8px; background: #fff; }
+  code { font: 13px ui-monospace, Consolas, monospace; background: #1b1c38; padding: 2px 6px; border-radius: 5px; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+  .warn { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: #2a2210; border: 1px solid #5c4a14; color: #f3d98a; font-size: 13px; }
+  ol { margin: 8px 0 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<h1>Mit dem Handy verbinden</h1>
+<p class="muted">Das Handy öffnet deine App auf diesem PC über das WLAN. Die Daten bleiben auf dem PC.</p>
+
+<div class="status"><span id="dot" class="dot"></span><strong id="status">Wird geladen …</strong></div>
+<button id="toggle" disabled>…</button>
+
+<div id="on" class="panel" hidden>
+  <div class="qr">
+    <img id="qr" alt="QR-Code mit der Adresse der App">
+    <div>
+      <p style="margin-top:0"><strong>QR-Code mit der Handy-Kamera scannen</strong> oder diese Adresse im Handy-Browser öffnen:</p>
+      <div id="urls"></div>
+    </div>
+  </div>
+  <ol>
+    <li>Handy und PC müssen im <strong>selben WLAN</strong> sein.</li>
+    <li>Melde dich am Handy mit <strong>demselben Konto wie am PC</strong> an.</li>
+    <li>Ein neues Konto am Handy anlegen geht nur mit dem Einladungscode: <code id="code"></code> <button id="copy-code" class="secondary" style="padding:3px 10px">Kopieren</button></li>
+    <li>Als Verknüpfung speichern: im Browser „Zum Startbildschirm hinzufügen“.</li>
+  </ol>
+  <p class="muted" style="font-size:12px">Beim ersten Mal fragt Windows, ob der Zugriff erlaubt werden soll. Erlaube ihn für <strong>private Netzwerke</strong>, sonst erreicht das Handy den PC nicht.</p>
+</div>
+
+<p id="no-network" class="warn" hidden>Es wurde keine WLAN- oder Netzwerkadresse gefunden. Verbinde den PC mit dem WLAN und öffne dieses Fenster neu.</p>
+
+<div class="warn">
+  <strong>Nur im eigenen, vertrauenswürdigen WLAN benutzen.</strong>
+  Die Verbindung zum Handy ist nicht verschlüsselt (kein HTTPS): In einem fremden oder öffentlichen WLAN könnten andere Passwort und Sitzung mitlesen. Schalte die Freigabe aus, wenn du sie nicht brauchst. Eine Installation als echte App (PWA) ist ohne HTTPS nicht möglich, nur die Verknüpfung.
+</div>
+
+<script>
+  const $ = id => document.getElementById(id)
+  let state = null
+
+  function render() {
+    $('dot').className = 'dot' + (state.enabled ? ' on' : '')
+    $('status').textContent = state.enabled ? 'Freigabe ist eingeschaltet' : 'Freigabe ist ausgeschaltet'
+    $('toggle').textContent = state.enabled ? 'Freigabe ausschalten' : 'Freigabe einschalten'
+    $('toggle').disabled = false
+    $('on').hidden = !(state.enabled && state.urls.length > 0)
+    $('no-network').hidden = !(state.enabled && state.urls.length === 0)
+    if (state.enabled && state.urls.length > 0) {
+      $('qr').src = state.qr
+      $('code').textContent = state.inviteCode
+      $('urls').replaceChildren(...state.urls.map((url) => {
+        const row = document.createElement('div')
+        row.className = 'row'
+        const code = document.createElement('code')
+        code.textContent = url
+        const copy = document.createElement('button')
+        copy.className = 'secondary'
+        copy.style.padding = '3px 10px'
+        copy.textContent = 'Kopieren'
+        copy.addEventListener('click', () => window.phone.copy(url))
+        row.append(code, copy)
+        return row
+      }))
+    }
+  }
+
+  $('toggle').addEventListener('click', async () => {
+    $('toggle').disabled = true
+    $('toggle').textContent = 'Wird umgestellt …'
+    state = await window.phone.set(!state.enabled)
+    render()
+  })
+  $('copy-code').addEventListener('click', () => window.phone.copy($('code').textContent))
+
+  window.phone.get().then((value) => { state = value; render() })
+</script>
+</body>
+</html>

@@ -70,6 +70,10 @@ export default defineNuxtConfig({
     // Bearer token for /api/admin/** (catalog syncs, ADR 0027). '' = those
     // endpoints are off. Overridable via NUXT_ADMIN_TOKEN.
     adminToken: '',
+    // Trust sign-in requests from the home network's private addresses, for a
+    // phone reaching the desktop app (ADR 0036). Off on a public host.
+    // Overridable via NUXT_TRUST_LOCAL_NETWORK.
+    trustLocalNetwork: false,
     // Set to '1' (via NUXT_E2E_SEED_CATALOG) to upsert the small, deterministic
     // E2E catalog fixture after migrations. Never enabled in normal runs —
     // see server/plugins/migrate.ts and server/db/fixtures/catalog-fixture.ts.
@@ -156,6 +160,8 @@ export default defineNuxtConfig({
     ],
   },
   // See pwa.config.ts: the service worker only precaches build assets and
-  // never answers page navigations (per-user SSR HTML).
-  pwa: pwaOptions,
+  // never answers page navigations (per-user SSR HTML). Off in a Vitest run:
+  // the module's `virtual:pwa-register/vue` fails to load there on Windows, and
+  // no test needs a service worker.
+  pwa: process.env.VITEST ? { ...pwaOptions, disable: true, client: { registerPlugin: false } } : pwaOptions,
 })
