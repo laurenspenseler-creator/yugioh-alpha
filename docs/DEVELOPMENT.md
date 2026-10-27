@@ -215,7 +215,7 @@ participant's deck) and on `/inventory/files`. They need no account and no API k
   (foil, small print) and the lettering what the artwork cannot (a card printed with an
   older picture than the catalog's). The lines are appended to the list, so the review
   table (with "sicher" and "Unsicher") decides what is added. The index
-  (`public/ai/art/`, 11 MB) is committed; after a catalog sync `pnpm ai:art` adds the new
+  (`public/ai/art/`, 23 MB: each artwork twice, sharp and slightly blurred) is committed; after a catalog sync `pnpm ai:art` adds the new
   cards (it downloads their pictures, so the first run takes an hour and 2.5 GB).
   `localStorage['ygo-art-device'] = 'processor'` makes the worker skip the graphics card.
 - **Speech** (`SpeechInput.vue`, `app/utils/speech-transcribe.ts`): Whisper
@@ -224,8 +224,12 @@ participant's deck) and on `/inventory/files`. They need no account and no API k
   240 MB, slow) or "Schnell" with the base one (75 MB), chosen next to the button;
   `app/utils/spoken-card-lines.ts` turns "dreimal Ash Blossom" into `3x Ash Blossom`.
   A name the recognizer wrote as it sounds ("Goldsako-Fark") is still found: the lookup
-  also compares the letters and the sound of all names. A card named twice, anywhere in the
-  list and however spelled, is two copies (the lines are merged by their best candidate).
+  also compares the letters and the sound of all names. A name said with a pause is written
+  as two lines; `POST /api/cards/join-spoken-lines` (`server/utils/spoken-lines.ts`) puts
+  them together when the two are closer to a card name than either alone, or when neither is
+  a name and together they sound like one ("Magic" "Gemma" becomes "Magic Jammer"). A card
+  named twice, anywhere in the list and however spelled, is two copies (the lines are merged
+  by their best candidate). On a tester's recording of 15 cards all 15 are resolved.
   The microphone needs HTTPS, `localhost` or the desktop app; on a phone that opens the
   dev server over plain HTTP a file input records with the phone's own recorder.
 - **Assets**: the OCR core and ONNX runtime are copied to `public/ai` by

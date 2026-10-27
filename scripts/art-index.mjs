@@ -36,24 +36,56 @@ const rows = db.prepare(`
   where c.retired_at is null and i.image_url_cropped is not null
   order by i.id`).all()
 
+// Every artwork gets two vectors: as it is, and slightly blurred, which is what a photo that is not
+// quite sharp makes of it (the first looks for the second on blurred photos and finds it; the
+// matching takes the better of the two for a card). `variants[i]` says which one vector `i` is.
+const BLURS = [0, 1.5]
+
 // What the index already has: the vectors stay as they are (int8 and their scale).
 const known = new Map()
 const metaFile = join(outDir, 'index.json')
 const binFile = join(outDir, 'index.bin')
 if (existsSync(metaFile) && existsSync(binFile)) {
   const meta = JSON.parse(readFileSync(metaFile, 'utf8'))
-  // An index of an older format is rebuilt from scratch.
-  if (meta.version === 2) {
+  // An index of an older format (or one without blurred copies) is rebuilt from scratch.
+  if (meta.version === 2 && meta.variants) {
     const binary = readFileSync(binFile)
     const scaleBytes = meta.count * ART_PARTS * 4
     const scales = new Float32Array(binary.buffer.slice(binary.byteOffset, binary.byteOffset + scaleBytes))
     const values = new Int8Array(binary.buffer.slice(binary.byteOffset + scaleBytes, binary.byteOffset + scaleBytes + meta.count * ART_VECTOR))
-    meta.imageIds.forEach((imageId, i) => known.set(imageId, { cardId: meta.cardIds[i], scales: [...scales.slice(i * ART_PARTS, (i + 1) * ART_PARTS)], values: values.slice(i * ART_VECTOR, (i + 1) * ART_VECTOR) }))
+    meta.imageIds.forEach((imageId, i) => known.set(`${imageId}:${meta.variants[i]}`, { imageId, variant: meta.variants[i], cardId: meta.cardIds[i], scales: [...scales.slice(i * ART_PARTS, (i + 1) * ART_PARTS)], values: values.slice(i * ART_VECTOR, (i + 1) * ART_VECTOR) }))
   }
 }
 
-const todo = rows.filter(row => !known.has(row.imageId)).slice(0, limit)
-console.log(`${rows.length} artworks in the catalog, ${known.size} in the index, ${todo.length} to add`)
+const todo = rows.filter(row => BLURS.some((_blur, variant) => !known.has(`${row.imageId}:${variant}`))).slice(0, limit)
+console.log(`${rows.length} artworks in the catalog, ${known.size} vectors in the index, ${todo.length} artworks to add`)
+
+/** An RGB picture (bytes, `size` x `size`) blurred with a Gaussian of standard deviation `sigma` pixels. */
+function blurred(pixels, size, sigma) {
+  if (sigma === 0) {
+    return pixels
+  }
+  const radius = Math.ceil(3 * sigma)
+  const kernel = Array.from({ length: 2 * radius + 1 }, (_, i) => Math.exp(-((i - radius) ** 2) / (2 * sigma * sigma)))
+  const sum = kernel.reduce((a, b) => a + b, 0)
+  const pass = (from, horizontal) => {
+    const out = new Float32Array(from.length)
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) {
+        for (let c = 0; c < 3; c += 1) {
+          let value = 0
+          for (let k = -radius; k <= radius; k += 1) {
+            const at = horizontal ? y * size + Math.min(size - 1, Math.max(0, x + k)) : Math.min(size - 1, Math.max(0, y + k)) * size + x
+            value += from[at * 3 + c] * kernel[k + radius]
+          }
+          out[(y * size + x) * 3 + c] = value / sum
+        }
+      }
+    }
+    return out
+  }
+  return pass(pass(pixels, true), false)
+}
 
 const failed = []
 if (todo.length > 0) {
@@ -68,14 +100,17 @@ if (todo.length > 0) {
         }
         const image = (await RawImage.fromBlob(await response.blob())).rgb()
         const resized = await image.resize(SIZE, SIZE)
-        const data = new Float32Array(3 * SIZE * SIZE)
-        const plane = SIZE * SIZE
-        for (let i = 0; i < plane; i += 1) {
-          for (let c = 0; c < 3; c += 1) {
-            data[c * plane + i] = (resized.data[i * 3 + c] / 255 - MEAN[c]) / STD[c]
+        return BLURS.map((sigma) => {
+          const source = blurred(resized.data, SIZE, sigma)
+          const data = new Float32Array(3 * SIZE * SIZE)
+          const plane = SIZE * SIZE
+          for (let i = 0; i < plane; i += 1) {
+            for (let c = 0; c < 3; c += 1) {
+              data[c * plane + i] = (source[i * 3 + c] / 255 - MEAN[c]) / STD[c]
+            }
           }
-        }
-        return data
+          return data
+        })
       }
       catch {
         if (attempt === 3) {
@@ -90,10 +125,10 @@ if (todo.length > 0) {
 
   const started = Date.now()
   for (let at = 0; at < todo.length; at += BATCH * DOWNLOADS_AT_ONCE) {
-    // Downloads run side by side; the model gets them eight at a time.
+    // Downloads run side by side; the model gets the pictures eight at a time.
     const chunk = todo.slice(at, at + BATCH * DOWNLOADS_AT_ONCE)
     const decoded = await Promise.all(chunk.map(pixels))
-    const ready = chunk.map((row, i) => ({ row, data: decoded[i] })).filter(entry => entry.data)
+    const ready = chunk.flatMap((row, i) => (decoded[i] ?? []).map((data, variant) => ({ row, variant, data })))
     for (let b = 0; b < ready.length; b += BATCH) {
       const group = ready.slice(b, b + BATCH)
       const input = new Float32Array(group.length * 3 * SIZE * SIZE)
@@ -102,7 +137,7 @@ if (todo.length > 0) {
       const tokens = hidden.dims[1]
       group.forEach((entry, i) => {
         const { scales, values } = quantizeArtVector(artVectorFromTokens(hidden.data, i * tokens * ART_DIMENSION, tokens))
-        known.set(entry.row.imageId, { cardId: entry.row.cardId, scales, values })
+        known.set(`${entry.row.imageId}:${entry.variant}`, { imageId: entry.row.imageId, variant: entry.variant, cardId: entry.row.cardId, scales, values })
       })
     }
     console.log(`${Math.min(at + chunk.length, todo.length)}/${todo.length}, ${Math.round((Date.now() - started) / 1000)} s`)
@@ -111,16 +146,24 @@ if (todo.length > 0) {
 
 // Only artworks of cards that are still in the catalog stay; the order is the catalog's.
 const current = new Set(rows.map(row => row.imageId))
-const imageIds = [...known.keys()].filter(imageId => current.has(imageId)).sort((a, b) => a - b)
-const scales = new Float32Array(imageIds.length * ART_PARTS)
-const values = new Int8Array(imageIds.length * ART_VECTOR)
-imageIds.forEach((imageId, i) => {
-  const entry = known.get(imageId)
+const entries = [...known.values()].filter(entry => current.has(entry.imageId)).sort((a, b) => a.imageId - b.imageId || a.variant - b.variant)
+const scales = new Float32Array(entries.length * ART_PARTS)
+const values = new Int8Array(entries.length * ART_VECTOR)
+entries.forEach((entry, i) => {
   scales.set(entry.scales, i * ART_PARTS)
   values.set(entry.values, i * ART_VECTOR)
 })
-const meta = { version: 2, model: MODEL, dimension: ART_DIMENSION, parts: ART_PARTS, count: imageIds.length, cardIds: imageIds.map(imageId => known.get(imageId).cardId), imageIds }
+const meta = {
+  version: 2,
+  model: MODEL,
+  dimension: ART_DIMENSION,
+  parts: ART_PARTS,
+  count: entries.length,
+  cardIds: entries.map(entry => entry.cardId),
+  imageIds: entries.map(entry => entry.imageId),
+  variants: entries.map(entry => entry.variant),
+}
 mkdirSync(outDir, { recursive: true })
 writeFileSync(metaFile, JSON.stringify(meta))
 writeFileSync(binFile, Buffer.concat([Buffer.from(scales.buffer), Buffer.from(values.buffer)]))
-console.log(`index: ${meta.count} artworks of ${new Set(meta.cardIds).size} cards -> public/ai/art${failed.length ? `; ${failed.length} could not be fetched (no cropped artwork online)` : ''}`)
+console.log(`index: ${meta.count} vectors of ${new Set(meta.imageIds).size} artworks of ${new Set(meta.cardIds).size} cards -> public/ai/art${failed.length ? `; ${failed.length} could not be fetched (no cropped artwork online)` : ''}`)

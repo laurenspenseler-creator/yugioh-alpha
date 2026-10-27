@@ -28,6 +28,8 @@ export interface ArtIndexMeta {
   cardIds: number[]
   /** The artwork (YGOPRODeck image id) of each vector; only the tool that updates the index reads it. */
   imageIds?: number[]
+  /** Which copy of its artwork each vector is (0 as it is, 1 slightly blurred, for photos that are not sharp); only the tool that updates the index reads it. */
+  variants?: number[]
 }
 
 export interface ArtIndex {

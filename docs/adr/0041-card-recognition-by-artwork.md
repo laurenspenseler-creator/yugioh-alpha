@@ -61,11 +61,18 @@ or a generic picture), and neither of two that claim it about equally clearly is
 
 `pnpm ai:art` (`scripts/art-index.mjs`) downloads the artworks the index does not have yet,
 embeds them with the same model and code (`artVectorFromTokens`) the browser uses and writes
-`public/ai/art/index.json` (card id and artwork id of each vector) and `index.bin` (per vector
-two float32 scales and 768 int8 values: 11 MB). A rerun after a catalog sync fetches only the new
-cards; a first run downloads about 2.5 GB and takes an hour. The index is committed: its
+`public/ai/art/index.json` (card id, artwork id and kind of each vector) and `index.bin` (per vector
+two float32 scales and 768 int8 values: 23 MB). A rerun after a catalog sync fetches only the new
+cards; a first run downloads about 2.5 GB and takes an hour or two. The index is committed: its
 inputs are too big to fetch on every checkout. A new card is recognized only after the index
 was rebuilt for it.
+
+Every artwork has two vectors: the picture as it is, and a copy blurred by 1.5 pixels, which is
+what a photo that is not quite sharp makes of it. The matching takes the better of the two for
+a card. Without the blurred copies a photo blurred by 1.2 pixels found 4 or 5 of 6 cards and one
+blurred by 1.6 pixels and made smaller found 4 or 5; with them 5 or 6, and on the sharp real
+photos 10 and 11 of 15 cards instead of 8 and 10. (A photo that is blurred and smaller and
+compressed to the point that a person has to guess is still not recognized.)
 
 ### The scan, in a worker, on the graphics card
 
@@ -105,7 +112,7 @@ found by its artwork alone is listed under its catalog name, as sure or as doubt
   near-identical pictures can blur (Magic Jammer and Trap Jammer, which differ mostly in
   colour, which the model ignores). The printed name covers those: the two ways make up for each
   other's blind spots.
-- The shipped data grows by 24 MB and 44 MB (the two models), 11 MB (index); the first photo
+- The shipped data grows by 24 MB and 44 MB (the two models), 23 MB (index); the first photo
   loads them. The installer gets 68 MB bigger.
 - A photo takes about a minute on a laptop's integrated graphics and a few minutes without
   WebGPU.

@@ -25,6 +25,8 @@ export interface ArtScanRequest {
 export interface ArtScanResult {
   cards: ArtCard[]
   rotation: ArtRotation
+  /** How clearly cards showed with the photo upright, turned right and turned left (empty when the way was given): for finding out why a photo was turned. */
+  rotationScores: number[]
   /** Windows that were turned into a vector. */
   windows: number
   /** Where the model ran: the graphics card, or the processor (thirty times slower). */
@@ -81,6 +83,9 @@ const ROTATION_PROBE_SIZE = 210
 const ROTATION_PROBE_STRIDE = 0.6
 /** A window of the probe counts for the part of its margin above this. */
 const ROTATION_PROBE_FLOOR = 0.05
+/** The upright way is kept when its score is at least this share of the best way's, or when no way scores at least the minimum. */
+const UPRIGHT_SHARE = 0.6
+const ROTATION_MIN_SCORE = 0.2
 const MEAN = [0.485, 0.456, 0.406]
 const STD = [0.229, 0.224, 0.225]
 /** A byte of a channel to what the model takes: (byte / 255 - mean) / std, as one multiplication and one subtraction. */
@@ -394,21 +399,30 @@ async function lookCloser(
 }
 
 /** Which way the photo lies: cards on their side look like nothing to the model, so the three ways are tried on the most textured windows. */
-async function findRotation(request: ArtScanRequest, model: Model, index: ArtIndex, plan: Plan): Promise<{ rotation: ArtRotation, embedded: number }> {
+async function findRotation(request: ArtScanRequest, model: Model, index: ArtIndex, plan: Plan): Promise<{ rotation: ArtRotation, embedded: number, scores: number[] }> {
   if (request.rotation !== 'auto') {
-    return { rotation: request.rotation, embedded: 0 }
+    return { rotation: request.rotation, embedded: 0, scores: [] }
   }
   let best = { rotation: 0 as ArtRotation, score: -1 }
+  let upright = 0
   let embedded = 0
+  const scores: number[] = []
   for (const [step, turn] of ([0, 90, 270] as const).entries()) {
     const probe = await rotationScore(model, index, request.bitmap, turn, plan.probeWindows)
     embedded += probe.embedded
+    scores.push(Math.round(probe.score * 1000) / 1000)
     scope.postMessage({ id: request.id, type: 'progress', stage: 'turning', percent: Math.round(((step + 1) / 3) * 100) })
+    if (turn === 0) {
+      upright = probe.score
+    }
     if (probe.score > best.score) {
       best = { rotation: turn, score: probe.score }
     }
   }
-  return { rotation: best.rotation, embedded }
+  // A photo is upright unless another way is clearly better: when nothing matches well (a blurred
+  // photo) the scores are noise, and noise must not turn the photo on its side.
+  const turned = best.score >= ROTATION_MIN_SCORE && upright < best.score * UPRIGHT_SHARE
+  return { rotation: turned ? best.rotation : 0, embedded, scores }
 }
 
 async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
@@ -422,7 +436,7 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
     scope.postMessage({ id: request.id, type: 'progress', stage, percent: Math.round((done / Math.max(1, total)) * 100) })
   }
 
-  const { rotation, embedded: probed } = await findRotation(request, model, index, plan)
+  const { rotation, embedded: probed, scores } = await findRotation(request, model, index, plan)
   const photo = drawPhoto(request.bitmap, WORKING_EDGE, rotation)
   const windows = byTexture(photo, artWindows(photo.width, photo.height, plan.sizes, plan.stride))
   const embedded = await embedWindows(model, photo, windows, performance.now() + plan.milliseconds * FIRST_PASS_SHARE, progress('scanning'))
@@ -434,6 +448,7 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   return {
     cards: cardsFromHits([...first, ...closer.hits]),
     rotation,
+    rotationScores: scores,
     windows: probed + embedded.windows.length + closer.embedded,
     device,
     seconds: Math.round((performance.now() - started) / 100) / 10,

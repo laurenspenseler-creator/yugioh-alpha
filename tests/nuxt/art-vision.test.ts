@@ -44,7 +44,7 @@ class FakeWorker {
   }
 }
 
-const RESULT = { cards: [{ cardId: 46986414, similarity: 0.8, margin: 0.2, copies: 1, support: 6, sure: true }], rotation: 0, windows: 120, device: 'webgpu', seconds: 12.5 }
+const RESULT = { cards: [{ cardId: 46986414, similarity: 0.8, margin: 0.2, copies: 1, support: 6, sure: true }], rotation: 0, rotationScores: [0.4, 0.02, 0.03], windows: 120, device: 'webgpu', seconds: 12.5 }
 
 describe('recognizeArt', () => {
   afterEach(() => {
