@@ -288,6 +288,16 @@ describe('suggestCatalogMatches with German names (ADR 0015)', () => {
     }
   })
 
+  it('finds a German name that official cards abbreviate when it is written out ("weißer" for "w.")', () => {
+    for (const line of ['Blauäugiger weißer Drache', '3x Blauäugiger Weißer Drache', 'blauäugiger weisser drache']) {
+      expect(suggestCatalogMatches(db, parseEntryLine(line))[0], line).toMatchObject({
+        cardId: CATALOG_FIXTURE_IDS.blueEyesWhiteDragon,
+        matchedBy: 'exact',
+        score: 1,
+      })
+    }
+  })
+
   it('still finds misspelled German names', () => {
     const [best] = suggestCatalogMatches(db, parseEntryLine('Dunkler Magir'))
 

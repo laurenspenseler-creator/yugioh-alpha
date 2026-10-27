@@ -56,7 +56,7 @@ export interface EntrySuggestResult {
 
 /**
  * The shared name folding (`foldCardName`, ADR 0015): lowercase, no accents,
- * `ÃŸ` â†’ `ss`, no spaces or punctuation, so "Number 39: Utopia",
+ * `ß` → `ss`, no spaces or punctuation, so "Number 39: Utopia",
  * "number 39 utopia" and "NUMBER39UTOPIA" compare equal and bigram
  * similarity is not dominated by punctuation/whitespace noise. The same
  * form is stored in `name_search`, so the German pool can compare in SQL.
@@ -85,7 +85,7 @@ function bigrams(value: string): Map<string, number> {
 }
 
 /**
- * SÃ¸rensenâ€“Dice coefficient over character bigrams (0..1). Hand-rolled on
+ * Sørensen–Dice coefficient over character bigrams (0..1). Hand-rolled on
  * purpose: it is a few lines, dependency-free, and tolerant enough for the
  * single-character OCR/speech slips we care about ("Dark Magican",
  * "Blue Eyes White Dragen").
@@ -352,7 +352,7 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
   }
 
   const query = parsed.query.trim()
-  // A bare passcode/set code carries no name information â€” skip the name
+  // A bare passcode/set code carries no name information — skip the name
   // search entirely instead of scanning the catalog for "SDY-006".
   const skipNameSearch = query === ''
     || parsed.passcode !== undefined
@@ -369,7 +369,7 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
   const containsPattern = `%${escaped}%`
 
   // One scan per line: whole-query patterns plus a few token patterns. The
-  // ordering keeps the pool useful rather than arbitrary â€” whole-query hits
+  // ordering keeps the pool useful rather than arbitrary — whole-query hits
   // first, then the names closest in length to the query, which is what a
   // bigram-similar name looks like. No join and no grouping, so this stays
   // a plain table scan; display data is fetched for the ranked ids only.
@@ -439,10 +439,10 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
 }
 
 // Official German names shorten or compound what a typed or chat-written list
-// spells as a plain adjective: "BlauÃ¤ugiger w. Drache" for "weiÃŸer Drache",
+// spells as a plain adjective: "Blauäugiger w. Drache" for "weißer Drache",
 // "Gold-Sarkophag" for "Goldener Sarkophag".
 const GERMAN_NAME_VARIANTS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/(?<![\p{L}])wei(?:ÃŸ|ss)(?:er|e|en|es|em)?(?![\p{L}])/giu, 'w.'],
+  [/(?<![\p{L}])wei(?:ß|ss)(?:er|e|en|es|em)?(?![\p{L}])/giu, 'w.'],
   [/(?<![\p{L}])golden(?:er|e|en|es|em)?(?![\p{L}])/giu, 'gold'],
 ]
 
@@ -612,7 +612,7 @@ export function parseSuggestRequest(body: unknown): SuggestRequest {
 /** Runs the catalog lookup for a validated request: one result per typed line. */
 export function suggestForRequest(db: Db, request: SuggestRequest): EntrySuggestResult[] {
   // Repeated lines ("3x Kuriboh" twice, a pasted list with duplicates) are a
-  // common case and each lookup scans the catalog â€” do it once per query.
+  // common case and each lookup scans the catalog — do it once per query.
   const cache = new Map<string, EntryCandidate[]>()
 
   const results = request.lines.map((line) => {
