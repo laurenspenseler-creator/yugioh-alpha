@@ -20,6 +20,8 @@ import { eq, isNull } from 'drizzle-orm'
 import type { useDb } from '../db'
 import { catalogCard, catalogCardTranslation } from '../db/schema'
 import { SURE_SCORE } from '../../shared/card-photo'
+import type { PhotoCardSource } from '../../shared/card-photo'
+import type { ArtCard } from '../../shared/card-art'
 import { foldCardName as normalizeCardName } from '../../shared/card-name-fold'
 
 type Db = ReturnType<typeof useDb>
@@ -72,6 +74,7 @@ export interface FragmentMatch {
   score: number
   /** Copies seen: the most any single pass saw, because the passes read the same photo. */
   count: number
+  source: PhotoCardSource
 }
 
 interface NameIndex {
@@ -408,17 +411,22 @@ function isHeader(window: WindowMatch): boolean {
  * finds names the first missed). A card counts when a window read like its
  * printed name (`isHeader`) in some pass, or when it was read twice with a very
  * high score (a name repeated where the card's own text quotes it); it counts
- * as many copies as the busiest single pass saw its name.
+ * as many copies as the busiest single pass saw its name. `evidence`, when given, is filled with the
+ * best score of any window per card, whether or not it made the card a match.
  */
-export function matchFragments(db: Db, passes: Array<Array<string | OcrLine>>): FragmentMatch[] {
+export function matchFragments(db: Db, passes: Array<Array<string | OcrLine>>, evidence?: Map<number, number>): FragmentMatch[] {
   const index = nameIndex(db)
   const counts = textCounts(db, index)
-  const byCard = new Map<number, FragmentMatch & { headers: number, repeats: number }>()
+  const byCard = new Map<number, Omit<FragmentMatch, 'source'> & { headers: number, repeats: number }>()
 
   for (const lines of passes) {
     const seen = new Map<number, { headers: number, repeats: number, score: number, text: string }>()
     for (const raw of lines) {
       for (const window of matchLine(index, counts, typeof raw === 'string' ? { text: raw } : raw)) {
+        // Whatever resembled a name, however small or weak, is a trace for the artwork to confirm (`mergeArtCards`).
+        if (evidence && window.score > (evidence.get(window.cardId) ?? 0)) {
+          evidence.set(window.cardId, window.score)
+        }
         const entry = seen.get(window.cardId) ?? { headers: 0, repeats: 0, score: 0, text: window.text }
         if (isHeader(window)) {
           entry.headers += 1
@@ -453,6 +461,42 @@ export function matchFragments(db: Db, passes: Array<Array<string | OcrLine>>): 
   return [...byCard.values()]
     .filter(match => match.headers > 0 || match.repeats >= REPEAT_COUNT)
     // Quotes of the card's own name in its text are not copies: only printed names count.
-    .map(({ headers, repeats: _repeats, ...match }) => ({ ...match, count: Math.max(1, headers) }))
+    .map(({ headers, repeats: _repeats, ...match }) => ({ ...match, count: Math.max(1, headers), source: 'text' as const }))
     .sort((a, b) => b.count - a.count || b.score - a.score || a.name.localeCompare(b.name))
+}
+
+/** What a card recognized only by its artwork scores: sure when the artwork matched clearly, else a doubtful suggestion. */
+export const ART_SURE_CARD_SCORE = 0.9
+export const ART_DOUBTFUL_CARD_SCORE = 0.7
+/**
+ * A doubtful artwork match is sure when some text resembled the card's name at least this much,
+ * however small or weak: two readings that do not depend on each other agree on a card.
+ */
+export const ART_TEXT_EVIDENCE_SCORE = 0.72
+
+/**
+ * Puts the cards recognized by their artwork (ADR 0041) together with the ones whose name was
+ * read: a card found both ways keeps the better score and the larger count; one found by its
+ * artwork alone is listed under its catalog name, as sure when the artwork was clear or some
+ * text (`evidence`, see `matchFragments`) resembled the name, else as doubtful. A card id the
+ * catalog does not know is dropped.
+ */
+export function mergeArtCards(db: Db, matches: FragmentMatch[], art: readonly ArtCard[], evidence: ReadonlyMap<number, number> = new Map()): FragmentMatch[] {
+  const names = nameIndex(db).names
+  const byCard = new Map(matches.map(match => [match.cardId, match]))
+  for (const card of art) {
+    const name = names.get(card.cardId)
+    if (!name) {
+      continue
+    }
+    const score = card.sure || (evidence.get(card.cardId) ?? 0) >= ART_TEXT_EVIDENCE_SCORE ? ART_SURE_CARD_SCORE : ART_DOUBTFUL_CARD_SCORE
+    const known = byCard.get(card.cardId)
+    if (known) {
+      byCard.set(card.cardId, { ...known, score: Math.max(known.score, score), count: Math.max(known.count, card.copies), source: 'both' })
+    }
+    else {
+      byCard.set(card.cardId, { cardId: card.cardId, name, text: name, score, count: card.copies, source: 'art' })
+    }
+  }
+  return [...byCard.values()].sort((a, b) => b.count - a.count || b.score - a.score || a.name.localeCompare(b.name))
 }

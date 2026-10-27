@@ -24,8 +24,10 @@ node_modules
 # Local card image assets (large, generated/copied from YGO Omega)
 public/assets
 
-# Run-time files of the on-device speech and photo reading (scripts/ai-assets.mjs)
-public/ai
+# Run-time files of the on-device speech and photo reading (scripts/ai-assets.mjs); the artwork
+# index (scripts/art-index.mjs) is the one part of them that is committed, it is built from our catalog
+public/ai/*
+!public/ai/art
 
 # Logs
 logs

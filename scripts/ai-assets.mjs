@@ -4,9 +4,9 @@
 //
 //   node scripts/ai-assets.mjs            copy the code (ONNX runtime, OCR core) from node_modules;
 //                                         runs after every `pnpm install`
-//   node scripts/ai-assets.mjs --models   also download the speech models (base and small) and the
-//                                         OCR language data (about 335 MB), so a build works offline;
-//                                         the desktop installer is built with this
+//   node scripts/ai-assets.mjs --models   also download the speech models (base and small), the vision
+//                                         model for artwork and the OCR language data (about 360 MB),
+//                                         so a build works offline; the desktop installer is built with this
 //
 // Without --models the app fetches the model and language data on first use from
 // Hugging Face and the Tesseract data host. public/ai is not committed.
@@ -71,6 +71,12 @@ async function downloadModels() {
     for (const file of ['config.json', 'generation_config.json', 'preprocessor_config.json', 'tokenizer.json', 'tokenizer_config.json', 'onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx']) {
       await download(`https://huggingface.co/${model}/resolve/main/${file}`, join(out, 'models', model, file))
     }
+  }
+  // The vision model that recognizes artwork (ADR 0041): DINOv2-small, 8-bit (about 23 MB, for the
+  // processor) and half precision (about 44 MB, for the graphics card, which is thirty times faster).
+  const vision = 'Xenova/dinov2-small'
+  for (const file of ['config.json', 'preprocessor_config.json', 'onnx/model_quantized.onnx', 'onnx/model_fp16.onnx']) {
+    await download(`https://huggingface.co/${vision}/resolve/main/${file}`, join(out, 'models', vision, file))
   }
   // The Tesseract language data of the "4.0.0" set the library uses by default.
   for (const language of ['eng', 'deu']) {

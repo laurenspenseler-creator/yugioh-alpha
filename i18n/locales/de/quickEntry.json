@@ -40,6 +40,14 @@
       "hint": "Lege die Karten gut sichtbar nebeneinander, mit gut lesbarem Namen oben auf jeder Karte, bei gutem Licht. Die Auswertung läuft auf deinem Gerät (die Fotos werden nicht hochgeladen), dauert etwa eine Minute pro Foto und ist eine Hilfe: Prüfe die Karten unten, bevor etwas gespeichert wird. Karten, die quer liegen, werden erkannt; spiegelnde Folie und kleine Fotos sind schwer zu lesen.",
       "starting": "Das Erkennungsmodul wird geladen …",
       "progress": "Foto {photo} von {photos} wird gelesen (Durchlauf {pass} von {passes}) …",
+      "art": {
+        "model": "Bilderkennung wird geladen … {percent} %",
+        "index": "Kartenbilder werden geladen …",
+        "turning": "Ausrichtung des Fotos wird geprüft …",
+        "scanning": "Karten werden am Bild erkannt … {percent} %",
+        "matching": "Bilder werden mit allen Karten verglichen … {percent} %",
+        "refining": "Treffer werden genauer geprüft … {percent} %"
+      },
       "result": "{count} Karte erkannt. | {count} Karten erkannt.",
       "unsure": "{count} davon ist unsicher. | {count} davon sind unsicher.",
       "none": "Auf den Fotos wurden keine Karten erkannt. Versuche es mit besserem Licht, näher dran und so, dass der Name oben auf jeder Karte gut lesbar ist.",

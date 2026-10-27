@@ -48,3 +48,4 @@ mark the old as superseded.
 | [0038](0038-card-text-filters-and-handtrap-definitions.md) | Card-text filters, exceptions, and what "hand traps" means | Accepted |
 | [0039](0039-decks-of-tournament-participants.md) | Several decks per tournament participant, set by the organizer | Accepted |
 | [0040](0040-on-device-photo-and-speech-input.md) | Photo and speech input run on the device, without an account or key | Accepted |
+| [0041](0041-card-recognition-by-artwork.md) | Cards on a photo are recognized by their artwork | Accepted |

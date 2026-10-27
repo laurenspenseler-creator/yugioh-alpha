@@ -203,8 +203,18 @@ collections are built by moving copies out of it, per deck if wanted
       a better set of passes, in English and German, and cards lying on their side turned
       upright; dictated names found by letters and sound; a card named twice is two copies;
       the ten kind chips always in one row, Pendel included.
+- [x] Tester feedback, round 5 (the photos found too little): cards on a photo are
+      recognized by their artwork as well as by their printed names, on the device
+      (DINOv2 against an index of all catalog pictures, on the graphics card when there is
+      one; [ADR 0041](adr/0041-card-recognition-by-artwork.md)). On three real photos
+      22 of 36 cards are found sure and without a wrong one where the lettering found 3
+      of 15; a card printed with an older picture still needs its name read.
 - [ ] Stronger photo reading with a vision model as an option (the assistant's API
       key, for example a free Gemini tier), next to the on-device reading.
+- [ ] Later, once the features are done: a speed pass (the artwork scan takes about a minute
+      on a laptop's graphics, minutes without WebGPU; threads for the processor need
+      cross-origin isolation) and a pass over the whole code for what can be smaller
+      (the installer is about 480 MB, mostly models).
 - [ ] Install the phone's view as a real PWA: needs HTTPS (a trusted local
       certificate or a tunnel such as Tailscale).
 
@@ -232,10 +242,9 @@ confirmed via its `search_catalog` tool — see
 [ADR 0010](adr/0010-chat-assistant-with-tools.md), which superseded the
 original client-side-OCR approach of
 [ADR 0003](adr/0003-client-side-ocr-and-speech-entry.md)). Recognizing a card
-from its artwork alone via perceptual hashing or embeddings against catalog
-images, without a model in the loop, is still open and depends on the locally
-cached card images that [ADR 0001](adr/0001-card-catalog-data-model.md) lists
-as follow-up work.
+from its artwork alone, by embeddings against the catalog images, is done
+on the device ([ADR 0041](adr/0041-card-recognition-by-artwork.md)); it needs
+no cached card images, the index of the pictures' vectors is committed.
 
 Voice input: Web Speech dictation in the chat composer was removed because it
 didn't work reliably. Dictation of card lists is back, running on the device

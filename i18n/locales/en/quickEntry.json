@@ -40,6 +40,14 @@
       "hint": "Lay the cards next to each other in good light, with the name at the top of each card easy to read. Reading happens on your device (the photos are not uploaded), takes about a minute per photo and is an aid: check the cards below before anything is saved. Cards lying on their side are recognized; shiny foil and small photos are hard to read.",
       "starting": "Loading the recognition module …",
       "progress": "Reading photo {photo} of {photos} (pass {pass} of {passes}) …",
+      "art": {
+        "model": "Loading the image recognition … {percent} %",
+        "index": "Loading the card images …",
+        "turning": "Checking which way the photo lies …",
+        "scanning": "Recognizing the cards by their artwork … {percent} %",
+        "matching": "Comparing the pictures with all cards … {percent} %",
+        "refining": "Taking a closer look at the matches … {percent} %"
+      },
       "result": "{count} card recognized. | {count} cards recognized.",
       "unsure": "{count} of them is uncertain. | {count} of them are uncertain.",
       "none": "No cards were recognized in the photos. Try better light, get closer, and make sure the name at the top of each card is easy to read.",

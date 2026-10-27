@@ -1,11 +1,15 @@
 <script setup lang="ts">
-// "Fotos auswerten" (ADR 0040): one or several photos of cards are read on the
-// device (Tesseract, WebAssembly), the recognized text goes to the server, which
-// finds the card names in it, and the cards come out as lines ("3x Dark Magician")
-// for the review table of whoever uses this: the quick capture, the deck import,
-// the inventory's files. Nothing is saved here, and only text leaves the device.
+// "Fotos auswerten" (ADR 0040, 0041): one or several photos of cards are read on the
+// device twice at the same time: Tesseract (WebAssembly) reads the printed names, and a
+// vision model recognizes the artwork of each card. The text and the card ids go to the
+// server, which finds the card names in the text and puts both together, and the cards come
+// out as lines ("3x Dark Magician") for the review table of whoever uses this: the quick
+// capture, the deck import, the inventory's files. Nothing is saved here, and only text
+// and card ids leave the device, never the photo.
 import { SURE_SCORE } from '~~/shared/card-photo'
 import type { PhotoCardMatch } from '~~/shared/card-photo'
+import { recognizeArt } from '~/utils/art-vision'
+import type { ArtProgress } from '~/utils/art-vision'
 import { readPhotoLines } from '~/utils/photo-ocr'
 
 const MAX_PHOTOS = 8
@@ -23,6 +27,7 @@ const fileInput = useTemplateRef<HTMLInputElement>('fileInput')
 const cameraInput = useTemplateRef<HTMLInputElement>('cameraInput')
 const isBusy = ref(false)
 const progress = ref<{ photo: number, photos: number, pass: number, passes: number } | null>(null)
+const artProgress = ref<ArtProgress | null>(null)
 const errorMessage = ref('')
 const result = ref<{ cards: number, unsure: number } | null>(null)
 
@@ -35,6 +40,10 @@ onMounted(() => {
 const progressLabel = computed(() => progress.value
   ? t('quickEntry.photo.progress', { photo: progress.value.photo, photos: progress.value.photos, pass: progress.value.pass, passes: progress.value.passes })
   : '')
+const artLabel = computed(() => {
+  const current = artProgress.value
+  return current ? t(`quickEntry.photo.art.${current.stage}`, { percent: n(current.percent ?? 0, 'integer') }) : ''
+})
 
 function validate(files: File[]): string {
   if (files.length > MAX_PHOTOS) {
@@ -70,14 +79,29 @@ async function onPick(event: Event) {
   const found = new Map<number, PhotoCardMatch>()
   try {
     for (const [index, file] of files.entries()) {
-      // English and German are read together whatever the card language is: a German name read
-      // with the English model alone came out as a different card in about every third photo.
-      const passes = await readPhotoLines(file, {
-        onPass: (pass, total) => {
-          progress.value = { photo: index + 1, photos: files.length, pass: pass + 1, passes: total }
-        },
+      // The printed names and the artwork are looked at at the same time, each in a thread of its own;
+      // one that fails (no artwork index in this build, say) leaves the other's cards. English and
+      // German are read together whatever the card language is: a German name read with the English
+      // model alone came out as a different card in about every third photo.
+      const [text, art] = await Promise.allSettled([
+        readPhotoLines(file, {
+          onPass: (pass, total) => {
+            progress.value = { photo: index + 1, photos: files.length, pass: pass + 1, passes: total }
+          },
+        }),
+        recognizeArt(file, { onProgress: (current) => { artProgress.value = current } }),
+      ])
+      if (text.status === 'rejected' && art.status === 'rejected') {
+        throw text.reason
+      }
+      if (art.status === 'rejected') {
+        // The text reading alone still gives cards; what went wrong with the artwork is for whoever opens the console.
+        console.warn('[photo] the artwork could not be recognized', art.reason)
+      }
+      const response = await $fetch<{ matches: PhotoCardMatch[] }>('/api/cards/match-fragments', {
+        method: 'POST',
+        body: { passes: text.status === 'fulfilled' ? text.value : [], art: art.status === 'fulfilled' ? art.value.cards : [] },
       })
-      const response = await $fetch<{ matches: PhotoCardMatch[] }>('/api/cards/match-fragments', { method: 'POST', body: { passes } })
       for (const match of response.matches) {
         const known = found.get(match.cardId)
         // The same card on two photos adds up: the review table lets the user take copies off.
@@ -92,6 +116,7 @@ async function onPick(event: Event) {
   finally {
     isBusy.value = false
     progress.value = null
+    artProgress.value = null
   }
 
   // A sure card goes in by its catalog name; a doubtful one as it was read, so the review shows it as doubtful.
@@ -159,6 +184,11 @@ async function onPick(event: Event) {
       data-testid="photo-progress"
     >
       {{ progressLabel || t('quickEntry.photo.starting') }}
+      <span
+        v-if="artLabel"
+        class="block text-xs text-muted"
+        data-testid="photo-art-progress"
+      >{{ artLabel }}</span>
     </p>
     <p
       v-else-if="result"

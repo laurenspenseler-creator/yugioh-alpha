@@ -13,6 +13,7 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare && node scripts/ai-assets.mjs",
     "ai:assets": "node scripts/ai-assets.mjs --models",
+    "ai:art": "node scripts/art-index.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "auth:generate": "npx @better-auth/cli generate",

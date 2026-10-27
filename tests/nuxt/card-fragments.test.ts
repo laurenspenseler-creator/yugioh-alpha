@@ -7,8 +7,10 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
 import { describe, expect, it } from 'vitest'
 import * as schema from '../../server/db/schema'
-import { EVERYDAY_WORD_TEXTS, HEADER_SIZE, matchFragments, MAX_FRAGMENT_LENGTH, MAX_FRAGMENT_PASSES, MAX_FRAGMENTS_PER_PASS, SURE_SCORE } from '../../server/utils/card-fragments'
+import { ART_DOUBTFUL_CARD_SCORE, ART_SURE_CARD_SCORE, ART_TEXT_EVIDENCE_SCORE, EVERYDAY_WORD_TEXTS, HEADER_SIZE, matchFragments, MAX_FRAGMENT_LENGTH, MAX_FRAGMENT_PASSES, MAX_FRAGMENTS_PER_PASS, mergeArtCards, SURE_SCORE } from '../../server/utils/card-fragments'
+import { MAX_ART_CARDS, parseArtCards } from '../../server/utils/card-art-input'
 import { parseFragmentPasses } from '../../server/utils/card-fragments-input'
+import type { ArtCard } from '../../shared/card-art'
 import { foldCardName } from '../../shared/card-name-fold'
 import { seedGermanNames } from './fixtures/german-names'
 
@@ -95,6 +97,88 @@ describe('matchFragments', () => {
   it('finds nothing in pure noise, digits and short words', () => {
     expect(matchFragments(db, [['BEETS EE ee — =', '5532222 | | = 29555505', 'ANT EN == J', 'weed DEZ Ks', 'to', '', 'a b c d e f']])).toEqual([])
     expect(matchFragments(db, [[]])).toEqual([])
+  })
+})
+
+describe('mergeArtCards: the artwork and the printed names together (ADR 0041)', () => {
+  const db = createTestDb()
+  const art = (cardId: number, extra: Partial<ArtCard> = {}): ArtCard => ({ cardId, similarity: 0.8, margin: 0.2, copies: 1, support: 6, sure: true, ...extra })
+
+  it('lists a card that only its artwork gave under its catalog name, as sure when the artwork was clear', () => {
+    const merged = mergeArtCards(db, [], [art(40640057), art(15025844, { sure: false, similarity: 0.58 })])
+
+    expect(merged).toEqual([
+      { cardId: 40640057, name: 'Kuriboh', text: 'Kuriboh', score: ART_SURE_CARD_SCORE, count: 1, source: 'art' },
+      { cardId: 15025844, name: 'Mystical Elf', text: 'Mystical Elf', score: ART_DOUBTFUL_CARD_SCORE, count: 1, source: 'art' },
+    ])
+    expect(ART_SURE_CARD_SCORE).toBeGreaterThanOrEqual(SURE_SCORE)
+    expect(ART_DOUBTFUL_CARD_SCORE).toBeLessThan(SURE_SCORE)
+  })
+
+  it('lets a card found both ways keep the better score and the larger count', () => {
+    const text = matchFragments(db, [['DARK MAGICIAN', 'DARK MAGICIAN']])
+    expect(text[0]).toMatchObject({ name: 'Dark Magician', count: 2, source: 'text' })
+
+    const [merged] = mergeArtCards(db, text, [art(46986414, { copies: 3, sure: false })])
+
+    expect(merged).toMatchObject({ cardId: 46986414, count: 3, source: 'both' })
+    expect(merged!.score).toBeGreaterThanOrEqual(ART_DOUBTFUL_CARD_SCORE)
+  })
+
+  it('does not lower the score of a name that was read well when the artwork is doubtful', () => {
+    const text = matchFragments(db, [['KURIBOH']])
+
+    const [merged] = mergeArtCards(db, text, [art(40640057, { sure: false })])
+
+    expect(merged!.score).toBe(1)
+  })
+
+  it('leaves out a card id the catalog does not know, and keeps the text matches when there is no artwork', () => {
+    const text = matchFragments(db, [['KURIBOH']])
+
+    expect(mergeArtCards(db, text, [art(999)])).toEqual(text)
+    expect(mergeArtCards(db, text, [])).toEqual(text)
+  })
+
+  it('puts the cards with the most copies first', () => {
+    const merged = mergeArtCards(db, [], [art(40640057), art(46986414, { copies: 2 })])
+
+    expect(merged.map(match => match.name)).toEqual(['Dark Magician', 'Kuriboh'])
+  })
+
+  it('takes a doubtful artwork match as sure when some text, however small, resembled the card\'s name', () => {
+    // KURIBOH in the small print of an effect text is no card by itself, but it is a trace.
+    const evidence = new Map<number, number>()
+    const text = matchFragments(db, [[{ text: 'KURIBOH', heights: [0.6] }]], evidence)
+    expect(text).toEqual([])
+    expect(evidence.get(40640057)).toBeGreaterThanOrEqual(ART_TEXT_EVIDENCE_SCORE)
+
+    const merged = mergeArtCards(db, text, [art(40640057, { sure: false }), art(15025844, { sure: false })], evidence)
+
+    expect(merged.find(match => match.cardId === 40640057)).toMatchObject({ score: ART_SURE_CARD_SCORE, source: 'art' })
+    expect(merged.find(match => match.cardId === 15025844)).toMatchObject({ score: ART_DOUBTFUL_CARD_SCORE })
+  })
+
+  it('leaves what is weak evidence alone', () => {
+    const merged = mergeArtCards(db, [], [art(40640057, { sure: false })], new Map([[40640057, ART_TEXT_EVIDENCE_SCORE - 0.05]]))
+
+    expect(merged[0]!.score).toBe(ART_DOUBTFUL_CARD_SCORE)
+  })
+})
+
+describe('parseArtCards (the artwork part of the request body)', () => {
+  const valid = { cardId: 46986414, similarity: 0.8, margin: 0.2, copies: 2, support: 6, sure: true }
+
+  it('takes recognized cards as they are', () => {
+    expect(parseArtCards([valid])).toEqual([valid])
+    expect(parseArtCards([])).toEqual([])
+  })
+
+  it('refuses what is not a list of well-formed cards', () => {
+    for (const body of [undefined, null, 'x', {}, [1], [{}], [{ ...valid, cardId: 0 }], [{ ...valid, cardId: 1.5 }], [{ ...valid, similarity: 'high' }], [{ ...valid, similarity: 2 }], [{ ...valid, margin: -1 }], [{ ...valid, copies: 0 }], [{ ...valid, copies: 100 }], [{ ...valid, support: 0 }], [{ ...valid, support: 'many' }], [{ ...valid, sure: 'yes' }]]) {
+      expect(parseArtCards(body), JSON.stringify(body)).toBeNull()
+    }
+    expect(parseArtCards(Array.from({ length: MAX_ART_CARDS + 1 }, () => valid))).toBeNull()
   })
 })
 

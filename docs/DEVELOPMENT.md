@@ -202,14 +202,22 @@ never refills the review table, so nothing is written twice.
 sit above the list here, in the deck import dialog (also for a tournament
 participant's deck) and on `/inventory/files`. They need no account and no API key:
 
-- **Photos** (`app/components/cards/PhotoImport.vue`, `app/utils/photo-ocr.ts`): several
-  photos at once, read in the browser with Tesseract (WASM, English and German, three
-  passes; a photo of cards lying on their side is turned the right way up first); only
-  the text lines and their relative heights go to `POST /api/cards/match-fragments`
-  (`server/utils/card-fragments.ts`), which returns candidate cards. A photo of one
-  card is read reliably; in a photo of six cards about nine in ten are found, plus a
-  few wrong hits, fewer on a small photo or with foil lettering. The lines are appended
-  to the list, so the review table (with "sicher" and "Unsicher") decides what is added.
+- **Photos** (`app/components/cards/PhotoImport.vue`): several photos at once, looked at
+  in the browser in two ways at the same time. Tesseract (`app/utils/photo-ocr.ts`, WASM,
+  English and German, three passes; a photo of cards lying on their side is turned the
+  right way up first) reads the printed names. A vision model (DINOv2) recognizes the
+  artwork (`app/utils/art-vision.ts`, the Web Worker `app/workers/art-vision.worker.ts`,
+  [ADR 0041](adr/0041-card-recognition-by-artwork.md)): windows of the photo against an
+  index of all catalog pictures, on the graphics card (WebGPU) when there is one, else
+  on the processor, which takes minutes. Only the text lines and the card ids go to
+  `POST /api/cards/match-fragments` (`server/utils/card-fragments.ts`), which puts both
+  together and returns candidate cards. The artwork finds what the lettering cannot
+  (foil, small print) and the lettering what the artwork cannot (a card printed with an
+  older picture than the catalog's). The lines are appended to the list, so the review
+  table (with "sicher" and "Unsicher") decides what is added. The index
+  (`public/ai/art/`, 11 MB) is committed; after a catalog sync `pnpm ai:art` adds the new
+  cards (it downloads their pictures, so the first run takes an hour and 2.5 GB).
+  `localStorage['ygo-art-device'] = 'processor'` makes the worker skip the graphics card.
 - **Speech** (`SpeechInput.vue`, `app/utils/speech-transcribe.ts`): Whisper
   (`@huggingface/transformers`, WASM, in the Web Worker `app/workers/speech.worker.ts` so the
   page stays usable) transcribes the recording, "Genau" with the small model (the default,
@@ -222,10 +230,11 @@ participant's deck) and on `/inventory/files`. They need no account and no API k
   dev server over plain HTTP a file input records with the phone's own recorder.
 - **Assets**: the OCR core and ONNX runtime are copied to `public/ai` by
   `pnpm ai:assets` (part of `postinstall`; git-ignored). `pnpm ai:assets --models`
-  also downloads both speech models and the OCR language data (about 335 MB); the
-  desktop build does that (`desktop/scripts/prepare-server.mjs`) so the installed app
-  works offline. Without them the browser fetches the model from Hugging Face on
-  first use. `public/ai` is not in the service worker's precache.
+  also downloads both speech models, the vision model (8-bit and half precision) and the
+  OCR language data (about 400 MB); the desktop build does that
+  (`desktop/scripts/prepare-server.mjs`) so the installed app works offline. Without them
+  the browser fetches the model from Hugging Face on first use. `public/ai` is not in the
+  service worker's precache; only `public/ai/art` (the artwork index) is committed.
 - After adding files under `public/`, restart `pnpm dev` (Vite can crash on the new
   folder).
 
