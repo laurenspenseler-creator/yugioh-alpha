@@ -437,17 +437,6 @@ function positions(length: number, size: number, step: number): number[] {
   return out
 }
 
-/** How much two windows overlap, by area (0 apart, 1 the same). */
-export function overlap(a: ArtWindow, b: ArtWindow): number {
-  const width = Math.min(a.x + a.size, b.x + b.size) - Math.max(a.x, b.x)
-  const height = Math.min(a.y + a.size, b.y + b.size) - Math.max(a.y, b.y)
-  if (width <= 0 || height <= 0) {
-    return 0
-  }
-  const shared = width * height
-  return shared / (a.size * a.size + b.size * b.size - shared)
-}
-
 export interface ArtHit extends ArtMatch {
   window: ArtWindow
 }

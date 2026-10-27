@@ -7,7 +7,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
 import { describe, expect, it } from 'vitest'
 import * as schema from '../../server/db/schema'
-import { ART_DOUBTFUL_CARD_SCORE, ART_SURE_CARD_SCORE, ART_TEXT_EVIDENCE_SCORE, EVERYDAY_WORD_TEXTS, HEADER_SIZE, matchFragments, MAX_FRAGMENT_LENGTH, MAX_FRAGMENT_PASSES, MAX_FRAGMENTS_PER_PASS, mergeArtCards, SURE_SCORE } from '../../server/utils/card-fragments'
+import { ART_SURE_CARD_SCORE, ART_TEXT_EVIDENCE_SCORE, EVERYDAY_WORD_TEXTS, HEADER_SIZE, matchFragments, MAX_FRAGMENT_LENGTH, MAX_FRAGMENT_PASSES, MAX_FRAGMENTS_PER_PASS, mergeArtCards, SURE_SCORE } from '../../server/utils/card-fragments'
 import { MAX_ART_CARDS, parseArtCards } from '../../server/utils/card-art-input'
 import { parseFragmentPasses } from '../../server/utils/card-fragments-input'
 import type { ArtCard } from '../../shared/card-art'
@@ -104,15 +104,15 @@ describe('mergeArtCards: the artwork and the printed names together (ADR 0041)',
   const db = createTestDb()
   const art = (cardId: number, extra: Partial<ArtCard> = {}): ArtCard => ({ cardId, similarity: 0.8, margin: 0.2, copies: 1, support: 6, sure: true, ...extra })
 
-  it('lists a card that only its artwork gave under its catalog name, as sure when the artwork was clear', () => {
-    const merged = mergeArtCards(db, [], [art(40640057), art(15025844, { sure: false, similarity: 0.58 })])
+  it('lists a card that only its artwork gave under its catalog name, when the artwork was sure', () => {
+    const merged = mergeArtCards(db, [], [art(40640057)])
 
-    expect(merged).toEqual([
-      { cardId: 40640057, name: 'Kuriboh', text: 'Kuriboh', score: ART_SURE_CARD_SCORE, count: 1, source: 'art' },
-      { cardId: 15025844, name: 'Mystical Elf', text: 'Mystical Elf', score: ART_DOUBTFUL_CARD_SCORE, count: 1, source: 'art' },
-    ])
+    expect(merged).toEqual([{ cardId: 40640057, name: 'Kuriboh', text: 'Kuriboh', score: ART_SURE_CARD_SCORE, count: 1, source: 'art' }])
     expect(ART_SURE_CARD_SCORE).toBeGreaterThanOrEqual(SURE_SCORE)
-    expect(ART_DOUBTFUL_CARD_SCORE).toBeLessThan(SURE_SCORE)
+  })
+
+  it('leaves out a card that only a doubtful artwork match gave: nine in ten of them are wrong', () => {
+    expect(mergeArtCards(db, [], [art(15025844, { sure: false, similarity: 0.58 })])).toEqual([])
   })
 
   it('lets a card found both ways keep the better score and the larger count', () => {
@@ -122,7 +122,7 @@ describe('mergeArtCards: the artwork and the printed names together (ADR 0041)',
     const [merged] = mergeArtCards(db, text, [art(46986414, { copies: 3, sure: false })])
 
     expect(merged).toMatchObject({ cardId: 46986414, count: 3, source: 'both' })
-    expect(merged!.score).toBeGreaterThanOrEqual(ART_DOUBTFUL_CARD_SCORE)
+    expect(merged!.score).toBeGreaterThanOrEqual(text[0]!.score)
   })
 
   it('does not lower the score of a name that was read well when the artwork is doubtful', () => {
@@ -156,13 +156,13 @@ describe('mergeArtCards: the artwork and the printed names together (ADR 0041)',
     const merged = mergeArtCards(db, text, [art(40640057, { sure: false }), art(15025844, { sure: false })], evidence)
 
     expect(merged.find(match => match.cardId === 40640057)).toMatchObject({ score: ART_SURE_CARD_SCORE, source: 'art' })
-    expect(merged.find(match => match.cardId === 15025844)).toMatchObject({ score: ART_DOUBTFUL_CARD_SCORE })
+    expect(merged.find(match => match.cardId === 15025844)).toBeUndefined()
   })
 
   it('leaves what is weak evidence alone', () => {
     const merged = mergeArtCards(db, [], [art(40640057, { sure: false })], new Map([[40640057, ART_TEXT_EVIDENCE_SCORE - 0.05]]))
 
-    expect(merged[0]!.score).toBe(ART_DOUBTFUL_CARD_SCORE)
+    expect(merged).toEqual([])
   })
 })
 

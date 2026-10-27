@@ -478,37 +478,38 @@ export function matchFragments(db: Db, passes: Array<Array<string | OcrLine>>, e
     .sort((a, b) => b.count - a.count || b.score - a.score || a.name.localeCompare(b.name))
 }
 
-/** What a card recognized only by its artwork scores: sure when the artwork matched clearly, else a doubtful suggestion. */
+/** What a card recognized by its artwork scores: sure (the page lists it under its catalog name). */
 export const ART_SURE_CARD_SCORE = 0.9
-export const ART_DOUBTFUL_CARD_SCORE = 0.7
 /**
- * A doubtful artwork match is sure when some text resembled the card's name at least this much,
- * however small or weak: two readings that do not depend on each other agree on a card.
+ * An artwork match that is not sure counts when some text resembled the card's name at least this
+ * much, however small or weak: two readings that do not depend on each other agree on a card.
  */
 export const ART_TEXT_EVIDENCE_SCORE = 0.72
 
 /**
  * Puts the cards recognized by their artwork (ADR 0041) together with the ones whose name was
  * read: a card found both ways keeps the better score and the larger count; one found by its
- * artwork alone is listed under its catalog name, as sure when the artwork was clear or some
- * text (`evidence`, see `matchFragments`) resembled the name, else as doubtful. A card id the
- * catalog does not know is dropped.
+ * artwork alone is listed under its catalog name when the artwork was sure or some text
+ * (`evidence`, see `matchFragments`) resembled the name. An artwork match that is not sure and
+ * has no such text is left out: nine in ten of them are wrong, and the page lists a card under
+ * its catalog name, which makes a wrong one look like a right one. A card id the catalog does
+ * not know is dropped.
  */
 export function mergeArtCards(db: Db, matches: FragmentMatch[], art: readonly ArtCard[], evidence: ReadonlyMap<number, number> = new Map()): FragmentMatch[] {
   const names = nameIndex(db).names
   const byCard = new Map(matches.map(match => [match.cardId, match]))
   for (const card of art) {
     const name = names.get(card.cardId)
-    if (!name) {
+    const known = byCard.get(card.cardId)
+    const confirmed = card.sure || (evidence.get(card.cardId) ?? 0) >= ART_TEXT_EVIDENCE_SCORE
+    if (!name || (!confirmed && !known)) {
       continue
     }
-    const score = card.sure || (evidence.get(card.cardId) ?? 0) >= ART_TEXT_EVIDENCE_SCORE ? ART_SURE_CARD_SCORE : ART_DOUBTFUL_CARD_SCORE
-    const known = byCard.get(card.cardId)
     if (known) {
-      byCard.set(card.cardId, { ...known, score: Math.max(known.score, score), count: Math.max(known.count, card.copies), source: 'both' })
+      byCard.set(card.cardId, { ...known, score: confirmed ? Math.max(known.score, ART_SURE_CARD_SCORE) : known.score, count: Math.max(known.count, card.copies), source: 'both' })
     }
     else {
-      byCard.set(card.cardId, { cardId: card.cardId, name, text: name, score, count: card.copies, source: 'art' })
+      byCard.set(card.cardId, { cardId: card.cardId, name, text: name, score: ART_SURE_CARD_SCORE, count: card.copies, source: 'art' })
     }
   }
   return [...byCard.values()].sort((a, b) => b.count - a.count || b.score - a.score || a.name.localeCompare(b.name))

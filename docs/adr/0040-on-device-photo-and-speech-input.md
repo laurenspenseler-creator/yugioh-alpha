@@ -80,13 +80,30 @@ sound: the consonant skeleton of a name without its vowels (`phoneticKey`), whos
 is capped at 0.8 so it is never taken for sure. On synthetic dictation of 21 cards
 this took base from 8 to 14 cards found and `whisper-small` from 14 to 18.
 
+Whisper does not always write what was said as one card per line. A name said with a pause
+comes out as two lines ("Schwarz Glänzender Soldat", "Gesandter des Anfangs"; "Magic",
+"Gemma" for "Magic Jammer"), and a list said without a pause for each card can come out
+as one line with no comma in it. `POST /api/cards/join-spoken-lines`
+(`server/utils/spoken-lines.ts`) mends both: a long line is cut into the stretches of
+words that are closest to card names (a dynamic program over the words, a number word
+before a stretch being its quantity), and neighbouring lines are joined when together they
+are closer to a card name than either alone, or when neither is a name and together they
+sound like one (the sound key treats g, j and k alike and drops the r of "-er"). On a
+tester's recording of 15 cards (German names, English ones, and a card said with a pause)
+all 15 are resolved, and on synthetic dictations of random cards 13 to 15 of 15; 10-card
+lists without any break and with one or two wrong letters per name resolve 93 % of the cards.
+
 A card named twice is two copies, wherever in the list and however it was spelled: the
 lines are merged by the card their best candidate is (from a score of 0.6), and a quantity
 that comes from merging equal lines is no longer taken back by `resolveEntryLine` (it
 was: "Kuriboh" said twice was one copy). `whisper-small` writes down far more names right
-(14 of 21 on the test dictation against 8 for base) and is slower; with four threads
-(possible only on a page with cross-origin isolation, which the app does not set yet) 9 s
-of speech took 33 s, on one thread about 4 s per second of speech.
+(14 of 21 on the test dictation against 8 for base) and is slower: on one thread about 2 to 4 s
+per second of speech (a tester's 37 s recording took 60 s on an idle laptop). Four threads
+(only on a page with cross-origin isolation, which the app does not set) did not make it
+faster in a later measurement: the decoder, which writes one word after the other, is what
+takes the time. Whisper on the graphics card (WebGPU) was tried and is no way out: its half
+precision decoder writes nonsense, and with the 4-bit decoder the small model was either
+15 minutes slow or lost the end of the recording.
 
 ### Where the engines and models live
 

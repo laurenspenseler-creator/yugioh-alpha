@@ -88,17 +88,21 @@ compressed to the point that a person has to guess is still not recognized.)
 `app/workers/art-vision.worker.ts` draws the photo with a long edge of 1600 px (turned a
 quarter if it lies on its side: the most textured windows of each of the three ways are
 compared by how clearly they match, which found the right way on every photo) and cuts square
-windows of four sizes out of it, three fifths of a window apart, about 400 of them. The most
-textured windows go first (paper, mats and sleeves are flat). Then the closer look, up to 30
-places and about 700 windows.
+windows of seven sizes (150 to 1,100 px: the art of a card is a tenth to two thirds of the
+photo, depending on how many cards are on it) out of it, three fifths of a window apart, about
+450 of them. The most textured windows go first (paper, mats and sleeves are flat). Then the
+closer look, up to 15 places and about 450 windows.
 
 A pass of the model in WebAssembly takes a second per window, which would make a photo a matter
-of ten minutes. On a graphics card with WebGPU and half precision it takes 40 milliseconds, so the
-worker runs the model there (`model_fp16.onnx`, 44 MB) and compares the windows with the index
-there too (`app/workers/art-gpu.ts`, one compute shader: 400 windows against 14,600 vectors in
-a tenth of a second where JavaScript needs twenty). Without WebGPU it uses the 8-bit model on
-the processor with a sparser first pass and a shorter closer look, and gets a few minutes;
-`localStorage['ygo-art-device'] = 'processor'` forces that way for testing.
+of ten minutes. On a graphics card with WebGPU and half precision it takes 40 to 55 milliseconds,
+so the worker runs the model there (`model_fp16.onnx`, 44 MB; a card or browser that cannot do
+half precision gets the 88 MB full precision model, fetched on first use) and compares the
+windows with the index there too (`app/workers/art-gpu.ts`, one compute shader: 450 windows
+against 29,000 vectors in a fraction of a second where JavaScript needs half a minute). Without
+WebGPU it uses the 8-bit model on the processor with a sparser first pass and a shorter closer
+look, and gets four minutes. `localStorage['ygo-art-device']` can be `'processor'` or `'full'`
+to force either way for testing. The request can also carry a `tuning` (window sizes, stride,
+the shape of the closer look), which is how the numbers in this document were found.
 
 The page talks to the worker through `recognizeArt()` (`app/utils/art-vision.ts`), the photo
 goes over as a bitmap, and only card ids come back.
@@ -106,16 +110,21 @@ goes over as a bitmap, and only card ids come back.
 `PhotoImport.vue` runs this and the text reading at the same time, each in its own thread,
 and sends the text lines and the recognized cards to `POST /api/cards/match-fragments`, which
 puts them together: a card found both ways keeps the better score and the larger count, one
-found by its artwork alone is listed under its catalog name, as sure or as doubtful.
+found by its artwork alone is listed under its catalog name when the artwork was sure, or when
+some text, however small or weak, resembled its name (two readings that do not depend on each
+other agree). An artwork match that is not sure and has no such text is left out: over about fifty
+photos, 8 of the 83 such matches were right, and the page lists a card under its catalog name,
+which makes a wrong one look like a right one.
 
 ## Consequences
 
 - Recognition no longer depends on legible lettering. On three real photos (6 and 2 × 15
-  cards) the artwork alone found 22 of 36 cards sure and 2 more doubtful, with no wrong sure card
-  and 1 wrong doubtful one (the lettering found 3 of 15 on the same photos); on four synthetic
-  photos of 6 cards it found all 24, with 2 wrong sure cards among them. The five that
-  the artwork misses on the real photos are the two printed with an older picture, a
-  near-black one (Schwarzes Loch) and two that are only weakly matched.
+  cards) the artwork alone found 22 of 36 cards sure and none wrong (the lettering found 3 of
+  15 on the same photos); on four synthetic photos of 6 cards it found all 24, with 2 wrong sure
+  cards among them. Over all test photos about one sure card in thirteen is wrong, and the review
+  table is where those are settled. The cards the artwork misses on the real photos are the two
+  printed with an older picture, a near-black one (Schwarzes Loch) and a few that are only weakly
+  matched.
 - A card printed with an older artwork than the catalog's current one is not found by its
   picture (Don Zaloog in the first prints shows swords, the catalog guns), and families with
   near-identical pictures can blur (Magic Jammer and Trap Jammer, which differ mostly in
@@ -123,5 +132,12 @@ found by its artwork alone is listed under its catalog name, as sure or as doubt
   other's blind spots.
 - The shipped data grows by 24 MB and 44 MB (the two models), 23 MB (index); the first photo
   loads them. The installer gets 68 MB bigger.
-- A photo takes about a minute on a laptop's integrated graphics and a few minutes without
-  WebGPU.
+- A photo takes about a minute on a laptop's integrated graphics and four minutes without
+  WebGPU (the text reading runs beside it and is not slower than that).
+- The photo-mean correction needs more than one card on the photo or the `photoMean`: an
+  index without it still works for photos of many cards, but not for one. `scripts/art-index.mjs`
+  keeps the value it finds in an existing index; it is estimated from photos (the `windowMean` of a
+  scan, averaged over several photos of several cards), not from the artworks.
+- Not recognized at all yet: photos that are blurred and small and compressed to the point that a
+  person has to guess, cards that are covered or cut off, and a card photographed from far below
+  at a steep angle (not tested).

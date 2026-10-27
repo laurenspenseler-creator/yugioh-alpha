@@ -51,9 +51,9 @@ const WORKING_EDGE = 1600
 const BATCH = 8
 
 /**
- * What to look at. The artwork of a card is 9 % to 25 % of a photo's long edge, depending on how many
- * cards are on the photo, hence the window sizes. The graphics card looks at about 400 windows and
- * then 700 more around the places that matched; the processor takes thirty times as long per window
+ * What to look at. The artwork of a card is 9 % to 70 % of a photo's long edge, depending on how many
+ * cards are on the photo, hence the window sizes. The graphics card looks at about 450 windows and
+ * then 450 more around the places that matched; the processor takes thirty times as long per window
  * and gets a sparser first pass (a card is matched from up to half a window off) and a short closer
  * look, and the time it may take is longer.
  */
@@ -79,6 +79,7 @@ const PLANS: Record<'webgpu' | 'wasm', Plan> = {
 function planFor(tuning?: Partial<Plan>): Plan {
   return { ...PLANS[device], ...tuning }
 }
+
 /** The first pass may use this share of the time; the rest is for the closer look. */
 const FIRST_PASS_SHARE = 0.6
 const ROTATION_PROBE_SIZE = 210

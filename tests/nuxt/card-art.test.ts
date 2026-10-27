@@ -21,7 +21,6 @@ import {
   matchFromSimilarities,
   meanVector,
   normalize,
-  overlap,
   parseArtIndex,
   photoCorrection,
   quantizeArtVector,
@@ -454,16 +453,6 @@ describe('artWindows', () => {
 
     expect(windows.every(window => window.size === 40)).toBe(true)
     expect(windows.map(window => window.x).filter((x, i, all) => all.indexOf(x) === i)).toEqual([0, 20, 40, 60])
-  })
-})
-
-describe('overlap', () => {
-  it('is 0 apart, 1 for the same window and in between otherwise', () => {
-    const a = { x: 0, y: 0, size: 100 }
-
-    expect(overlap(a, { x: 200, y: 0, size: 100 })).toBe(0)
-    expect(overlap(a, a)).toBe(1)
-    expect(overlap(a, { x: 50, y: 0, size: 100 })).toBeCloseTo(1 / 3, 5)
   })
 })
 
