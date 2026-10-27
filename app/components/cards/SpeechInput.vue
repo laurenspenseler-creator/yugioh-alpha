@@ -75,7 +75,16 @@ async function finish(audio: Blob) {
     heard.value = await transcribe(samples, language.value, quality.value, (progress) => {
       loadPercent.value = progress.percent
     })
-    const lines = spokenCardLines(heard.value)
+    let lines = spokenCardLines(heard.value)
+    if (lines.length > 1) {
+      // A name said with a pause in it was written as two lines: the server puts such neighbours together.
+      try {
+        lines = (await $fetch<{ lines: string[] }>('/api/cards/join-spoken-lines', { method: 'POST', body: { lines } })).lines
+      }
+      catch {
+        // Without it the lines are still right most of the time.
+      }
+    }
     if (lines.length === 0) {
       errorMessage.value = t('quickEntry.speech.nothing')
     }
