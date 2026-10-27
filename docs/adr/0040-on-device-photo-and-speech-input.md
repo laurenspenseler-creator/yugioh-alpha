@@ -109,6 +109,13 @@ takes the time. Whisper on the graphics card (WebGPU) was tried and is no way ou
 precision decoder writes nonsense, and with the 4-bit decoder the small model was either
 15 minutes slow or lost the end of the recording.
 
+A prompt for Whisper (a list of well-known card names as the text it "heard before", which
+`generate` of transformers.js accepts as `decoder_input_ids` but its pipeline does not offer, so
+it needs the chunk loop of the pipeline rewritten against private functions) was tried and not
+kept: over 170 dictated cards (the test dictations, the same with room noise of 8 dB, and eight
+dictations of ten random cards with 18 dB) 159 were found with it and 159 without. It makes a list
+without pauses come out with commas, which the join and split of the lines does as well.
+
 ### Where the engines and models live
 
 `pnpm ai:assets` (also part of `postinstall`) copies the OCR core and the ONNX runtime
