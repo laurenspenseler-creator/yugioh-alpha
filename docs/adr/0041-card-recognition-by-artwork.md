@@ -135,6 +135,11 @@ which makes a wrong one look like a right one.
   table is where those are settled. The cards the artwork misses on the real photos are the two
   printed with an older picture, a near-black one (Schwarzes Loch) and a few that are only weakly
   matched.
+- A photo taken at an angle does not hurt much: four synthetic photos squeezed like a phone held
+  at an angle (the far edge 30 % narrower, turned 4 degrees) were read 24 of 24 sure with none
+  wrong. At 45 % and 9 degrees it is 11 of 12, with three wrong sure cards: slanted text boxes and
+  the bare table match a card's picture by chance, from about as many windows as a real card, so
+  nothing in a hit's margin, similarity or spread tells the two apart.
 - A card printed with an older artwork than the catalog's current one is not found by its
   picture (Don Zaloog in the first prints shows swords, the catalog guns), and families with
   near-identical pictures can blur (Magic Jammer and Trap Jammer, which differ mostly in
