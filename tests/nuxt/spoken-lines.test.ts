@@ -18,6 +18,8 @@ const CARDS = [
   { id: 6, name: 'Dark Magician' },
   { id: 7, name: 'Yata-Garasu' },
   { id: 8, name: 'Legacy of Yata-Garasu' },
+  { id: 9, name: 'The Six Samurai - Irou' },
+  { id: 10, name: 'The Six Samurai - Kamon' },
 ]
 
 function createTestDb() {
@@ -76,6 +78,11 @@ describe('joinSpokenLines', () => {
   it('cuts a line without any break into the cards it names, a number word before a card is its quantity', () => {
     expect(joinSpokenLines(db, ['Kuriboh Dunkler Magier Harpyien Flederwisch drei Kuriboh']))
       .toEqual(['Kuriboh', 'Dunkler Magier', 'Harpyien Flederwisch', '3x Kuriboh'])
+  })
+
+  it('joins a name that is the start of a family of names with a half that was heard wrongly ("Cayman" for "Kamon")', () => {
+    expect(joinSpokenLines(db, ['Kuriboh', 'The Six Samurai', 'Cayman', 'Magic Jammer']))
+      .toEqual(['Kuriboh', 'The Six Samurai - Kamon', 'Magic Jammer'])
   })
 
   it('keeps a name whole that ends in the name of another card ("Legacy of Yata-Garasu" is not "Legacy of" and "Yata-Garasu")', () => {

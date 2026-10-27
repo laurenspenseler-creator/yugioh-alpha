@@ -27,8 +27,11 @@ const JOIN_ADVANTAGE = 0.1
  */
 const NEARLY_EXACT = 0.9
 const FRAGMENT_BELOW = 0.7
-/** Neither half is a card name when both are below this by letters; together they must sound this like a name. */
-const NOT_A_NAME_BELOW = 0.85
+/**
+ * Neither half is a card name when both are below this by letters ("The Six Samurai" is 0.86 close to "The Six Samurai - Irou",
+ * but only the start of a family of names); together they must sound this like a name.
+ */
+const NOT_A_NAME_BELOW = 0.9
 const MIN_SOUND_JOIN = 0.75
 /** "Magic Gemma" has three consonants (m, k, m): enough here, because the whole sound must be a name's. */
 const SOUND_JOIN_MIN_CONSONANTS = 3
