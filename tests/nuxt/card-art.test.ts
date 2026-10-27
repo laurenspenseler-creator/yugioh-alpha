@@ -495,6 +495,15 @@ describe('cardsFromHits', () => {
     expect(cards.every(card => !card.sure)).toBe(true)
   })
 
+  it('needs fewer windows per card when the support scale shrinks (a sparser look at the photo)', () => {
+    const hits = [...around(1, 0.3, 4), ...around(2, 0.3, 3, 400)]
+
+    const usual = cardsFromHits(hits)
+    expect(usual.map(card => [card.cardId, card.sure])).toEqual([[1, false]])
+    const sparse = cardsFromHits(hits, { supportScale: 0.65 })
+    expect(sparse.map(card => [card.cardId, card.sure])).toEqual([[1, true], [2, false]])
+  })
+
   it('takes the clearest hit of a card as its strength, even when weaker windows came first', () => {
     const [card] = cardsFromHits([hit(1, 0.1, 0, 0, 200, 0.4), hit(1, 0.25, 40, 30, 200, 0.55), hit(1, 0.2, 20, 20, 200, 0.5), hit(1, 0.16, 30, 10), hit(1, 0.12, 10, 20), hit(1, 0.11, 50, 40)])
 

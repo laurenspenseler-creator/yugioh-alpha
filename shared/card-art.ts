@@ -574,7 +574,11 @@ const CLAIM_GAP = 0.05
  * `onlySure` only the sure cards are returned: a photo of one card or two has no room for the
  * doubtful ones that the frame, the text and the table of a card give.
  */
-export function cardsFromHits(hits: readonly ArtHit[], options: { onlySure?: boolean } = {}): ArtCard[] {
+export function cardsFromHits(hits: readonly ArtHit[], options: { onlySure?: boolean, supportScale?: number } = {}): ArtCard[] {
+  // A sparser look at the photo gives every card fewer windows: the support it needs shrinks with it.
+  const scale = options.supportScale ?? 1
+  const minSupport = Math.max(2, Math.round(ART_MIN_SUPPORT * scale))
+  const sureSupport = Math.max(minSupport, Math.round(ART_SURE_SUPPORT * scale))
   const byCard = new Map<number, ArtHit[]>()
   for (const hit of hits) {
     if (hit.similarity >= ART_SUPPORT_SIMILARITY && hit.margin >= ART_SUPPORT_MARGIN) {
@@ -586,7 +590,7 @@ export function cardsFromHits(hits: readonly ArtHit[], options: { onlySure?: boo
   for (const [cardId, list] of byCard) {
     const places = artPlaces(list)
     const best = places[0]!.best
-    if (best.margin < ART_MIN_MARGIN || best.similarity < ART_MIN_SIMILARITY || list.length < ART_MIN_SUPPORT) {
+    if (best.margin < ART_MIN_MARGIN || best.similarity < ART_MIN_SIMILARITY || list.length < minSupport) {
       continue
     }
     const copies = [places[0]!]
@@ -607,7 +611,7 @@ export function cardsFromHits(hits: readonly ArtHit[], options: { onlySure?: boo
         margin: best.margin,
         copies: copies.length,
         support: list.length,
-        sure: best.margin >= ART_SURE_MARGIN && best.similarity >= ART_SURE_SIMILARITY && list.length >= ART_SURE_SUPPORT,
+        sure: best.margin >= ART_SURE_MARGIN && best.similarity >= ART_SURE_SIMILARITY && list.length >= sureSupport,
       },
     })
   }

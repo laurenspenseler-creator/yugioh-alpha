@@ -87,7 +87,9 @@ compressed to the point that a person has to guess is still not recognized.)
 
 `app/workers/art-vision.worker.ts` draws the photo with a long edge of 1600 px (turned a
 quarter if it lies on its side: the most textured windows of each of the three ways are
-compared by how clearly they match, which found the right way on every photo) and cuts square
+compared by how clearly they match, which found the right way on every photo; the upright way
+comes first and a score of 0.3 or more ends the probe, because upright photos scored 0.26 to
+0.91 and the two real photos on their side 0.07 and 0.16) and cuts square
 windows of seven sizes (150 to 1,100 px: the art of a card is a tenth to two thirds of the
 photo, depending on how many cards are on it) out of it, three fifths of a window apart, about
 450 of them. The most textured windows go first (paper, mats and sleeves are flat). Then the
@@ -99,8 +101,16 @@ so the worker runs the model there (`model_fp16.onnx`, 44 MB; a card or browser 
 half precision gets the 88 MB full precision model, fetched on first use) and compares the
 windows with the index there too (`app/workers/art-gpu.ts`, one compute shader: 450 windows
 against 29,000 vectors in a fraction of a second where JavaScript needs half a minute). Without
-WebGPU it uses the 8-bit model on the processor with a sparser first pass and a shorter closer
-look, and gets four minutes. `localStorage['ygo-art-device']` can be `'processor'` or `'full'`
+WebGPU it uses the 8-bit model on the processor with a sparser first pass (four sizes, three
+quarters of a window apart, about 140 windows) and a shorter closer look (10 places, no zoom),
+and takes two to three minutes on a desktop processor. A sparser look gives every card fewer
+windows, so this plan asks for 65 % of the usual support (`supportScale`): on six test photos
+that made 28 cards sure instead of 24 with none wrong, while 50 % let wrong doubtful ones in
+and the graphics card's plan gained nothing from it. The photos of the real tests on the
+processor: 14 sure cards of 36 (rot1 4, rot2 7, user 3), where the plan of the graphics card
+finds 25. The recognition does not fall off slowly with fewer windows: the graphics card's plan
+cut to 150 to 310 windows (a budget of 3 to 24 s) found 0 or 1 of the 15 cards of a real photo,
+so a device much slower than a desktop processor is better served by waiting than by stopping early. `localStorage['ygo-art-device']` can be `'processor'` or `'full'`
 to force either way for testing. The request can also carry a `tuning` (window sizes, stride,
 the shape of the closer look), which is how the numbers in this document were found.
 
@@ -132,7 +142,7 @@ which makes a wrong one look like a right one.
   other's blind spots.
 - The shipped data grows by 24 MB and 44 MB (the two models), 23 MB (index); the first photo
   loads them. The installer gets 68 MB bigger.
-- A photo takes about a minute on a laptop's integrated graphics and four minutes without
+- A photo takes about a minute on a laptop's integrated graphics and two to three minutes without
   WebGPU (the text reading runs beside it and is not slower than that).
   WebGPU only exists in a secure context, so a phone that opens the laptop's address over plain
   HTTP gets the processor path (a few minutes, longer on a phone). The worker reports where the

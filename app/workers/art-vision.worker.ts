@@ -69,10 +69,12 @@ export interface Plan {
   probeWindows: number
   /** Looking stops after this long, whatever is left: the cards found so far are returned. */
   milliseconds: number
+  /** How much of the usual number of windows a card needs to be listed or sure (see `cardsFromHits`): a sparser plan gives every card fewer windows. */
+  supportScale: number
 }
 const PLANS: Record<'webgpu' | 'wasm', Plan> = {
-  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: ART_REFINE_MAX_PLACES, probeWindows: 40, milliseconds: 150_000 },
-  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 16, milliseconds: 240_000 },
+  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: ART_REFINE_MAX_PLACES, probeWindows: 40, milliseconds: 150_000, supportScale: 1 },
+  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65 },
 }
 
 /** The plan for where the model runs, with whatever a test asked to change. */
@@ -84,10 +86,14 @@ function planFor(tuning?: Partial<Plan>): Plan {
 const FIRST_PASS_SHARE = 0.6
 const ROTATION_PROBE_SIZE = 210
 const ROTATION_PROBE_STRIDE = 0.6
+/** The scores of the three ways are the sum over this many windows (the graphics card's probe); fewer windows are scaled up to it. */
+const ROTATION_PROBE_REFERENCE = 40
 /** A window of the probe counts for the part of its margin above this. */
 const ROTATION_PROBE_FLOOR = 0.05
 /** A photo whose windows are corrected mostly by the mean of other photos (see `photoCorrection`) shows few cards: only the sure ones are listed. */
 const FEW_CARDS_OWN = 0.5
+/** A photo whose upright score is this much is upright, and the other two ways are not tried (upright photos scored 0.26 to 0.91, those on their side 0.07 and 0.16). */
+const ROTATION_UPRIGHT_SURE = 0.3
 /** The upright way is kept when its score is at least this share of the best way's, or when no way scores at least the minimum. */
 const UPRIGHT_SHARE = 0.6
 const ROTATION_MIN_SCORE = 0.2
@@ -366,7 +372,9 @@ async function rotationScore(model: Model, index: ArtIndex, bitmap: ImageBitmap,
   const probe = byTexture(photo, artWindows(photo.width, photo.height, [ROTATION_PROBE_SIZE], ROTATION_PROBE_STRIDE)).slice(0, windows)
   const embedded = await embedWindows(model, photo, probe, Infinity)
   const hits = await matchWindows(index, embedded.windows, correctForPhoto(embedded.vectors, undefined, index.photoMean))
-  return { score: hits.reduce((sum, hit) => sum + Math.max(0, hit.margin - ROTATION_PROBE_FLOOR), 0), embedded: probe.length }
+  // As if there were `ROTATION_PROBE_REFERENCE` windows, so the minimum below holds for the sparser probe of the processor too.
+  const sum = hits.reduce((total, hit) => total + Math.max(0, hit.margin - ROTATION_PROBE_FLOOR), 0)
+  return { score: sum * ROTATION_PROBE_REFERENCE / Math.max(1, probe.length), embedded: probe.length }
 }
 
 function windowKey(window: ArtWindow): string {
@@ -403,7 +411,10 @@ async function lookCloser(
   return { hits: await matchWindows(index, embedded.windows, embedded.vectors.map(vector => correct(vector))), embedded: embedded.windows.length }
 }
 
-/** Which way the photo lies: cards on their side look like nothing to the model, so the three ways are tried on the most textured windows. */
+/**
+ * Which way the photo lies: cards on their side look like nothing to the model, so the three ways are tried
+ * on the most textured windows, the upright one first, which is enough for most photos.
+ */
 async function findRotation(request: ArtScanRequest, model: Model, index: ArtIndex, plan: Plan): Promise<{ rotation: ArtRotation, embedded: number, scores: number[] }> {
   if (request.rotation !== 'auto') {
     return { rotation: request.rotation, embedded: 0, scores: [] }
@@ -419,6 +430,9 @@ async function findRotation(request: ArtScanRequest, model: Model, index: ArtInd
     scope.postMessage({ id: request.id, type: 'progress', stage: 'turning', percent: Math.round(((step + 1) / 3) * 100), device })
     if (turn === 0) {
       upright = probe.score
+      if (upright >= ROTATION_UPRIGHT_SURE) {
+        return { rotation: 0, embedded, scores }
+      }
     }
     if (probe.score > best.score) {
       best = { rotation: turn, score: probe.score }
@@ -451,7 +465,7 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   const closer = await lookCloser(model, index, photo, first, correct, progress('refining'), deadline, request.tuning)
 
   return {
-    cards: cardsFromHits([...first, ...closer.hits], { onlySure: correct.own < FEW_CARDS_OWN }),
+    cards: cardsFromHits([...first, ...closer.hits], { onlySure: correct.own < FEW_CARDS_OWN, supportScale: plan.supportScale }),
     rotation,
     rotationScores: scores,
     windowMean: Array.from(meanVector(embedded.vectors)),
