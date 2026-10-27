@@ -225,9 +225,12 @@ participant's deck) and on `/inventory/files`. They need no account and no API k
   `app/utils/spoken-card-lines.ts` turns "dreimal Ash Blossom" into `3x Ash Blossom`.
   A name the recognizer wrote as it sounds ("Goldsako-Fark") is still found: the lookup
   also compares the letters and the sound of all names. A name said with a pause is written
-  as two lines; `POST /api/cards/join-spoken-lines` (`server/utils/spoken-lines.ts`) puts
-  them together when the two are closer to a card name than either alone, or when neither is
-  a name and together they sound like one ("Magic" "Gemma" becomes "Magic Jammer"). A card
+  as two lines, and a list that was written without commas as one line; `POST
+  /api/cards/join-spoken-lines` (`server/utils/spoken-lines.ts`) cuts a long line into the
+  cards (the way of cutting it into stretches closest to card names, a number word before
+  a stretch being its quantity) and puts halves together when the two are closer to a card
+  name than either alone, or when neither is a name and together they sound like one
+  ("Magic" "Gemma" becomes "Magic Jammer"). A card
   named twice, anywhere in the list and however spelled, is two copies (the lines are merged
   by their best candidate). On a tester's recording of 15 cards all 15 are resolved.
   The microphone needs HTTPS, `localhost` or the desktop app; on a phone that opens the

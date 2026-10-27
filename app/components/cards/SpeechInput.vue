@@ -76,8 +76,9 @@ async function finish(audio: Blob) {
       loadPercent.value = progress.percent
     })
     let lines = spokenCardLines(heard.value)
-    if (lines.length > 1) {
-      // A name said with a pause in it was written as two lines: the server puts such neighbours together.
+    if (lines.length > 0) {
+      // A name said with a pause in it was written as two lines, and a list written without commas as one:
+      // the server puts such neighbours together and cuts such a line into the cards.
       try {
         lines = (await $fetch<{ lines: string[] }>('/api/cards/join-spoken-lines', { method: 'POST', body: { lines } })).lines
       }

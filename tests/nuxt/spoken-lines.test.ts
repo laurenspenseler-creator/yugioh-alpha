@@ -69,6 +69,21 @@ describe('joinSpokenLines', () => {
     expect(joinSpokenLines(db, ['schwarz glänzender Soldat', '2x Gesandter des Anfangs'])).toEqual(['schwarz glänzender Soldat', '2x Gesandter des Anfangs'])
   })
 
+  it('cuts a line without any break into the cards it names, a number word before a card is its quantity', () => {
+    expect(joinSpokenLines(db, ['Kuriboh Dunkler Magier Harpyien Flederwisch drei Kuriboh']))
+      .toEqual(['Kuriboh', 'Dunkler Magier', 'Harpyien Flederwisch', '3x Kuriboh'])
+  })
+
+  it('cuts a run of cards that were heard wrongly, too', () => {
+    expect(joinSpokenLines(db, ['Kuribo Dunkler Magiker Harpien Flederwisch Magic Jammer']))
+      .toEqual(['Kuribo', 'Dunkler Magiker', 'Harpien Flederwisch', 'Magic Jammer'])
+  })
+
+  it('keeps a long name that is one card as a whole, and a short line as it is', () => {
+    expect(joinSpokenLines(db, ['Schwarz Glänzender Soldat Gesandter des Anfangs'])).toEqual(['Schwarz Glänzender Soldat Gesandter des Anfangs'])
+    expect(joinSpokenLines(db, ['Topf der Gier'])).toEqual(['Topf der Gier'])
+  })
+
   it('has nothing to do for no lines or one', () => {
     expect(joinSpokenLines(db, [])).toEqual([])
     expect(joinSpokenLines(db, ['Kuriboh'])).toEqual(['Kuriboh'])

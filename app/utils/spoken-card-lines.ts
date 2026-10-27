@@ -5,58 +5,10 @@
 // settles misheard letters, this only finds where one card ends and the next
 // begins, and how many of it were said (ADR 0040).
 
-const NUMBER_WORDS: Record<string, number> = {
-  ein: 1,
-  eine: 1,
-  einen: 1,
-  einem: 1,
-  einer: 1,
-  einmal: 1,
-  zwei: 2,
-  zwo: 2,
-  zweimal: 2,
-  drei: 3,
-  dreimal: 3,
-  vier: 4,
-  viermal: 4,
-  fünf: 5,
-  fuenf: 5,
-  fünfmal: 5,
-  sechs: 6,
-  sieben: 7,
-  acht: 8,
-  neun: 9,
-  zehn: 10,
-  elf: 11,
-  zwölf: 12,
-  zwoelf: 12,
-  one: 1,
-  a: 1,
-  an: 1,
-  two: 2,
-  three: 3,
-  four: 4,
-  five: 5,
-  six: 6,
-  seven: 7,
-  eight: 8,
-  nine: 9,
-  ten: 10,
-}
-
-/** The most copies of one card that are said in a line; a larger number is a misheard name. */
-const MAX_SPOKEN_COPIES = 12
+import { quantityOf } from '~~/shared/spoken-quantity'
 
 /** A number word or digit at the start of a segment, with the "mal" / "x" that may follow it. */
 const LEADING_QUANTITY = /^(\d{1,2}|[a-zäöüß]+)\s*(?:x|×|mal)?\s+/i
-
-function quantityOf(word: string): number | null {
-  if (/^\d{1,2}$/.test(word)) {
-    const value = Number(word)
-    return value >= 1 && value <= MAX_SPOKEN_COPIES ? value : null
-  }
-  return NUMBER_WORDS[word.toLowerCase()] ?? null
-}
 
 /** Whether the text after a "und" starts a new card: a number word or digit, then a name. */
 function startsWithQuantity(text: string): boolean {
