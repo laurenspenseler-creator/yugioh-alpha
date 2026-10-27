@@ -7,7 +7,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
 import { describe, expect, it } from 'vitest'
 import * as schema from '../../server/db/schema'
-import { ART_SURE_CARD_SCORE, ART_TEXT_EVIDENCE_SCORE, EVERYDAY_WORD_TEXTS, HEADER_SIZE, matchFragments, MAX_FRAGMENT_LENGTH, MAX_FRAGMENT_PASSES, MAX_FRAGMENTS_PER_PASS, mergeArtCards, SURE_SCORE } from '../../server/utils/card-fragments'
+import { ART_SURE_CARD_SCORE, ART_TEXT_EVIDENCE_SCORE, closestBySound, EVERYDAY_WORD_TEXTS, HEADER_SIZE, matchFragments, MAX_FRAGMENT_LENGTH, MAX_FRAGMENT_PASSES, MAX_FRAGMENTS_PER_PASS, mergeArtCards, SURE_SCORE } from '../../server/utils/card-fragments'
 import { MAX_ART_CARDS, parseArtCards } from '../../server/utils/card-art-input'
 import { parseFragmentPasses } from '../../server/utils/card-fragments-input'
 import type { ArtCard } from '../../shared/card-art'
@@ -228,5 +228,14 @@ describe('matchFragments: the printed name against the effect text', () => {
 
     expect(matchFragments(crowded, [[{ text: 'monster', heights: [header] }]])).toEqual([])
     expect(matchFragments(crowded, [[{ text: 'MONSTER EGG', heights: [header, header] }]]).map(match => match.name)).toEqual(['Monster Egg'])
+  })
+})
+
+describe('closestBySound', () => {
+  it('ranks the name that is spelled closer first when several have the same sound', () => {
+    const db = createTestDb([{ id: 1, name: 'Hippo Token' }, { id: 2, name: 'Puppet Queen' }])
+    const hits = closestBySound(db, 'Papit Queen', 3, 3)
+    expect(hits.map(hit => hit.cardId).slice(0, 2)).toEqual([2, 1])
+    expect(hits[0]!.score).toBeLessThanOrEqual(0.8)
   })
 })

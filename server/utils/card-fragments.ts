@@ -78,7 +78,7 @@ export interface FragmentMatch {
 }
 
 interface NameIndex {
-  entries: Array<{ cardId: number, gramCount: number, key: string }>
+  entries: Array<{ cardId: number, gramCount: number, key: string, grams: string[] }>
   names: Map<number, string>
   postings: Map<string, number[]>
   /** In how many card texts (English and German) each word of three letters or more is; read from the texts on first use. */
@@ -116,7 +116,7 @@ function nameIndex(db: Db): NameIndex {
     }
     const grams = bigramSet(folded)
     const entryIndex = index.entries.length
-    index.entries.push({ cardId, gramCount: grams.length, key: phoneticKey(folded) })
+    index.entries.push({ cardId, gramCount: grams.length, key: phoneticKey(folded), grams })
     for (const gram of grams) {
       const list = index.postings.get(gram)
       if (list) {
@@ -246,6 +246,21 @@ export function phoneticKey(folded: string): string {
   return key
 }
 
+/** How alike two sets of bigrams are (Sørensen–Dice), 0 to 1. */
+function diceOf(a: readonly string[], b: readonly string[]): number {
+  if (a.length === 0 || b.length === 0) {
+    return 0
+  }
+  const other = new Set(b)
+  let shared = 0
+  for (const gram of a) {
+    if (other.has(gram)) {
+      shared += 1
+    }
+  }
+  return (2 * shared) / (a.length + b.length)
+}
+
 /** Edit distance of two short strings, giving up above `max`. */
 function editDistance(a: string, b: string, max: number): number {
   if (Math.abs(a.length - b.length) > max) {
@@ -274,6 +289,11 @@ const MIN_KEY_LENGTH = 4
 const MAX_KEY_DIFFERENCE = 0.25
 /** A match by sound is a guess: it never scores above this, so it is never taken for sure. */
 const SOUND_SCORE_CEILING = 0.8
+/**
+ * Of two names with the same sound the one spelled closer scores higher, by at most this much ("Papit Queen":
+ * Puppet Queen and Hippo Token both have its skeleton).
+ */
+const SOUND_LETTER_WEIGHT = 0.04
 /** Below this best score by letters, names are compared by sound too. */
 const SOUND_SEARCH_BELOW = 0.6
 
@@ -282,6 +302,7 @@ function rankBySound(index: NameIndex, folded: string, limit: number, minKeyLeng
   if (key.length < minKeyLength) {
     return []
   }
+  const queryGrams = bigramSet(folded)
   const bestByCard = new Map<number, number>()
   for (const entry of index.entries) {
     if (entry.key.length < minKeyLength) {
@@ -292,8 +313,8 @@ function rankBySound(index: NameIndex, folded: string, limit: number, minKeyLeng
     if (distance > longest * MAX_KEY_DIFFERENCE) {
       continue
     }
-    // Same skeleton: just under the ceiling; every edit takes more off.
-    const score = SOUND_SCORE_CEILING - (distance / longest) * 0.6
+    // Same skeleton: just under the ceiling; every edit takes more off, and so does a spelling far from the text's.
+    const score = SOUND_SCORE_CEILING - (distance / longest) * 0.6 - (1 - diceOf(queryGrams, entry.grams)) * SOUND_LETTER_WEIGHT
     if (score > (bestByCard.get(entry.cardId) ?? 0)) {
       bestByCard.set(entry.cardId, score)
     }
