@@ -30,12 +30,15 @@ export interface ArtIndexMeta {
   imageIds?: number[]
   /** Which copy of its artwork each vector is (0 as it is, 1 slightly blurred, for photos that are not sharp); only the tool that updates the index reads it. */
   variants?: number[]
+  /** The mean window vector of many photos of several cards (`ART_VECTOR` numbers): what a photo of few cards is corrected by (`photoCorrection`). */
+  photoMean?: number[]
 }
 
 export interface ArtIndex {
   cardIds: number[]
   scales: Float32Array
   values: Int8Array
+  photoMean?: Float32Array
 }
 
 export function parseArtIndex(meta: ArtIndexMeta, binary: ArrayBuffer): ArtIndex {
@@ -50,6 +53,7 @@ export function parseArtIndex(meta: ArtIndexMeta, binary: ArrayBuffer): ArtIndex
     cardIds: meta.cardIds,
     scales: new Float32Array(binary, 0, meta.count * ART_PARTS),
     values: new Int8Array(binary, scaleBytes, meta.count * ART_VECTOR),
+    photoMean: meta.photoMean?.length === ART_VECTOR ? Float32Array.from(meta.photoMean) : undefined,
   }
 }
 
@@ -143,7 +147,7 @@ export function centerArtIndex(index: ArtIndex): ArtIndex {
       values.set(quantized.values, start)
     }
   }
-  return { cardIds: index.cardIds, scales, values }
+  return { cardIds: index.cardIds, scales, values, photoMean: index.photoMean }
 }
 
 /** Where part `part` of vector `vectorIndex` starts in `ArtIndex.values`. */
@@ -163,22 +167,64 @@ const MIN_WINDOWS_TO_CORRECT = 4
  * taken off, per part, and each part is made a unit vector again. Only the shape of the windows
  * of one photo is used: nothing is known about which cards it shows.
  */
-export function correctForPhoto(vectors: readonly Float32Array[], dropped = ART_DROPPED_DIRECTIONS): Float32Array[] {
-  const correct = photoCorrection(vectors, dropped)
+export function correctForPhoto(vectors: readonly Float32Array[], dropped = ART_DROPPED_DIRECTIONS, photoMean?: ArrayLike<number>): Float32Array[] {
+  const correct = photoCorrection(vectors, dropped, photoMean)
   return vectors.map(vector => correct(vector))
+}
+
+/** The mean of vectors of the same length; the tool that estimates `photoMean` of the index averages these over many photos. */
+export function meanVector(vectors: readonly Float32Array[]): Float32Array {
+  const mean = new Float32Array(vectors[0]?.length ?? 0)
+  for (const vector of vectors) {
+    for (let d = 0; d < mean.length; d += 1) {
+      mean[d]! += vector[d]! / vectors.length
+    }
+  }
+  return mean
+}
+
+/**
+ * The windows of a photo of several cards differ in many directions; those of a photo of one card
+ * (or two) mostly in one, because most of them show that card at some size. When this share of the
+ * windows' variance lies along their strongest direction, the photo's own mean is the card, and
+ * taking it off takes the card off: the mean of many photos (`photoMean` of the index) is used
+ * instead, and at this share and above only that one.
+ */
+const FEW_CARDS_SHARE_FROM = 0.22
+const FEW_CARDS_SHARE_TO = 0.32
+
+/** The share of the variance of centred rows that lies along their strongest direction. */
+function strongestShare(rows: readonly Float32Array[]): number {
+  const direction = mainDirections(rows, 1)[0]
+  if (!direction || rows.length === 0) {
+    return 0
+  }
+  let along = 0
+  let total = 0
+  for (const row of rows) {
+    let dot = 0
+    for (let d = 0; d < ART_DIMENSION; d += 1) {
+      dot += row[d]! * direction[d]!
+      total += row[d]! * row[d]!
+    }
+    along += dot * dot
+  }
+  return total === 0 ? 0 : along / total
 }
 
 /**
  * What `correctForPhoto` takes off, learned from a photo's windows once, to be applied to those
  * windows and to windows that are looked at later (a closer look at a place that matched).
+ * `photoMean` is the mean window vector of many photos (both parts, as the model gives them), used
+ * for a photo of few cards instead of the photo's own mean (see `FEW_CARDS_SHARE_FROM`).
  */
-export function photoCorrection(vectors: readonly Float32Array[], dropped = ART_DROPPED_DIRECTIONS): (vector: Float32Array) => Float32Array {
+export function photoCorrection(vectors: readonly Float32Array[], dropped = ART_DROPPED_DIRECTIONS, photoMean?: ArrayLike<number>): PhotoCorrection {
   const count = vectors.length
   if (count < MIN_WINDOWS_TO_CORRECT) {
-    return vector => joinParts(part => normalize(vector.subarray(part * ART_DIMENSION, (part + 1) * ART_DIMENSION)))
+    return Object.assign((vector: Float32Array) => joinParts(part => normalize(vector.subarray(part * ART_DIMENSION, (part + 1) * ART_DIMENSION))), { own: 1 })
   }
+  const rowsOfPart: Float32Array[][] = []
   const means: Float64Array[] = []
-  const directionsOfPart: Float64Array[][] = []
   for (let part = 0; part < ART_PARTS; part += 1) {
     const rows = vectors.map(vector => vector.slice(part * ART_DIMENSION, (part + 1) * ART_DIMENSION))
     const mean = new Float64Array(ART_DIMENSION)
@@ -193,11 +239,24 @@ export function photoCorrection(vectors: readonly Float32Array[], dropped = ART_
       }
     }
     means.push(mean)
-    // The directions come from the windows after the mean is off; each window then loses what lies along them.
-    const directions = mainDirections(rows, Math.min(dropped, Math.floor(count / 8)))
-    directionsOfPart.push(directions)
+    rowsOfPart.push(rows)
   }
-  return vector => joinParts((part) => {
+
+  // How much of the photo's own mean is trusted: all of it for many cards, none for few.
+  const share = photoMean ? strongestShare(rowsOfPart[0]!) : 0
+  const own = Math.min(1, Math.max(0, (FEW_CARDS_SHARE_TO - share) / (FEW_CARDS_SHARE_TO - FEW_CARDS_SHARE_FROM)))
+  const directionsOfPart: Float64Array[][] = []
+  for (let part = 0; part < ART_PARTS; part += 1) {
+    if (own < 1) {
+      for (let d = 0; d < ART_DIMENSION; d += 1) {
+        means[part]![d] = own * means[part]![d]! + (1 - own) * photoMean![part * ART_DIMENSION + d]!
+      }
+    }
+    // The directions come from the windows after the mean is off; each window then loses what lies along them
+    // (not for a photo of few cards: that direction is the card).
+    directionsOfPart.push(own < 1 ? [] : mainDirections(rowsOfPart[part]!, Math.min(dropped, Math.floor(count / 8))))
+  }
+  return Object.assign((vector: Float32Array) => joinParts((part) => {
     const row = vector.slice(part * ART_DIMENSION, (part + 1) * ART_DIMENSION)
     for (let d = 0; d < ART_DIMENSION; d += 1) {
       row[d]! -= means[part]![d]!
@@ -212,8 +271,11 @@ export function photoCorrection(vectors: readonly Float32Array[], dropped = ART_
       }
     }
     return normalize(row)
-  })
+  }), { own })
 }
+
+/** A correction learned from a photo; `own` is how much of the photo's own mean it uses (1 for a photo of many cards, 0 for one of few). */
+export type PhotoCorrection = ((vector: Float32Array) => Float32Array) & { own: number }
 
 function joinParts(partOf: (part: number) => Float32Array): Float32Array {
   const out = new Float32Array(ART_VECTOR)
@@ -519,9 +581,11 @@ const CLAIM_GAP = 0.05
  * card are not counted, a card needs enough of the others (`ART_MIN_SUPPORT`), and its best hit
  * (the one furthest ahead) is its strength. Places far enough apart with the same card are copies.
  * A place holds one card: when a second card claims the place of a clearer one it is not sure (a
- * look-alike or a generic picture), and when the two are about equally clear neither is.
+ * look-alike or a generic picture), and when the two are about equally clear neither is. With
+ * `onlySure` only the sure cards are returned: a photo of one card or two has no room for the
+ * doubtful ones that the frame, the text and the table of a card give.
  */
-export function cardsFromHits(hits: readonly ArtHit[]): ArtCard[] {
+export function cardsFromHits(hits: readonly ArtHit[], options: { onlySure?: boolean } = {}): ArtCard[] {
   const byCard = new Map<number, ArtHit[]>()
   for (const hit of hits) {
     if (hit.similarity >= ART_SUPPORT_SIMILARITY && hit.margin >= ART_SUPPORT_MARGIN) {
@@ -541,7 +605,7 @@ export function cardsFromHits(hits: readonly ArtHit[]): ArtCard[] {
       if (
         place.support >= FURTHER_COPY_SUPPORT
         && place.best.margin >= Math.max(ART_SURE_MARGIN, best.margin * FURTHER_COPY_SHARE)
-        && copies.every(copy => centerDistance(copy.best.window, place.best.window) >= FURTHER_COPY_DISTANCE)
+        && copies.every(copy => centerDistance(copy.best.window, place.best.window) >= FURTHER_COPY_DISTANCE && !oneWindowCoversBoth(list, copy.best.window, place.best.window))
       ) {
         copies.push(place)
       }
@@ -570,5 +634,17 @@ export function cardsFromHits(hits: readonly ArtHit[]): ArtCard[] {
       }
     }
   }
-  return found.map(entry => entry.card)
+  const cards = found.map(entry => entry.card)
+  return options.onlySure ? cards.filter(card => card.sure) : cards
 }
+
+/** Whether a hit of the card has a window that holds the centres of both windows well inside it (one picture seen from two corners, not two cards). */
+function oneWindowCoversBoth(hits: readonly ArtHit[], a: ArtWindow, b: ArtWindow): boolean {
+  const apart = Math.hypot(a.x + a.size / 2 - (b.x + b.size / 2), a.y + a.size / 2 - (b.y + b.size / 2))
+  return hits.some((hit) => {
+    const w = hit.window
+    const inside = (c: ArtWindow) => c.x + c.size / 2 > w.x && c.x + c.size / 2 < w.x + w.size && c.y + c.size / 2 > w.y && c.y + c.size / 2 < w.y + w.size
+    return w.size >= COVERS_BOTH_RATIO * apart && inside(a) && inside(b)
+  })
+}
+const COVERS_BOTH_RATIO = 1.5

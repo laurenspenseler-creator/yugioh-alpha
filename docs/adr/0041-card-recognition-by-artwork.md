@@ -43,6 +43,15 @@ With these, cards are found that plain cosine never named. Things that did not h
 neighbours or to the windows of this photo (the second even hurts, because a real card is close
 to many overlapping windows), and a colour layout check (not stable under light and foil).
 
+A photo of one card (or two) breaks the second correction: most of its windows show that card, so
+the photo's own mean is the card, and taking it off takes the card off (exact catalog pictures
+placed in a photo found 0 to 1 of 8 that way). When the windows differ mostly along one direction
+(their strongest direction holds 32 % of their variance or more; a photo of many cards 9 to 20 %) the
+index's `photoMean` is used instead, the mean window vector of ten photos of several cards, and in
+between the two are mixed. Such a photo lists only its sure cards: all 8 were found, with no doubtful
+junk from the frame and the text. The windows also include sizes up to 1,100 px, for the art of a
+card that fills the frame.
+
 ### A closer look
 
 No window of a first pass sits exactly on an artwork, and one that does matches it much better.

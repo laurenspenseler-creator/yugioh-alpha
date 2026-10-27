@@ -6,7 +6,7 @@
 // only card ids come back.
 import { AutoModel, env, Tensor } from '@huggingface/transformers'
 import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
-import { ART_DIMENSION, ART_REFINE_MAX_PLACES, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows } from '~~/shared/card-art'
+import { ART_DIMENSION, ART_REFINE_MAX_PLACES, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows } from '~~/shared/card-art'
 import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtWindow } from '~~/shared/card-art'
 import { createGpuMatcher } from './art-gpu'
 import type { GpuMatcher } from './art-gpu'
@@ -27,6 +27,8 @@ export interface ArtScanResult {
   rotation: ArtRotation
   /** How clearly cards showed with the photo upright, turned right and turned left (empty when the way was given): for finding out why a photo was turned. */
   rotationScores: number[]
+  /** The mean vector of the first pass's windows: averaged over many photos of several cards it is the index's `photoMean` (for tuning, see `scripts/art-index.mjs`). */
+  windowMean: number[]
   /** Windows that were turned into a vector. */
   windows: number
   /** Where the model ran: the graphics card, or the processor (thirty times slower). */
@@ -69,8 +71,8 @@ export interface Plan {
   milliseconds: number
 }
 const PLANS: Record<'webgpu' | 'wasm', Plan> = {
-  webgpu: { sizes: [150, 210, 290, 400], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: ART_REFINE_MAX_PLACES, probeWindows: 40, milliseconds: 150_000 },
-  wasm: { sizes: [210, 290, 400], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 16, milliseconds: 240_000 },
+  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: ART_REFINE_MAX_PLACES, probeWindows: 40, milliseconds: 150_000 },
+  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 16, milliseconds: 240_000 },
 }
 
 /** The plan for where the model runs, with whatever a test asked to change. */
@@ -83,6 +85,8 @@ const ROTATION_PROBE_SIZE = 210
 const ROTATION_PROBE_STRIDE = 0.6
 /** A window of the probe counts for the part of its margin above this. */
 const ROTATION_PROBE_FLOOR = 0.05
+/** A photo whose windows are corrected mostly by the mean of other photos (see `photoCorrection`) shows few cards: only the sure ones are listed. */
+const FEW_CARDS_OWN = 0.5
 /** The upright way is kept when its score is at least this share of the best way's, or when no way scores at least the minimum. */
 const UPRIGHT_SHARE = 0.6
 const ROTATION_MIN_SCORE = 0.2
@@ -360,7 +364,7 @@ async function rotationScore(model: Model, index: ArtIndex, bitmap: ImageBitmap,
   const photo = drawPhoto(bitmap, WORKING_EDGE, rotation)
   const probe = byTexture(photo, artWindows(photo.width, photo.height, [ROTATION_PROBE_SIZE], ROTATION_PROBE_STRIDE)).slice(0, windows)
   const embedded = await embedWindows(model, photo, probe, Infinity)
-  const hits = await matchWindows(index, embedded.windows, correctForPhoto(embedded.vectors))
+  const hits = await matchWindows(index, embedded.windows, correctForPhoto(embedded.vectors, undefined, index.photoMean))
   return { score: hits.reduce((sum, hit) => sum + Math.max(0, hit.margin - ROTATION_PROBE_FLOOR), 0), embedded: probe.length }
 }
 
@@ -441,14 +445,15 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   const windows = byTexture(photo, artWindows(photo.width, photo.height, plan.sizes, plan.stride))
   const embedded = await embedWindows(model, photo, windows, performance.now() + plan.milliseconds * FIRST_PASS_SHARE, progress('scanning'))
   // What the photo itself looks like is learned from all its windows, then every window is matched.
-  const correct = photoCorrection(embedded.vectors)
+  const correct = photoCorrection(embedded.vectors, undefined, index.photoMean)
   const first = await matchWindows(index, embedded.windows, embedded.vectors.map(vector => correct(vector)), progress('matching'))
   const closer = await lookCloser(model, index, photo, first, correct, progress('refining'), deadline, request.tuning)
 
   return {
-    cards: cardsFromHits([...first, ...closer.hits]),
+    cards: cardsFromHits([...first, ...closer.hits], { onlySure: correct.own < FEW_CARDS_OWN }),
     rotation,
     rotationScores: scores,
+    windowMean: Array.from(meanVector(embedded.vectors)),
     windows: probed + embedded.windows.length + closer.embedded,
     device,
     seconds: Math.round((performance.now() - started) / 100) / 10,

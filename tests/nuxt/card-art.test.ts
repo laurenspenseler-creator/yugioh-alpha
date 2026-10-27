@@ -19,6 +19,7 @@ import {
   centerArtIndex,
   correctForPhoto,
   matchFromSimilarities,
+  meanVector,
   normalize,
   overlap,
   parseArtIndex,
@@ -339,6 +340,44 @@ describe('photoCorrection', () => {
   })
 })
 
+describe('photoCorrection for photos of few cards', () => {
+  /** Windows that show one picture (a card seen at many sizes and positions): they differ mostly along one direction. */
+  const one = Array.from({ length: 40 }, (_, i) => mixed(7, 300, 0.1 + 0.3 * ((i * 7) % 10) / 10))
+  /** Windows that show many different pictures. */
+  const many = Array.from({ length: 40 }, (_, i) => vector(500 + i))
+  const generic = normalize(vector(9000))
+
+  it('uses the photo\'s own mean for many cards, and says so', () => {
+    const correct = photoCorrection(many, 3, generic)
+
+    expect(correct.own).toBe(1)
+    expect(Array.from(correct(many[3]!))).toEqual(Array.from(photoCorrection(many)(many[3]!)))
+  })
+
+  it('leaves a card that fills the photo in the windows by using the mean of other photos instead', () => {
+    const correct = photoCorrection(one, 3, generic)
+
+    expect(correct.own).toBeLessThan(0.5)
+    // With the photo's own mean the card would be gone: the corrected window would be about the noise, not the card.
+    const kept = correct(one[0]!)
+    const card = vector(7)
+    let along = 0
+    for (let d = 0; d < ART_DIMENSION; d += 1) {
+      along += kept[d]! * card[d]!
+    }
+    expect(along).toBeGreaterThan(0.3)
+  })
+
+  it('does as before without a mean of other photos', () => {
+    expect(photoCorrection(one).own).toBe(1)
+  })
+
+  it('averages vectors', () => {
+    expect(Array.from(meanVector([Float32Array.of(1, 2), Float32Array.of(3, 6)]))).toEqual([2, 4])
+    expect(meanVector([])).toHaveLength(0)
+  })
+})
+
 describe('refinementWindows', () => {
   it('moves and zooms a window around itself, inside the picture, without the window itself', () => {
     const windows = refinementWindows({ x: 100, y: 100, size: 100 }, 1000, 1000)
@@ -485,6 +524,24 @@ describe('cardsFromHits', () => {
     const [card] = cardsFromHits([
       ...around(1, 0.3, 4).map(h => ({ ...h, window: { ...h.window, size: 400 } })),
       ...around(1, 0.28, 4, 300).map(h => ({ ...h, window: { x: h.window.x, y: 250, size: 150 } })),
+    ])
+
+    expect(card!.copies).toBe(1)
+  })
+
+  it('lists only the sure cards when asked (a photo of one card has no room for doubtful ones)', () => {
+    const hits = [...around(1, 0.3, 8), ...around(2, 0.08, 5, 1000, 0.4)]
+
+    expect(cardsFromHits(hits).map(card => card.cardId)).toEqual([1, 2])
+    expect(cardsFromHits(hits, { onlySure: true }).map(card => card.cardId)).toEqual([1])
+  })
+
+  it('does not take a window that holds both places for two copies', () => {
+    // 150 px windows in two corners of a picture that a 1,100 px window sees whole.
+    const [card] = cardsFromHits([
+      ...around(1, 0.3, 4).map(h => ({ ...h, window: { x: 0, y: 0, size: 150 } })),
+      ...around(1, 0.28, 4).map(h => ({ ...h, window: { x: 700, y: 0, size: 150 } })),
+      { cardId: 1, similarity: 0.5, margin: 0.2, window: { x: 0, y: 0, size: 1100 } },
     ])
 
     expect(card!.copies).toBe(1)

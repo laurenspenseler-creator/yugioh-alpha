@@ -45,8 +45,12 @@ const BLURS = [0, 1.5]
 const known = new Map()
 const metaFile = join(outDir, 'index.json')
 const binFile = join(outDir, 'index.bin')
+// The mean window vector of many photos (what a photo of few cards is corrected by, see
+// `photoCorrection` in shared/card-art.ts) is estimated from photos, not from the artworks: it is kept.
+let photoMean
 if (existsSync(metaFile) && existsSync(binFile)) {
   const meta = JSON.parse(readFileSync(metaFile, 'utf8'))
+  photoMean = meta.photoMean
   // An index of an older format (or one without blurred copies) is rebuilt from scratch.
   if (meta.version === 2 && meta.variants) {
     const binary = readFileSync(binFile)
@@ -162,6 +166,7 @@ const meta = {
   cardIds: entries.map(entry => entry.cardId),
   imageIds: entries.map(entry => entry.imageId),
   variants: entries.map(entry => entry.variant),
+  ...(photoMean ? { photoMean } : {}),
 }
 mkdirSync(outDir, { recursive: true })
 writeFileSync(metaFile, JSON.stringify(meta))
