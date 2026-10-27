@@ -46,7 +46,8 @@
         "turning": "Ausrichtung des Fotos wird geprüft …",
         "scanning": "Karten werden am Bild erkannt … {percent} %",
         "matching": "Bilder werden mit allen Karten verglichen … {percent} %",
-        "refining": "Treffer werden genauer geprüft … {percent} %"
+        "refining": "Treffer werden genauer geprüft … {percent} %",
+        "slow": "Dieses Gerät kann die Grafikkarte nicht nutzen (WebGPU fehlt, etwa bei einer Adresse mit http://). Ein Foto dauert deshalb einige Minuten."
       },
       "result": "{count} Karte erkannt. | {count} Karten erkannt.",
       "unsure": "{count} davon ist unsicher. | {count} davon sind unsicher.",

@@ -44,6 +44,8 @@ const artLabel = computed(() => {
   const current = artProgress.value
   return current ? t(`quickEntry.photo.art.${current.stage}`, { percent: n(current.percent ?? 0, 'integer') }) : ''
 })
+// Without a graphics card to compute on (no WebGPU, which a page on a plain http:// address does not get) a photo takes minutes.
+const artSlow = computed(() => artProgress.value?.device === 'wasm')
 
 function validate(files: File[]): string {
   if (files.length > MAX_PHOTOS) {
@@ -189,6 +191,11 @@ async function onPick(event: Event) {
         class="block text-xs text-muted"
         data-testid="photo-art-progress"
       >{{ artLabel }}</span>
+      <span
+        v-if="artSlow"
+        class="block text-xs text-muted"
+        data-testid="photo-art-slow"
+      >{{ t('quickEntry.photo.art.slow') }}</span>
     </p>
     <p
       v-else-if="result"

@@ -10,6 +10,8 @@ export interface ArtProgress {
   stage: ArtStage
   /** 0–100 within the stage, or null while it is not known. */
   percent: number | null
+  /** Where the model runs, once it is known (not while it is still being loaded): the processor is thirty times slower than the graphics card. */
+  device?: 'webgpu' | 'wasm'
 }
 
 let worker: Worker | null = null
@@ -56,7 +58,7 @@ export async function recognizeArt(
         return
       }
       if (reply.type === 'progress') {
-        options.onProgress?.({ stage: reply.stage, percent: reply.percent })
+        options.onProgress?.({ stage: reply.stage, percent: reply.percent, device: reply.device })
         return
       }
       done()

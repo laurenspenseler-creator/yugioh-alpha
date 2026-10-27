@@ -113,19 +113,19 @@ describe('recognizeArt', () => {
 
   it('passes a known rotation on, forwards the progress, and ignores replies to other requests', async () => {
     const { recognizeArt } = await setup()
-    const seen: Array<[string, number | null]> = []
+    const seen: Array<[string, number | null, string | undefined]> = []
 
-    const cards = recognizeArt(new Blob(['x']), { rotation: 270, onProgress: progress => seen.push([progress.stage, progress.percent]) })
+    const cards = recognizeArt(new Blob(['x']), { rotation: 270, onProgress: progress => seen.push([progress.stage, progress.percent, progress.device]) })
     const { worker, message } = await posted()
     expect(message.rotation).toBe(270)
 
     worker.reply({ id: 999, type: 'progress', stage: 'scanning', percent: 99 })
     worker.reply({ id: message.id, type: 'progress', stage: 'model', percent: 40 })
-    worker.reply({ id: message.id, type: 'progress', stage: 'scanning', percent: null })
+    worker.reply({ id: message.id, type: 'progress', stage: 'scanning', percent: null, device: 'wasm' })
     worker.reply({ id: message.id, type: 'result', result: RESULT })
 
     await cards
-    expect(seen).toEqual([['model', 40], ['scanning', null]])
+    expect(seen).toEqual([['model', 40, undefined], ['scanning', null, 'wasm']])
   })
 
   it('starts the worker once and reuses it, because it holds the model and the index', async () => {

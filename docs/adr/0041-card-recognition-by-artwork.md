@@ -134,6 +134,10 @@ which makes a wrong one look like a right one.
   loads them. The installer gets 68 MB bigger.
 - A photo takes about a minute on a laptop's integrated graphics and four minutes without
   WebGPU (the text reading runs beside it and is not slower than that).
+  WebGPU only exists in a secure context, so a phone that opens the laptop's address over plain
+  HTTP gets the processor path (a few minutes, longer on a phone). The worker reports where the
+  model runs with its progress, and the page then says that the photo will take minutes
+  (`quickEntry.photo.art.slow`) instead of leaving the "about a minute" of the hint standing.
 - The photo-mean correction needs more than one card on the photo or the `photoMean`: an
   index without it still works for photos of many cards, but not for one. `scripts/art-index.mjs`
   keeps the value it finds in an existing index; it is estimated from photos (the `windowMean` of a

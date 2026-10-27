@@ -55,6 +55,24 @@ describe('PhotoImport', () => {
     expect(component.emitted('lines')).toEqual([[{ lines: ['2x Dark Magician', '1x Kuriboh', '1x Mystic Elf'], photos: 1, unsure: 1 }]])
   })
 
+  it('says that a photo takes minutes when the artwork is looked at on the processor, and not when the graphics card does it', async () => {
+    for (const [device, slowNote] of [['wasm', true], ['webgpu', false]] as const) {
+      let finish = () => {}
+      const running = new Promise<void>((resolve) => { finish = resolve })
+      recognizeArt.mockReset().mockImplementation(async (_photo: Blob, options: { onProgress: (progress: unknown) => void }) => {
+        options.onProgress({ stage: 'scanning', percent: 10, device })
+        await running
+        return ART
+      })
+      const component = await mountSuspended(PhotoImport)
+      const choosing = choose(component, [photo()])
+      await vi.waitFor(() => expect(component.html()).toContain('photo-art-progress'))
+      expect(component.html().includes('photo-art-slow')).toBe(slowNote)
+      finish()
+      await choosing
+    }
+  })
+
   it('goes on with the names alone when the artwork cannot be recognized (no index in this build, say)', async () => {
     recognizeArt.mockRejectedValue(new Error('The artwork index answered 404'))
     const component = await mountSuspended(PhotoImport)

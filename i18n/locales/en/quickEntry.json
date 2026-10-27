@@ -46,7 +46,8 @@
         "turning": "Checking which way the photo lies …",
         "scanning": "Recognizing the cards by their artwork … {percent} %",
         "matching": "Comparing the pictures with all cards … {percent} %",
-        "refining": "Taking a closer look at the matches … {percent} %"
+        "refining": "Taking a closer look at the matches … {percent} %",
+        "slow": "This device cannot use the graphics card (WebGPU is missing, for instance on an http:// address). A photo takes a few minutes because of that."
       },
       "result": "{count} card recognized. | {count} cards recognized.",
       "unsure": "{count} of them is uncertain. | {count} of them are uncertain.",

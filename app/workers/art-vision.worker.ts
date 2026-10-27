@@ -39,7 +39,7 @@ export interface ArtScanResult {
 export type ArtStage = 'model' | 'index' | 'turning' | 'scanning' | 'matching' | 'refining'
 
 export type ArtReply
-  = | { id: number, type: 'progress', stage: ArtStage, percent: number | null }
+  = | { id: number, type: 'progress', stage: ArtStage, percent: number | null, device?: 'webgpu' | 'wasm' }
     | { id: number, type: 'result', result: ArtScanResult }
     | { id: number, type: 'error', message: string }
 
@@ -416,7 +416,7 @@ async function findRotation(request: ArtScanRequest, model: Model, index: ArtInd
     const probe = await rotationScore(model, index, request.bitmap, turn, plan.probeWindows)
     embedded += probe.embedded
     scores.push(Math.round(probe.score * 1000) / 1000)
-    scope.postMessage({ id: request.id, type: 'progress', stage: 'turning', percent: Math.round(((step + 1) / 3) * 100) })
+    scope.postMessage({ id: request.id, type: 'progress', stage: 'turning', percent: Math.round(((step + 1) / 3) * 100), device })
     if (turn === 0) {
       upright = probe.score
     }
@@ -433,12 +433,12 @@ async function findRotation(request: ArtScanRequest, model: Model, index: ArtInd
 async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   const started = performance.now()
   const model = await loadModel(request.id)
-  scope.postMessage({ id: request.id, type: 'progress', stage: 'index', percent: null })
+  scope.postMessage({ id: request.id, type: 'progress', stage: 'index', percent: null, device })
   const index = await loadIndex()
   const plan = planFor(request.tuning)
   const deadline = performance.now() + plan.milliseconds
   const progress = (stage: ArtStage) => (done: number, total: number) => {
-    scope.postMessage({ id: request.id, type: 'progress', stage, percent: Math.round((done / Math.max(1, total)) * 100) })
+    scope.postMessage({ id: request.id, type: 'progress', stage, percent: Math.round((done / Math.max(1, total)) * 100), device })
   }
 
   const { rotation, embedded: probed, scores } = await findRotation(request, model, index, plan)
