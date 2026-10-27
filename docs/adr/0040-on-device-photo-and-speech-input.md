@@ -88,10 +88,14 @@ as one line with no comma in it. `POST /api/cards/join-spoken-lines`
 words that are closest to card names (a dynamic program over the words, a number word
 before a stretch being its quantity), and neighbouring lines are joined when together they
 are closer to a card name than either alone, or when neither is a name and together they
-sound like one (the sound key treats g, j and k alike and drops the r of "-er"). On a
+sound like one (the sound key treats g, j and k alike and drops the r of "-er"). A stretch
+of several words that is exactly a card name wins over a cut into two shorter card names
+("Vermächtnis von" + "Yatagarasu"), and a half that is only the start of a family of names
+("The Six Samurai", 0.86 close to "... - Irou") still counts as no name for the sound join
+("Cayman" for "Kamon"). On a
 tester's recording of 15 cards (German names, English ones, and a card said with a pause)
 all 15 are resolved, and on synthetic dictations of random cards 13 to 15 of 15; 10-card
-lists without any break and with one or two wrong letters per name resolve 93 % of the cards.
+lists without any break and with one or two wrong letters per name resolve 94 % of the cards.
 
 A card named twice is two copies, wherever in the list and however it was spelled: the
 lines are merged by the card their best candidate is (from a score of 0.6), and a quantity
