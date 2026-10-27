@@ -47,6 +47,16 @@ describe('joinSpokenLines', () => {
     expect(joinSpokenLines(db, ['Harpyien', 'Flederwisch'])).toEqual(['Harpyien Flederwisch'])
   })
 
+  it('joins halves that are no card names but sound like one together ("Magic" "Gemma" for Magic Jammer)', () => {
+    // The line becomes the name of the card it sounds like: the lookup would not find "Magic Gemma" by its letters.
+    expect(joinSpokenLines(db, ['Kuriboh', 'Magic', 'Gemma', 'Dunkler Magier'])).toEqual(['Kuriboh', 'Magic Jammer', 'Dunkler Magier'])
+    expect(joinSpokenLines(db, ['2x Magic', 'Gemma'])).toEqual(['2x Magic Jammer'])
+  })
+
+  it('does not join by sound when one half is a card name of its own', () => {
+    expect(joinSpokenLines(db, ['Kuriboh', 'Gemma'])).toEqual(['Kuriboh', 'Gemma'])
+  })
+
   it('keeps the quantity of the first line', () => {
     expect(joinSpokenLines(db, ['2x schwarz glänzender Soldat', 'Gesandter des Anfangs'])).toEqual(['2x schwarz glänzender Soldat Gesandter des Anfangs'])
   })

@@ -5,7 +5,7 @@
 // page's side of this. Everything stays on the device: the photo is handed over as a bitmap and
 // only card ids come back.
 import { AutoModel, env, Tensor } from '@huggingface/transformers'
-import { AI_ASSETS, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
+import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
 import { ART_DIMENSION, ART_REFINE_MAX_PLACES, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows } from '~~/shared/card-art'
 import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtWindow } from '~~/shared/card-art'
 import { createGpuMatcher } from './art-gpu'
@@ -94,21 +94,30 @@ type Model = (inputs: { pixel_values: Tensor }) => Promise<{ last_hidden_state: 
 let modelLoading: Promise<Model> | null = null
 let indexLoading: Promise<ArtIndex> | null = null
 let matcherLoading: Promise<GpuMatcher | null> | null = null
-/** Where the model runs: the graphics card is thirty times faster than the processor, when it can do half precision. */
+/** Where the model runs: the graphics card is thirty times faster than the processor. */
 let device: 'webgpu' | 'wasm' = 'wasm'
 
-async function webGpuUsable(): Promise<boolean> {
+/**
+ * How the graphics card is to run the model, or null when it cannot (or was told not to). Half
+ * precision is the small and quick way, and needs a card that computes in it and a browser that
+ * has `Float16Array` to read its answers; the full precision model (88 MB, fetched from Hugging
+ * Face, not shipped) is for the rest.
+ */
+async function webGpuPrecision(): Promise<'fp16' | 'fp32' | null> {
   const gpu = (navigator as unknown as { gpu?: { requestAdapter: () => Promise<{ features: Set<string> } | null> } }).gpu
-  // Half precision answers need Float16Array to be read, and the card needs to compute in it.
-  if (!gpu || (globalThis as { Float16Array?: unknown }).Float16Array === undefined || self.name === ART_PROCESSOR_WORKER) {
-    return false
+  if (!gpu || self.name === ART_PROCESSOR_WORKER) {
+    return null
   }
   try {
     const adapter = await gpu.requestAdapter()
-    return adapter !== null && adapter.features.has('shader-f16')
+    if (!adapter) {
+      return null
+    }
+    const half = adapter.features.has('shader-f16') && (globalThis as { Float16Array?: unknown }).Float16Array !== undefined
+    return half && self.name !== ART_FULL_PRECISION_WORKER ? 'fp16' : 'fp32'
   }
   catch {
-    return false
+    return null
   }
 }
 
@@ -119,8 +128,8 @@ async function loadModel(id: number): Promise<Model> {
     env.allowLocalModels = await aiAssetServed(`models/${MODEL_ID}/config.json`)
     env.allowRemoteModels = true
     const files = new Map<string, { loaded: number, total: number }>()
-    const create = async (where: 'webgpu' | 'wasm') => await AutoModel.from_pretrained(MODEL_ID, {
-      dtype: where === 'webgpu' ? 'fp16' : 'q8',
+    const create = async (where: 'webgpu' | 'wasm', dtype: 'fp16' | 'fp32' | 'q8') => await AutoModel.from_pretrained(MODEL_ID, {
+      dtype,
       device: where,
       progress_callback: (event: { status: string, file?: string, loaded?: number, total?: number }) => {
         if (event.status === 'progress' && event.file && event.total) {
@@ -132,9 +141,10 @@ async function loadModel(id: number): Promise<Model> {
       },
     }) as unknown as Model
 
-    if (await webGpuUsable()) {
+    const precision = await webGpuPrecision()
+    if (precision) {
       try {
-        const model = await create('webgpu')
+        const model = await create('webgpu', precision)
         // The first run compiles the graphics card's programs; a card that cannot run them fails here, not on the photo.
         await model({ pixel_values: new Tensor('float32', new Float32Array(3 * MODEL_INPUT * MODEL_INPUT), [1, 3, MODEL_INPUT, MODEL_INPUT]) })
         device = 'webgpu'
@@ -145,7 +155,7 @@ async function loadModel(id: number): Promise<Model> {
       }
     }
     device = 'wasm'
-    return await create('wasm')
+    return await create('wasm', 'q8')
   })().catch((error) => {
     modelLoading = null
     throw error

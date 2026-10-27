@@ -2,7 +2,7 @@
 // (`app/workers/art-vision.worker.ts`) as a bitmap, and the cards it recognizes come back. The photo
 // never leaves the device.
 import type { ArtReply, ArtRotation, ArtScanRequest, ArtScanResult, ArtStage } from '~/workers/art-vision.worker'
-import { ART_DEVICE_KEY, ART_PROCESSOR_WORKER } from '~/utils/ai-assets'
+import { ART_DEVICE_KEY, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER } from '~/utils/ai-assets'
 
 export type { ArtRotation, ArtScanResult } from '~/workers/art-vision.worker'
 
@@ -15,19 +15,20 @@ export interface ArtProgress {
 let worker: Worker | null = null
 let lastRequest = 0
 
-/** Whether this browser was told to keep the model on the processor (a switch for testing that way). */
-function processorOnly(): boolean {
+/** The name of the worker: a switch for testing the ways that are not the usual one on a given machine (see `ART_PROCESSOR_WORKER`). */
+function workerName(): string {
   try {
-    return localStorage.getItem(ART_DEVICE_KEY) === 'processor'
+    const chosen = localStorage.getItem(ART_DEVICE_KEY)
+    return chosen === 'processor' ? ART_PROCESSOR_WORKER : chosen === 'full' ? ART_FULL_PRECISION_WORKER : 'art'
   }
   catch {
-    return false
+    return 'art'
   }
 }
 
 /** The background thread, started on first use and kept (it holds the model and the index). */
 function artWorker(): Worker {
-  worker ??= new Worker(new URL('../workers/art-vision.worker.ts', import.meta.url), { type: 'module', name: processorOnly() ? ART_PROCESSOR_WORKER : 'art' })
+  worker ??= new Worker(new URL('../workers/art-vision.worker.ts', import.meta.url), { type: 'module', name: workerName() })
   return worker
 }
 

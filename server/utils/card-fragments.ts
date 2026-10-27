@@ -215,8 +215,11 @@ function bestMatch(index: NameIndex, folded: string): { cardId: number, score: n
 
 // --- By sound: what a speech recognizer writes for a name it did not know ------------
 
-/** Voiced and unvoiced consonants, and the ones German and English spell alike, as one class. */
-const CONSONANT_CLASS: Record<string, string> = { b: 'p', p: 'p', d: 't', t: 't', g: 'k', k: 'k', c: 'k', q: 'k', f: 'f', v: 'f', w: 'f', s: 's', z: 's' }
+/**
+ * Voiced and unvoiced consonants, and the ones German and English spell alike, as one class. The
+ * English "J" of "Jammer" is what a German writes as "Gemma" or "Dschemma", so g, j and k are one.
+ */
+const CONSONANT_CLASS: Record<string, string> = { b: 'p', p: 'p', d: 't', t: 't', g: 'k', j: 'k', k: 'k', c: 'k', q: 'k', f: 'f', v: 'f', w: 'f', s: 's', z: 's' }
 const DIGRAPHS: ReadonlyArray<readonly [RegExp, string]> = [[/sch/g, 's'], [/ph/g, 'f'], [/ch/g, 'k'], [/ck/g, 'k'], [/tz/g, 's'], [/th/g, 't'], [/dt/g, 't'], [/qu/g, 'k'], [/x/g, 'ks']]
 
 /**
@@ -225,7 +228,8 @@ const DIGRAPHS: ReadonlyArray<readonly [RegExp, string]> = [[/sch/g, 's'], [/ph/
  * "makes c" and "maxx c" share "mksk").
  */
 export function phoneticKey(folded: string): string {
-  let text = folded
+  // The r at the end of "-er" is hardly said ("Jammer" is heard as "Gemma").
+  let text = folded.replace(/([aeiouy])r$/, '$1')
   for (const [pattern, replacement] of DIGRAPHS) {
     text = text.replace(pattern, replacement)
   }
@@ -273,14 +277,14 @@ const SOUND_SCORE_CEILING = 0.8
 /** Below this best score by letters, names are compared by sound too. */
 const SOUND_SEARCH_BELOW = 0.6
 
-function rankBySound(index: NameIndex, folded: string, limit: number): Array<{ cardId: number, score: number }> {
+function rankBySound(index: NameIndex, folded: string, limit: number, minKeyLength = MIN_KEY_LENGTH): Array<{ cardId: number, score: number }> {
   const key = phoneticKey(folded)
-  if (key.length < MIN_KEY_LENGTH) {
+  if (key.length < minKeyLength) {
     return []
   }
   const bestByCard = new Map<number, number>()
   for (const entry of index.entries) {
-    if (entry.key.length < MIN_KEY_LENGTH) {
+    if (entry.key.length < minKeyLength) {
       continue
     }
     const longest = Math.max(key.length, entry.key.length)
@@ -295,6 +299,15 @@ function rankBySound(index: NameIndex, folded: string, limit: number): Array<{ c
     }
   }
   return [...bestByCard].map(([cardId, score]) => ({ cardId, score })).sort((a, b) => b.score - a.score).slice(0, limit)
+}
+
+/**
+ * The cards whose names sound like a text, best first: for a text a recognizer spelled by ear. Scores
+ * stay below sure. `minKeyLength` is how many consonants a sound needs to count; a short one (three)
+ * only matches a name that has the very same consonants.
+ */
+export function closestBySound(db: Db, text: string, limit: number, minKeyLength = MIN_KEY_LENGTH): Array<{ cardId: number, score: number }> {
+  return rankBySound(nameIndex(db), normalizeCardName(text), limit, minKeyLength)
 }
 
 /**

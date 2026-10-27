@@ -2,9 +2,13 @@
 // A name with a dash or a comma in it ("Schwarz Glänzender Soldat - Gesandter des Anfangs") is
 // said with a pause and written as two lines; each half then matches some other card or none.
 // Two neighbouring lines are one card when the two together are clearly closer to a card name
-// than either is alone.
+// than either is alone, or when neither is a card name and together they sound like one
+// ("Magic" and "Gemma" for "Magic Jammer").
+import { inArray } from 'drizzle-orm'
 import type { useDb } from '../db'
+import { catalogCard } from '../db/schema'
 import { normalizeCardName, similarity, suggestCatalogMatches } from './card-entry'
+import { closestBySound } from './card-fragments'
 
 type Db = ReturnType<typeof useDb>
 
@@ -22,6 +26,11 @@ const JOIN_ADVANTAGE = 0.1
  */
 const NEARLY_EXACT = 0.9
 const FRAGMENT_BELOW = 0.7
+/** Neither half is a card name when both are below this by letters; together they must sound this like a name. */
+const NOT_A_NAME_BELOW = 0.85
+const MIN_SOUND_JOIN = 0.75
+/** "Magic Gemma" has three consonants (m, k, m): enough here, because the whole sound must be a name's. */
+const SOUND_JOIN_MIN_CONSONANTS = 3
 
 const QUANTITY = /^(\d{1,2})x\s+(.+)$/i
 
@@ -40,6 +49,16 @@ function closestNameSimilarity(db: Db, text: string): number {
     }
   }
   return best
+}
+
+/** The English name of the card a text sounds like (the whole sound, not just a part), the one nearest by letters when several do; null if none. */
+function nameBySound(db: Db, text: string): string | null {
+  const sounding = closestBySound(db, text, 5, SOUND_JOIN_MIN_CONSONANTS).filter(hit => hit.score >= MIN_SOUND_JOIN)
+  const names = sounding.length === 0
+    ? []
+    : db.select({ name: catalogCard.name }).from(catalogCard).where(inArray(catalogCard.id, sounding.map(hit => hit.cardId))).all().map(row => row.name)
+  const folded = normalizeCardName(text)
+  return names.sort((a, b) => similarity(folded, normalizeCardName(b)) - similarity(folded, normalizeCardName(a)))[0] ?? null
 }
 
 /**
@@ -62,6 +81,14 @@ export function joinSpokenLines(db: Db, lines: readonly string[]): string[] {
       const oneHalfIsAFragment = together >= NEARLY_EXACT && Math.min(...halves) < FRAGMENT_BELOW
       if (together >= MIN_JOINED_SIMILARITY && (clearlyBetter || oneHalfIsAFragment)) {
         out.push(match ? `${match[1]}x ${joinedName}` : joinedName)
+        at += 1
+        continue
+      }
+      // Neither half is a name, but together they sound like one: the line becomes that card's name, because
+      // the lookup would not find it by the spelling ("Magic Gemma").
+      const heard = Math.max(...halves) < NOT_A_NAME_BELOW ? nameBySound(db, joinedName) : null
+      if (heard) {
+        out.push(match ? `${match[1]}x ${heard}` : heard)
         at += 1
         continue
       }

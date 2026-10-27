@@ -91,6 +91,16 @@ describe('recognizeArt', () => {
     expect(worker.options).toEqual({ type: 'module', name: 'art-processor' })
   })
 
+  it('starts a worker that runs the graphics card in full precision when the browser was told so', async () => {
+    vi.stubGlobal('localStorage', { getItem: (key: string) => key === 'ygo-art-device' ? 'full' : null })
+    const { recognizeArt } = await setup()
+
+    void recognizeArt(new Blob(['x']))
+    const { worker } = await posted()
+
+    expect(worker.options).toEqual({ type: 'module', name: 'art-full-precision' })
+  })
+
   it('does not mind a browser without storage', async () => {
     vi.stubGlobal('localStorage', { getItem: () => { throw new Error('blocked') } })
     const { recognizeArt } = await setup()
