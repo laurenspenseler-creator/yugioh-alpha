@@ -16,6 +16,8 @@ const CARDS = [
   { id: 4, name: 'Magic Jammer' },
   { id: 5, name: 'Kuriboh' },
   { id: 6, name: 'Dark Magician' },
+  { id: 7, name: 'Yata-Garasu' },
+  { id: 8, name: 'Legacy of Yata-Garasu' },
 ]
 
 function createTestDb() {
@@ -31,6 +33,8 @@ function createTestDb() {
     3: 'Harpyien-Flederwisch',
     4: 'Magische Störung',
     6: 'Dunkler Magier',
+    7: 'Yata-Garasu',
+    8: 'Vermächtnis von Yata-Garasu',
   })
   return db
 }
@@ -72,6 +76,11 @@ describe('joinSpokenLines', () => {
   it('cuts a line without any break into the cards it names, a number word before a card is its quantity', () => {
     expect(joinSpokenLines(db, ['Kuriboh Dunkler Magier Harpyien Flederwisch drei Kuriboh']))
       .toEqual(['Kuriboh', 'Dunkler Magier', 'Harpyien Flederwisch', '3x Kuriboh'])
+  })
+
+  it('keeps a name whole that ends in the name of another card ("Legacy of Yata-Garasu" is not "Legacy of" and "Yata-Garasu")', () => {
+    expect(joinSpokenLines(db, ['Kuriboh Dunkler Magier Vermächtnis von Yatagarasu Magic Jammer']))
+      .toEqual(['Kuriboh', 'Dunkler Magier', 'Vermächtnis von Yatagarasu', 'Magic Jammer'])
   })
 
   it('cuts a run of cards that were heard wrongly, too', () => {

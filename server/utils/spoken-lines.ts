@@ -60,6 +60,12 @@ const MAX_NAME_WORDS = 7
 const SEGMENT_FLOOR = 0.62
 const SEGMENT_BASE = 0.55
 const LONGER_STRETCH_BONUS = 0.08
+/**
+ * A stretch of several words that is exactly a card name beats a cut into two cards that each match part of it
+ * ("Vermächtnis von" and "Yatagarasu", both names of other cards, for "Vermächtnis von Yatagarasu").
+ */
+const EXACT_STRETCH = 0.95
+const EXACT_STRETCH_BONUS = 0.25
 /** A line that is as close as this to one card name as a whole is one card, however many words. */
 const WHOLE_NAME = 0.85
 
@@ -100,6 +106,7 @@ export function splitRunOnLine(db: Db, line: string): string[] {
       const closeness = score(end - length, end)
       // A longer stretch wins over a shorter one inside it that is a little closer ("Vermächtnis von Yata-Garasu" over "Yata-Garasu").
       const value = closeness - SEGMENT_BASE + LONGER_STRETCH_BONUS * Math.min(length - 1, 3)
+        + (length > 1 && closeness >= EXACT_STRETCH ? EXACT_STRETCH_BONUS : 0)
       if (closeness >= SEGMENT_FLOOR && best[end - length]! + value > best[end]!) {
         best[end] = best[end - length]! + value
         start[end] = end - length
