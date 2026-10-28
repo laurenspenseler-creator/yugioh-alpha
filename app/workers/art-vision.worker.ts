@@ -47,8 +47,11 @@ const MODEL_ID = 'Xenova/dinov2-small'
 const MODEL_INPUT = 224
 /** The photo is looked at with this long edge, in pixels; the window sizes below are for it. */
 const WORKING_EDGE = 1600
-/** Windows are embedded this many at a time. */
-const BATCH = 8
+/**
+ * Windows are embedded this many at a time. Larger batches keep the graphics card busier (the same photo took
+ * 152, 105, 82 and 78 seconds at 4, 8, 16 and 32); the processor gains nothing from them.
+ */
+const batchSize = () => device === 'webgpu' ? 16 : 8
 
 /**
  * What to look at. The artwork of a card is 9 % to 70 % of a photo's long edge, depending on how many
@@ -313,8 +316,8 @@ async function embedWindows(
       report?.(embedded.windows.length, windows.length)
     }
   }
-  for (let at = 0; at < windows.length && performance.now() < deadline; at += BATCH) {
-    const batch = windows.slice(at, at + BATCH)
+  for (let at = 0; at < windows.length && performance.now() < deadline; at += batchSize()) {
+    const batch = windows.slice(at, at + batchSize())
     const next = { batch, vectors: runModel(model, windowTensor(photo, batch), batch.length) }
     await collect()
     running = next
