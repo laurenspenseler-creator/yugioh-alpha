@@ -55,6 +55,8 @@ export async function transcribeAudio(
   onProgress?: (progress: SpeechLoadProgress) => void,
 ): Promise<string> {
   const transcriber = await loadTranscriber(quality, onProgress)
-  const result = await transcriber(audio, { language, task: 'transcribe', chunk_length_s: 30, stride_length_s: 5 })
+  // With timestamps: without them Whisper writes down only the start of a 30 second stretch of names said one
+  // after the other and drops the rest (14 of 48 cards missing from a minute and a half of a deck list).
+  const result = await transcriber(audio, { language, task: 'transcribe', chunk_length_s: 30, stride_length_s: 5, return_timestamps: true })
   return (Array.isArray(result) ? result.map(part => part.text).join(' ') : result.text).trim()
 }

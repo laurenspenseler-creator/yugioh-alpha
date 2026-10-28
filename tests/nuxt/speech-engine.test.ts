@@ -47,7 +47,7 @@ describe('transcribeAudio', () => {
     expect(first).toBe('Kuriboh')
     expect(pipeline).toHaveBeenCalledTimes(1)
     expect(transcriber).toHaveBeenCalledTimes(2)
-    expect(transcriber.mock.calls[1]).toEqual([expect.any(Float32Array), expect.objectContaining({ language: 'english', task: 'transcribe' })])
+    expect(transcriber.mock.calls[1]).toEqual([expect.any(Float32Array), expect.objectContaining({ language: 'english', task: 'transcribe', return_timestamps: true })])
   })
 
   it('reports how far the download of the model is, over all its files', async () => {

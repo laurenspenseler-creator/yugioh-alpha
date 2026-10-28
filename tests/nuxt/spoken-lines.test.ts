@@ -20,6 +20,7 @@ const CARDS = [
   { id: 8, name: 'Legacy of Yata-Garasu' },
   { id: 9, name: 'The Six Samurai - Irou' },
   { id: 10, name: 'The Six Samurai - Kamon' },
+  { id: 11, name: 'Double Coston' },
 ]
 
 function createTestDb() {
@@ -37,6 +38,7 @@ function createTestDb() {
     6: 'Dunkler Magier',
     7: 'Yata-Garasu',
     8: 'Vermächtnis von Yata-Garasu',
+    11: 'Doppelter Coston',
   })
   return db
 }
@@ -83,6 +85,14 @@ describe('joinSpokenLines', () => {
   it('joins a name that is the start of a family of names with a half that was heard wrongly ("Cayman" for "Kamon")', () => {
     expect(joinSpokenLines(db, ['Kuriboh', 'The Six Samurai', 'Cayman', 'Magic Jammer']))
       .toEqual(['Kuriboh', 'The Six Samurai - Kamon', 'Magic Jammer'])
+  })
+
+  it('joins two halves of a name that sound like it together, though one consonant differs ("Doppelter" "Kostom")', () => {
+    expect(joinSpokenLines(db, ['Kuriboh', 'Doppelter', 'Kostom', 'Magic Jammer'])).toEqual(['Kuriboh', 'Double Coston', 'Magic Jammer'])
+  })
+
+  it('keeps a short line as one card, the pauses of the recognizer are where the cards end ("Jomagna das Feuer von Tom")', () => {
+    expect(joinSpokenLines(db, ['Kuriboh Dunkler Magier Magic Jammer Dark'])).toEqual(['Kuriboh Dunkler Magier Magic Jammer Dark'])
   })
 
   it('keeps a name whole that ends in the name of another card ("Legacy of Yata-Garasu" is not "Legacy of" and "Yata-Garasu")', () => {

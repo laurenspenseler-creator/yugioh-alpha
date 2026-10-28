@@ -32,7 +32,7 @@ const FRAGMENT_BELOW = 0.7
  * but only the start of a family of names); together they must sound this like a name.
  */
 const NOT_A_NAME_BELOW = 0.9
-const MIN_SOUND_JOIN = 0.75
+const MIN_SOUND_JOIN = 0.7
 /** "Magic Gemma" has three consonants (m, k, m): enough here, because the whole sound must be a name's. */
 const SOUND_JOIN_MIN_CONSONANTS = 3
 
@@ -55,8 +55,8 @@ function closestNameSimilarity(db: Db, text: string): number {
   return best
 }
 
-/** A line this long may be several cards said one after the other. */
-const RUN_ON_MIN_WORDS = 5
+/** A line this long may be several cards said one after the other: Whisper writes a comma at every pause, so a stretch of fewer words is one card, however garbled ("Jomagna das Feuer von Tom"). */
+const RUN_ON_MIN_WORDS = 7
 /** The most words of one card name. */
 const MAX_NAME_WORDS = 7
 /** A stretch of words is a card from this similarity to a name on, and must beat the base to be worth a line of its own. */

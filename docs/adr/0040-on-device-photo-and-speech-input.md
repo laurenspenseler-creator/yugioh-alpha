@@ -97,6 +97,15 @@ tester's recording of 15 cards (German names, English ones, and a card said with
 all 15 are resolved, and on synthetic dictations of random cards 13 to 15 of 15; 10-card
 lists without any break and with one or two wrong letters per name resolve 94 % of the cards.
 
+A deck list said in one go, a minute and a half of names one after the other, came out with whole
+stretches missing (11 and 14 of 44 and 48 cards of the tester's two recordings): without timestamps
+Whisper writes down the start of each 30 second stretch and stops, and nothing makes it go on.
+`return_timestamps: true` makes it write everything (30 of 31 and 34 of 43 different cards found
+instead of 25 and 26, and not slower); 15 second stretches without timestamps made it repeat one
+name a hundred times. A comma-separated stretch of up to six words is one card ("Jomagna das Feuer
+von Tom" for "Yomagna das Feuerphantom"), and two halves that are no names join by sound from 0.70 on
+("Doppelter" "Kostom").
+
 A card named twice is two copies, wherever in the list and however it was spelled: the
 lines are merged by the card their best candidate is (from a score of 0.6), and a quantity
 that comes from merging equal lines is no longer taken back by `resolveEntryLine` (it
