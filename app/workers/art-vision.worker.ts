@@ -6,7 +6,7 @@
 // only card ids come back.
 import { AutoModel, env, Tensor } from '@huggingface/transformers'
 import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
-import { ART_DIMENSION, ART_REFINE_MAX_PLACES, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows } from '~~/shared/card-art'
+import { ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows } from '~~/shared/card-art'
 import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtWindow } from '~~/shared/card-art'
 import { createGpuMatcher } from './art-gpu'
 import type { GpuMatcher } from './art-gpu'
@@ -69,11 +69,13 @@ export interface Plan {
   probeWindows: number
   /** Looking stops after this long, whatever is left: the cards found so far are returned. */
   milliseconds: number
+  /** Places that matched this closely get a closer look too, however narrow their lead (a look-alike a hair ahead is common on a real photo); undefined: only the clear ones. */
+  minSimilarity?: number
   /** How much of the usual number of windows a card needs to be listed or sure (see `cardsFromHits`): a sparser plan gives every card fewer windows. */
   supportScale: number
 }
 const PLANS: Record<'webgpu' | 'wasm', Plan> = {
-  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: ART_REFINE_MAX_PLACES, probeWindows: 40, milliseconds: 150_000, supportScale: 1 },
+  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 24, probeWindows: 40, milliseconds: 150_000, supportScale: 1, minSimilarity: 0.35 },
   wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65 },
 }
 
@@ -399,7 +401,7 @@ async function lookCloser(
   const plan = planFor(tuning)
   const seen = new Set(first.map(hit => windowKey(hit.window)))
   const windows: ArtWindow[] = []
-  for (const candidate of refinementCandidates(first, plan.minMargin, plan.places)) {
+  for (const candidate of refinementCandidates(first, plan.minMargin, plan.places, plan.minSimilarity)) {
     for (const window of refinementWindows(candidate.window, photo.width, photo.height, plan.shifts, plan.zooms)) {
       if (!seen.has(windowKey(window))) {
         seen.add(windowKey(window))

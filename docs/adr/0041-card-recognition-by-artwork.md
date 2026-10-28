@@ -140,6 +140,18 @@ which makes a wrong one look like a right one.
   wrong. At 45 % and 9 degrees it is 11 of 12, with three wrong sure cards: slanted text boxes and
   the bare table match a card's picture by chance, from about as many windows as a real card, so
   nothing in a hit's margin, similarity or spread tells the two apart.
+- Real photos from a phone are harder than the test photos. The tester's three photos of the same deck
+  (1536 × 2048, cards in sleeves, 44 cards of 33 kinds) were read 24 of 33 kinds and 25 of 44 copies;
+  on them the right card is often second, a hair behind a look-alike (Mirror Force behind "Embrace of
+  the Tistina" by 0.003), or its picture matches only moderately (Pot of Greed 0.48, Jinzo 0.32). Giving
+  every place that matched at least 0.35 a closer look, however narrow its lead (`minSimilarity`, up
+  to 24 places), makes it 26 kinds and 27 copies (about a fifth more time); the places that are not
+  clear are listed only when a name read from the photo confirms them, like any other doubtful match.
+  Tried and dropped: counting runners-up as support (+5 kinds, 100 more wrong candidates), holding back
+  cards that sit among many similar pictures (worse everywhere), finding copies by how alike two windows
+  look (+2 copies in nine photos: two copies of one card look only 0.6 alike once the photo's own
+  mean is taken out). Whole windows in a dense table of cards cannot be found as blobs either: sleeves
+  and frames touch.
 - A card printed with an older artwork than the catalog's current one is not found by its
   picture (Don Zaloog in the first prints shows swords, the catalog guns), and families with
   near-identical pictures can blur (Magic Jammer and Trap Jammer, which differ mostly in

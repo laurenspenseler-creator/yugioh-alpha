@@ -305,7 +305,15 @@ describe('similarities and matchFromSimilarities', () => {
     // Card 1 has two vectors; its second one is the best, so card 2's value is the runner-up.
     const match = matchFromSimilarities([1, 2, 1], [0.2, 0.4, 0.9])
 
-    expect(match).toEqual({ cardId: 1, similarity: 0.9, margin: expect.closeTo(0.5, 5) })
+    expect(match).toEqual({ cardId: 1, similarity: 0.9, margin: expect.closeTo(0.5, 5), runnersUp: [{ cardId: 2, similarity: 0.4 }] })
+  })
+
+  it('remembers the three closest other cards, one entry per card, closest first', () => {
+    const match = matchFromSimilarities([1, 2, 3, 4, 5, 2, 6], [0.9, 0.5, 0.6, 0.3, 0.7, 0.65, 0.2])
+
+    expect(match!.cardId).toBe(1)
+    expect(match!.runnersUp).toEqual([{ cardId: 5, similarity: 0.7 }, { cardId: 2, similarity: 0.65 }, { cardId: 3, similarity: 0.6 }])
+    expect(match!.margin).toBeCloseTo(0.2, 5)
   })
 
   it('does not take another vector of the best card for a rival', () => {
@@ -426,6 +434,16 @@ describe('refinementCandidates', () => {
     const candidates = refinementCandidates([hit(1, 0.2, 0), hit(1, 0.18, 500), hit(1, 0.16, 1000), hit(1, 0.14, 1500)])
 
     expect(candidates.map(candidate => candidate.window.x)).toEqual([0, 500, 1000])
+  })
+
+  it('also takes places that matched closely though narrowly (a look-alike a hair ahead), after the clear ones', () => {
+    const close = (cardId: number, similarity: number, margin: number, x: number): ArtHit => ({ cardId, similarity, margin, window: { x, y: 0, size: 100 } })
+    const hits = [hit(1, 0.12, 0), close(2, 0.62, 0.01, 400), close(3, 0.3, 0.0, 800), close(4, 0.45, -0.02, 1200)]
+
+    expect(refinementCandidates(hits).map(candidate => candidate.cardId)).toEqual([1])
+    expect(refinementCandidates(hits, undefined, undefined, 0.4).map(candidate => candidate.cardId)).toEqual([1, 2, 4])
+    // and a limit still cuts the narrow ones first
+    expect(refinementCandidates(hits, undefined, 2, 0.4).map(candidate => candidate.cardId)).toEqual([1, 2])
   })
 
   it('looks at no more places than the limit', () => {

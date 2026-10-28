@@ -323,13 +323,23 @@ function mainDirections(rows: readonly Float32Array[], wanted: number): Float64A
   return directions
 }
 
+export interface ArtRunnerUp {
+  cardId: number
+  similarity: number
+}
+
 export interface ArtMatch {
   cardId: number
   /** Mean cosine similarity of the two parts with the card's artwork (both centred), 0 for anything and up to 1. */
   similarity: number
   /** How much closer this card is than the next best other card: tells a certain match from a lucky one. */
   margin: number
+  /** The next best other cards, closest first: on a real photo the right card is often second, a hair behind a look-alike. */
+  runnersUp?: ArtRunnerUp[]
 }
+
+/** How many other cards a match remembers. */
+export const ART_RUNNERS_UP = 3
 
 /**
  * How close `vector` (both parts unit vectors, see `correctForPhoto`) is to every vector of the
@@ -368,27 +378,32 @@ export function similarities(index: ArtIndex, vector: Float32Array): Float32Arra
  * `cardIds`), and how far ahead of the next best other card it is.
  */
 export function matchFromSimilarities(cardIds: readonly number[], similarity: ArrayLike<number>, start = 0): ArtMatch | null {
-  let bestCard = -1
-  let bestSimilarity = -Infinity
-  let secondSimilarity = -Infinity
+  // The closest cards, one entry per card (a second vector of the same card moves nothing down), closest first.
+  const top: ArtRunnerUp[] = []
   for (let i = 0; i < cardIds.length; i += 1) {
     const value = similarity[start + i]!
-    if (value > bestSimilarity) {
-      // A second vector of the same card moves nothing down: "second" is the best of the other cards.
-      if (cardIds[i] !== bestCard) {
-        secondSimilarity = bestSimilarity
-      }
-      bestCard = cardIds[i]!
-      bestSimilarity = value
+    if (top.length > ART_RUNNERS_UP && value <= top[ART_RUNNERS_UP]!.similarity) {
+      continue
     }
-    else if (cardIds[i] !== bestCard && value > secondSimilarity) {
-      secondSimilarity = value
+    const card = cardIds[i]!
+    const known = top.findIndex(entry => entry.cardId === card)
+    if (known >= 0) {
+      if (value <= top[known]!.similarity) {
+        continue
+      }
+      top.splice(known, 1)
+    }
+    const at = top.findIndex(entry => value > entry.similarity)
+    top.splice(at < 0 ? top.length : at, 0, { cardId: card, similarity: value })
+    if (top.length > ART_RUNNERS_UP + 1) {
+      top.pop()
     }
   }
-  if (bestCard < 0) {
+  const best = top[0]
+  if (!best) {
     return null
   }
-  return { cardId: bestCard, similarity: bestSimilarity, margin: secondSimilarity === -Infinity ? bestSimilarity : bestSimilarity - secondSimilarity }
+  return { cardId: best.cardId, similarity: best.similarity, margin: top.length > 1 ? best.similarity - top[1]!.similarity : best.similarity, runnersUp: top.slice(1) }
 }
 
 /**
@@ -511,15 +526,17 @@ export function artPlaces(hits: readonly ArtHit[]): ArtPlace[] {
 }
 
 /** The places that are clear enough to be worth a closer look (up to three per card), the clearest first. */
-export function refinementCandidates(hits: readonly ArtHit[], minMargin = ART_REFINE_MIN_MARGIN, limit = ART_REFINE_MAX_PLACES): ArtHit[] {
+export function refinementCandidates(hits: readonly ArtHit[], minMargin = ART_REFINE_MIN_MARGIN, limit = ART_REFINE_MAX_PLACES, minSimilarity?: number): ArtHit[] {
   const byCard = new Map<number, ArtHit[]>()
   for (const hit of hits) {
-    if (hit.margin >= minMargin) {
+    if (hit.margin >= minMargin || (minSimilarity !== undefined && hit.similarity >= minSimilarity)) {
       byCard.set(hit.cardId, [...(byCard.get(hit.cardId) ?? []), hit])
     }
   }
   const places = [...byCard.values()].flatMap(list => artPlaces(list).slice(0, REFINE_PLACES_PER_CARD).map(place => place.best))
-  return places.sort((a, b) => b.margin - a.margin).slice(0, limit)
+  // The clear places first; places that matched closely but not clearly (a look-alike a hair ahead) after them.
+  const rank = (hit: ArtHit) => hit.margin >= minMargin ? 1 + hit.margin : hit.similarity
+  return places.sort((a, b) => rank(b) - rank(a)).slice(0, limit)
 }
 
 /** A window counts as support for its card when it is this clear and about this close (centred cosine). */
