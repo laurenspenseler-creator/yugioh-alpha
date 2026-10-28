@@ -118,6 +118,13 @@ takes the time. Whisper on the graphics card (WebGPU) was tried and is no way ou
 precision decoder writes nonsense, and with the 4-bit decoder the small model was either
 15 minutes slow or lost the end of the recording.
 
+Cutting a long recording at its pauses and writing the pieces down on three workers at once was tried
+and not kept: 251 seconds for the tester's 83 second recording, against 186 on one worker. The model's
+8-bit matrix products wait for memory, not for cores, so three copies of it slow each other down.
+
+A shorter overlap between the 30 second stretches (2 seconds instead of 5 on each side, a sixth less
+time) loses names at the joins: 25 of 43 kinds of the chaos deck were found instead of 35.
+
 A prompt for Whisper (a list of well-known card names as the text it "heard before", which
 `generate` of transformers.js accepts as `decoder_input_ids` but its pipeline does not offer, so
 it needs the chunk loop of the pipeline rewritten against private functions) was tried and not
