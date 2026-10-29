@@ -150,8 +150,12 @@ which makes a wrong one look like a right one.
   Tried and dropped: counting runners-up as support (+5 kinds, 100 more wrong candidates), holding back
   cards that sit among many similar pictures (worse everywhere), finding copies by how alike two windows
   look (+2 copies in nine photos: two copies of one card look only 0.6 alike once the photo's own
-  mean is taken out). Whole windows in a dense table of cards cannot be found as blobs either: sleeves
-  and frames touch.
+  mean is taken out; compared as the model gives them and each place shifted and zoomed to its best,
+  true copies look 0.68 to 0.84 alike and a wrong place 0.80, so no threshold tells them apart). Cards in a dense table cannot be found as blobs either (sleeves and frames
+  touch). Reading the name of every place the artwork finds, cut out above the picture and read
+  larger, got 2 of 33 kinds (most places are text boxes and table, the cut misses the bar), and
+  reading again the lines the OCR had located but misread got 2 of 33: on a phone photo of 16 cards
+  the OCR finds only a handful of name lines, so the names cannot make up for the artwork.
 - A card printed with an older artwork than the catalog's current one is not found by its
   picture (Don Zaloog in the first prints shows swords, the catalog guns), and families with
   near-identical pictures can blur (Magic Jammer and Trap Jammer, which differ mostly in
