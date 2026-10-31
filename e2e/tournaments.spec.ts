@@ -384,7 +384,7 @@ test.describe('tournaments', () => {
     await expect(participantRow(page, 'Gast Anton')).toBeVisible()
     // The column headers are dropped on phones — each card labels itself.
     await expect(page.getByRole('columnheader', { name: 'Deck', exact: true })).toBeHidden()
-    await expect(page.getByText('Gäste ohne Konto verwaltet die Turnierleitung.')).toBeVisible()
+    await expect(page.getByText('Die Turnierleitung trägt Decks für alle ein.')).toBeVisible()
     await expectNoHorizontalOverflow('registration')
 
     // --- Running: 44px row menu and result buttons ------------------------------
