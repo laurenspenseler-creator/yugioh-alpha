@@ -42,6 +42,8 @@ function participant(overrides: Partial<TournamentParticipantDto> = {}): Tournam
     isSelf: true,
     dropped: false,
     withdrawn: false,
+    disqualified: false,
+    dropOption: null,
     seed: 1,
     decks: [],
     createdAt: '2025-01-01T00:00:00.000Z',
@@ -132,6 +134,9 @@ function tournamentDetail(overrides: Partial<TournamentDetail> = {}): Tournament
     scoring: 'match',
     byeScoring: 'win',
     plannedRounds: null,
+    engine: 'classic',
+    queueSetup: null,
+    queue: null,
     format: null,
     organizerName: 'Organizer',
     role: 'organizer',
@@ -734,7 +739,8 @@ describe('tournament detail page — English', () => {
     expect(text).toContain('Complete round')
     expect(text).toContain('Next round')
     expect(text).toContain('Finish tournament')
-    expect(text).toContain('Delete tournament')
+    // While a tournament runs there is no delete: ending it keeps what was played.
+    expect(text).not.toContain('Delete tournament')
     expect(text).toContain('All results must be entered')
 
     expect(text).toContain('Participants (2)')

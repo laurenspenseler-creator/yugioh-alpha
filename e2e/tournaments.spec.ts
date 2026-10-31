@@ -62,6 +62,8 @@ test.describe('tournaments', () => {
     await expect(page).toHaveURL('/tournaments/new')
 
     await page.getByLabel('Turniername').fill('Freitagsturnier')
+    await page.getByLabel('Turnierart').click()
+    await page.getByRole('option', { name: 'Mit Runden' }).click()
     await page.getByLabel('Format').click()
     await page.getByRole('option', { name: 'Ohne Banliste' }).click()
     await page.getByLabel('Paarungssystem').click()
@@ -224,6 +226,8 @@ test.describe('tournaments', () => {
     const organizer = await registerAndLogin(page)
     await page.goto('/tournaments/new')
     await waitForHydration(page)
+    await page.getByLabel('Turnierart').click()
+    await page.getByRole('option', { name: 'Mit Runden' }).click()
     // The planned-rounds field is wide enough for its placeholder, on desktop
     // and on a phone (#96).
     const plannedRoundsFits = () => page.getByLabel('Geplante Runden').evaluate((input: HTMLInputElement) => {
@@ -292,6 +296,8 @@ test.describe('tournaments', () => {
     await page.goto('/tournaments/new')
     await waitForHydration(page)
     await page.getByLabel('Turniername').fill('Bestätigungsturnier')
+    await page.getByLabel('Turnierart').click()
+    await page.getByRole('option', { name: 'Mit Runden' }).click()
     await page.getByRole('button', { name: 'Turnier anlegen' }).click()
     await expect(page).toHaveURL(/\/tournaments\/[0-9a-f-]{36}$/)
 
@@ -409,6 +415,8 @@ test.describe('tournaments', () => {
     await page.goto('/tournaments/new')
     await waitForHydration(page)
     await page.getByLabel('Turniername').fill('Ligaturnier')
+    await page.getByLabel('Turnierart').click()
+    await page.getByRole('option', { name: 'Mit Runden' }).click()
     await page.getByLabel('Paarungssystem').click()
     await page.getByRole('option', { name: 'Jeder gegen jeden' }).click()
     // New tournaments score by games and give a bye nothing (ADR 0031).

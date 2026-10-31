@@ -5,6 +5,176 @@
     "dropped": "Dropped",
     "withdrawn": "Withdrawn from standings",
     "backToList": "Back to tournaments",
+    "queue": {
+      "engine": {
+        "label": "Kind of tournament",
+        "classic": {
+          "label": "With rounds",
+          "description": "Round by round: whoever is done waits for the others before the next round begins."
+        },
+        "queue": {
+          "label": "With tables and a queue",
+          "description": "The schedule is fixed from the start. As soon as a table is free the next duel starts, so nobody waits for a whole round."
+        }
+      },
+      "mode": {
+        "label": "Mode",
+        "round_robin": {
+          "label": "Round robin",
+          "description": "Everybody plays everybody else exactly once. The schedule is fixed from the start. Good up to about 8 players."
+        },
+        "champions_league": {
+          "label": "Champions League",
+          "description": "Everybody gets the same number of drawn opponents, but not all of them. The schedule is fixed from the start. Good for about 9 to 24 players."
+        },
+        "swiss": {
+          "label": "Swiss system",
+          "description": "Opponents are paired round by round by the standings, nobody meets anybody twice. Good for large fields."
+        },
+        "recommended": "Recommended for {count} players"
+      },
+      "setup": {
+        "title": "Settings",
+        "editHint": "You can change this until the tournament starts. The schedule is drawn at the start.",
+        "rounds": "Duels per player",
+        "roundsHint": "An even number, at most the number of players minus 1. A duel is a single game without a draw.",
+        "roundsAuto": "Automatic",
+        "roundsRoundRobin": "In a round robin the number follows from the number of players: everybody plays everybody once.",
+        "prelaunch": "Head start: draw rounds 1 and 2 in advance",
+        "prelaunchHint": "The first two rounds are fixed at the start, every later round is paired as soon as the one before the last is done. That keeps the tables busy.",
+        "tables": "Tables",
+        "duelMinutes": "Minutes per duel",
+        "wishedHours": "Wanted total duration (hours)",
+        "suggest": "Suggest number of duels",
+        "suggested": "Suggestion: {rounds} duels per player",
+        "estimate": "Estimated duration",
+        "estimateValue": "about {hours} h {minutes} min",
+        "estimateNeedsPlayers": "The duration can be estimated as soon as at least two players are registered.",
+        "perPlayer": "{count} duels per player, {total} duels in all",
+        "compare": "Duration of the modes with {count} players",
+        "save": "Save settings",
+        "saveFailed": "The settings could not be saved.",
+        "summary": "{mode} · {tables} tables · {minutes} min per duel"
+      },
+      "board": {
+        "tableTitle": "Standings",
+        "tableHelp": "Sorted by wins. With equal wins the Buchholz sum (the wins of all opponents) decides, then the direct duel. Whoever left is grey and last, without a place.",
+        "columns": {
+          "place": "Place",
+          "player": "Player",
+          "wins": "Wins",
+          "played": "Duels",
+          "open": "Open",
+          "buchholz": "Buchholz",
+          "now": "Now"
+        },
+        "atTable": "Table {number}",
+        "inQueue": "Waiting · No. {position}",
+        "tied": "level",
+        "dropped": "left",
+        "disqualified": "disqualified",
+        "progress": "{done} of {total} duels played",
+        "remaining": "About {hours} h {minutes} min to go",
+        "tablesTitle": "Tables",
+        "tablesHelp": "As soon as a table is free the next duel starts by itself. Players with the most open duels go first, at a tie whoever has waited longest.",
+        "tableFree": "Table {number}: free",
+        "tableDuel": "Table {number}",
+        "vs": "vs",
+        "winnerLabel": "Winner",
+        "wonBy": "{name} won",
+        "setWinner": "{name} won",
+        "correct": "Change result",
+        "nextTitle": "Up next",
+        "nextEmpty": "No duel is waiting.",
+        "queueNumber": "No. {number}",
+        "scheduleTitle": "Schedule",
+        "scheduleHelp": "The schedule is fixed from the start. Matchdays are only a display: a duel is played as soon as a table and both players are free.",
+        "scheduleHelpSwiss": "In the Swiss system each round is paired as soon as the one before it is done. Later rounds only show up then.",
+        "round": "Round {number}",
+        "matchday": "Matchday {number}",
+        "roundDone": "done",
+        "status": {
+          "planned": "Waiting",
+          "running": "Running",
+          "done": "Played",
+          "void": "Struck"
+        },
+        "kind": {
+          "makeup": "Make-up duel",
+          "rematch": "Rematch",
+          "decider": "Deciding duel"
+        },
+        "resultFailed": "The result could not be saved."
+      },
+      "rematch": {
+        "title": "Rematch needed",
+        "text": "{a} and {b} have already played each other, but there is no other opponent to make up the duel. Schedule it anyway?",
+        "confirm": "Schedule duel",
+        "failed": "The duel could not be scheduled."
+      },
+      "decider": {
+        "title": "Tie for first place",
+        "text": "{names} are level. A deciding duel settles first place.",
+        "schedule": "Schedule deciding duel",
+        "failed": "The deciding duel could not be scheduled."
+      },
+      "recompute": {
+        "button": "Recalculate pairings",
+        "hint": "Only pairings that have not started are drawn again from the current standings. Played and running duels stay.",
+        "previewTitle": "This would change",
+        "round": "Round {number}",
+        "apply": "Apply",
+        "cancel": "Cancel",
+        "noChange": "Nothing would change at the current standings.",
+        "failed": "The pairings could not be recalculated."
+      },
+      "undecided": {
+        "title": "Decision pending",
+        "text": "{names} left. The open duels wait until you have decided.",
+        "decide": "Decide now"
+      },
+      "leave": {
+        "menu": "Let leave …",
+        "decideMenu": "Make the decision …",
+        "title": "{name} leaves",
+        "decideTitle": "Decision for {name}",
+        "intro": "What should happen to the duels of {name}? In the standings {name} stays grey and without a place and still sees their own result.",
+        "optionA": {
+          "label": "A · As if they had never been there",
+          "description": "All duels are struck, the played ones too. Whoever played or was to play them gets a replacement duel."
+        },
+        "optionB": {
+          "label": "B · Played duels stay",
+          "description": "Only the open duels are struck. Whoever still had an open duel against them gets a replacement duel."
+        },
+        "unavailable": "This does not add up at the current standing: afterwards not everybody would have the same number of duels.",
+        "later": "Decide later",
+        "laterHint": "Their duels wait until you have decided.",
+        "inDuel": "The player is in a duel right now. Enter the result first.",
+        "submit": "Let leave",
+        "submitDecide": "Decide",
+        "cancel": "Cancel",
+        "failed": "Leaving could not be saved."
+      },
+      "disqualify": {
+        "menu": "Disqualify …",
+        "title": "Disqualify {name}?",
+        "description": "{name} disappears from the standings completely and all duels are struck, as if they had never been there. This cannot be undone.",
+        "failed": "The disqualification could not be saved."
+      },
+      "finish": {
+        "save": "Save & end tournament",
+        "title": "Save and end the tournament?",
+        "description": "Everything that was played stays as the result. Duels that are still open will not be played."
+      },
+      "help": {
+        "title": "How it works",
+        "point1": "A duel is a single game. There is no draw and no time limit – only the winner is entered.",
+        "point2": "All players end with the same number of duels. The tournament runs until everybody has played theirs.",
+        "point3": "As soon as a table is free, the next possible duel starts. Whoever sits at a table shows under “Now”; whoever waits sees their number in the queue.",
+        "point4": "If somebody drops out, the app rearranges the duels so everybody has the same number again."
+      }
+    },
     "status": {
       "registration": "Registration",
       "running": "Running",

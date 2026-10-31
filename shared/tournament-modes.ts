@@ -141,6 +141,22 @@ export function maxEvenRounds(players: number): number {
   return most - (most % 2)
 }
 
+/** The most Champions League duels a player has when the organizer does not say. */
+export const DEFAULT_CHAMPIONS_LEAGUE_ROUNDS = 6
+
+/**
+ * R when the organizer leaves it open: the rule of thumb for Swiss, a short league for the Champions League,
+ * never more than the field allows. A round robin has no R of its own.
+ */
+export function defaultRounds(mode: QueueMode, players: number, prelaunch: boolean): number | null {
+  if (mode === 'round_robin') {
+    return null
+  }
+  const most = Math.max(2, maxEvenRounds(players))
+  const wanted = mode === 'swiss' ? swissRounds(players, prelaunch) : DEFAULT_CHAMPIONS_LEAGUE_ROUNDS
+  return Math.min(wanted, most)
+}
+
 /** Which mode the app recommends for a number of players (the thresholds follow the examples of the spec). */
 export function recommendedMode(players: number): QueueMode {
   if (players <= 8) {

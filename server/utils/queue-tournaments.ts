@@ -19,8 +19,7 @@ import { startingSchedule, swissRoundDue } from '../../shared/tournament-flow'
 import type { FlowSetup, NewDuel } from '../../shared/tournament-flow'
 import {
   DEFAULT_DUEL_MINUTES,
-  maxEvenRounds,
-  swissRounds,
+  defaultRounds,
   usableTables,
   validateSetup,
 } from '../../shared/tournament-modes'
@@ -41,9 +40,6 @@ type Db = ReturnType<typeof useDb>
 type TournamentRow = typeof tournament.$inferSelect
 type ParticipantRow = typeof tournamentParticipant.$inferSelect
 type DuelRow = typeof tournamentDuel.$inferSelect
-
-/** The most Champions League duels a player has when the organizer does not say. */
-const DEFAULT_CHAMPIONS_LEAGUE_ROUNDS = 6
 
 // --- The state, loaded and written back ---------------------------------------------
 
@@ -184,16 +180,6 @@ export function advanceQueue(db: Db, tournamentId: string, now: Date): void {
 }
 
 // --- Starting -----------------------------------------------------------------------
-
-/** R when the organizer left it open: the rule of thumb for Swiss, a short league for the Champions League. */
-export function defaultRounds(mode: QueueMode, players: number, prelaunch: boolean): number | null {
-  if (mode === 'round_robin') {
-    return null
-  }
-  const most = Math.max(2, maxEvenRounds(players))
-  const wanted = mode === 'swiss' ? swissRounds(players, prelaunch) : DEFAULT_CHAMPIONS_LEAGUE_ROUNDS
-  return Math.min(wanted, most)
-}
 
 /**
  * Starts a duel-queue tournament: checks the setup with the number of players there are now, draws the fixed

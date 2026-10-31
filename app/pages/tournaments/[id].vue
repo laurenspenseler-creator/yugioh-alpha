@@ -77,15 +77,29 @@ function finishTournament() {
   )
 }
 
+const isQueue = computed(() => tournament.value?.engine === 'queue')
+
 async function onFinishClick() {
   const confirmed = await confirm({
-    title: t('tournaments.detail.confirm.finish.title'),
-    description: t('tournaments.detail.confirm.finish.description'),
+    title: isQueue.value ? t('tournaments.queue.finish.title') : t('tournaments.detail.confirm.finish.title'),
+    description: isQueue.value ? t('tournaments.queue.finish.description') : t('tournaments.detail.confirm.finish.description'),
   })
   if (!confirmed) {
     return
   }
   await finishTournament()
+}
+
+// --- Duel queue: a player leaves, or the organizer decides later -------------------
+
+const leaveOpen = ref(false)
+const leaveParticipantId = ref<string | null>(null)
+const leaveMode = ref<'leave' | 'decide'>('leave')
+
+function openLeave(participantId: string, mode: 'leave' | 'decide') {
+  leaveParticipantId.value = participantId
+  leaveMode.value = mode
+  leaveOpen.value = true
 }
 
 async function deleteTournament() {
@@ -198,7 +212,7 @@ const actionHint = computed(() => {
   if (tournament.value.status === 'registration') {
     return startTitle.value
   }
-  if (tournament.value.status === 'running') {
+  if (tournament.value.status === 'running' && !isQueue.value) {
     const titles: Record<RunningAction, string | undefined> = {
       complete: completeRoundTitle.value,
       next: createRoundTitle.value,
@@ -261,21 +275,38 @@ const actionHint = computed(() => {
         </div>
 
         <div class="mt-2 space-y-0.5 text-sm text-muted">
-          <div>
-            {{ t('tournaments.detail.pairingSystem', { name: t(`tournaments.pairingSystem.${tournament.pairingSystem}.label`) }) }}
-          </div>
-          <div>
-            {{ t('tournaments.detail.scoring', { name: t(`tournaments.scoring.${tournament.scoring}.label`) }) }}
-          </div>
-          <div>
-            {{ t('tournaments.detail.byeScoring', { name: t(`tournaments.byeScoring.${tournament.byeScoring}.label`) }) }}
-          </div>
-          <div v-if="tournament.rounds.length === 0">
-            {{ t('tournaments.detail.notStarted') }}
-          </div>
-          <div v-else>
-            {{ roundProgress }}
-          </div>
+          <template v-if="tournament.queueSetup">
+            <div>
+              {{ t('tournaments.queue.setup.summary', {
+                mode: t(`tournaments.queue.mode.${tournament.queueSetup.mode}.label`),
+                tables: tournament.queueSetup.tables,
+                minutes: tournament.queueSetup.duelMinutes,
+              }) }}
+            </div>
+            <div v-if="!tournament.queue">
+              {{ t('tournaments.detail.notStarted') }}
+            </div>
+            <div v-else>
+              {{ t('tournaments.queue.board.progress', { done: tournament.queue.duelsDone, total: tournament.queue.duelsTotal }) }}
+            </div>
+          </template>
+          <template v-else>
+            <div>
+              {{ t('tournaments.detail.pairingSystem', { name: t(`tournaments.pairingSystem.${tournament.pairingSystem}.label`) }) }}
+            </div>
+            <div>
+              {{ t('tournaments.detail.scoring', { name: t(`tournaments.scoring.${tournament.scoring}.label`) }) }}
+            </div>
+            <div>
+              {{ t('tournaments.detail.byeScoring', { name: t(`tournaments.byeScoring.${tournament.byeScoring}.label`) }) }}
+            </div>
+            <div v-if="tournament.rounds.length === 0">
+              {{ t('tournaments.detail.notStarted') }}
+            </div>
+            <div v-else>
+              {{ roundProgress }}
+            </div>
+          </template>
           <div>{{ t('tournaments.detail.organizer', { name: tournament.organizerName }) }}</div>
         </div>
 
@@ -292,6 +323,15 @@ const actionHint = computed(() => {
                   :disabled="!tournament.canStart || busy"
                   :title="startTitle"
                   @click="startTournament"
+                />
+              </template>
+              <template v-else-if="tournament.status === 'running' && isQueue">
+                <!-- A duel queue has no rounds to close: the tournament is saved and ended in one step. -->
+                <UButton
+                  :label="t('tournaments.queue.finish.save')"
+                  color="primary"
+                  :disabled="!tournament.canFinish || busy"
+                  @click="onFinishClick"
                 />
               </template>
               <template v-else-if="tournament.status === 'running'">
@@ -320,7 +360,9 @@ const actionHint = computed(() => {
                   @click="onFinishClick"
                 />
               </template>
+              <!-- While a tournament runs there is no delete: ending it keeps what was played (tester feedback, round 6). -->
               <UButton
+                v-if="tournament.status !== 'running'"
                 color="error"
                 variant="outline"
                 :label="t('tournaments.detail.actions.delete')"
@@ -358,32 +400,64 @@ const actionHint = computed(() => {
         {{ errorMessage }}
       </p>
 
-      <!-- Once finished, the final table is what people come for — lead with it. -->
-      <TournamentsStandingsTable
-        v-if="tournament.status === 'finished'"
-        :tournament="tournament"
-      />
+      <!-- Duel queue (ADR 0042): settings until the start, then the standings fixed on top with the schedule below. -->
+      <template v-if="isQueue">
+        <TournamentsQueueSetupPanel
+          v-if="tournament.status === 'registration'"
+          :tournament="tournament"
+          @updated="onUpdated"
+        />
 
-      <TournamentsScoringPanel
-        v-if="tournament.role === 'organizer' && tournament.status === 'registration'"
-        :tournament="tournament"
-        @updated="onUpdated"
-      />
+        <TournamentsQueueBoard
+          v-if="tournament.queue"
+          :tournament="tournament"
+          @updated="onUpdated"
+          @decide="participantId => openLeave(participantId, 'decide')"
+        />
 
-      <TournamentsParticipantsPanel
-        :tournament="tournament"
-        @updated="onUpdated"
-      />
+        <TournamentsParticipantsPanel
+          :tournament="tournament"
+          @updated="onUpdated"
+          @leave="openLeave"
+        />
 
-      <TournamentsRoundsPanel
-        :tournament="tournament"
-        @updated="onUpdated"
-      />
+        <TournamentsQueueLeaveDialog
+          v-model:open="leaveOpen"
+          :tournament="tournament"
+          :participant-id="leaveParticipantId"
+          :mode="leaveMode"
+          @updated="onUpdated"
+        />
+      </template>
 
-      <TournamentsStandingsTable
-        v-if="tournament.status !== 'finished'"
-        :tournament="tournament"
-      />
+      <template v-else>
+        <!-- Once finished, the final table is what people come for — lead with it. -->
+        <TournamentsStandingsTable
+          v-if="tournament.status === 'finished'"
+          :tournament="tournament"
+        />
+
+        <TournamentsScoringPanel
+          v-if="tournament.role === 'organizer' && tournament.status === 'registration'"
+          :tournament="tournament"
+          @updated="onUpdated"
+        />
+
+        <TournamentsParticipantsPanel
+          :tournament="tournament"
+          @updated="onUpdated"
+        />
+
+        <TournamentsRoundsPanel
+          :tournament="tournament"
+          @updated="onUpdated"
+        />
+
+        <TournamentsStandingsTable
+          v-if="tournament.status !== 'finished'"
+          :tournament="tournament"
+        />
+      </template>
     </template>
   </div>
 </template>

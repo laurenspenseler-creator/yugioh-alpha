@@ -5,6 +5,176 @@
     "dropped": "Ausgestiegen",
     "withdrawn": "Aus der Wertung genommen",
     "backToList": "Zurück zu den Turnieren",
+    "queue": {
+      "engine": {
+        "label": "Turnierart",
+        "classic": {
+          "label": "Mit Runden",
+          "description": "Runde für Runde: Wer fertig ist, wartet auf die anderen, bevor die nächste Runde beginnt."
+        },
+        "queue": {
+          "label": "Mit Tischen und Warteschlange",
+          "description": "Der Plan steht von Anfang an. Sobald ein Tisch frei wird, startet das nächste Duell – niemand wartet auf eine ganze Runde."
+        }
+      },
+      "mode": {
+        "label": "Modus",
+        "round_robin": {
+          "label": "Jeder gegen jeden",
+          "description": "Jeder spielt genau einmal gegen jeden anderen. Der Plan steht von Anfang an. Gut bis etwa 8 Spieler."
+        },
+        "champions_league": {
+          "label": "Champions League",
+          "description": "Jeder bekommt gleich viele ausgeloste Gegner, aber nicht alle. Der Plan steht von Anfang an. Gut für etwa 9 bis 24 Spieler."
+        },
+        "swiss": {
+          "label": "Schweizer System",
+          "description": "Die Gegner werden Runde für Runde nach dem Tabellenstand gepaart, niemand trifft jemanden zweimal. Gut für große Felder."
+        },
+        "recommended": "Empfohlen bei {count} Spielern"
+      },
+      "setup": {
+        "title": "Einstellungen",
+        "editHint": "Du kannst das ändern, solange das Turnier noch nicht gestartet ist. Der Plan wird erst beim Start ausgelost.",
+        "rounds": "Duelle pro Spieler",
+        "roundsHint": "Eine gerade Zahl, höchstens Spielerzahl minus 1. Ein Duell ist eine einzelne Partie ohne Unentschieden.",
+        "roundsAuto": "Automatisch",
+        "roundsRoundRobin": "Bei „Jeder gegen jeden“ ergibt sich die Zahl aus der Spielerzahl: jeder gegen jeden einmal.",
+        "prelaunch": "Vorlauf: Runde 1 und 2 vorab auslosen",
+        "prelaunchHint": "Die ersten beiden Runden stehen schon beim Start fest, jede weitere wird gepaart, sobald die vorletzte fertig ist. So bleiben die Tische besetzt.",
+        "tables": "Tische",
+        "duelMinutes": "Minuten pro Duell",
+        "wishedHours": "Gewünschte Gesamtdauer (Stunden)",
+        "suggest": "Duellzahl vorschlagen",
+        "suggested": "Vorschlag: {rounds} Duelle pro Spieler",
+        "estimate": "Geschätzte Dauer",
+        "estimateValue": "ca. {hours} Std. {minutes} Min.",
+        "estimateNeedsPlayers": "Die Dauer lässt sich schätzen, sobald mindestens zwei Spieler eingetragen sind.",
+        "perPlayer": "{count} Duelle pro Spieler, {total} Duelle insgesamt",
+        "compare": "Dauer der Modi bei {count} Spielern",
+        "save": "Einstellungen speichern",
+        "saveFailed": "Die Einstellungen konnten nicht gespeichert werden.",
+        "summary": "{mode} · {tables} Tische · {minutes} Min. pro Duell"
+      },
+      "board": {
+        "tableTitle": "Tabelle",
+        "tableHelp": "Sortiert nach Siegen. Bei gleich vielen Siegen entscheidet Buchholz (die Summe der Siege aller Gegner), danach das direkte Duell. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
+        "columns": {
+          "place": "Platz",
+          "player": "Spieler",
+          "wins": "Siege",
+          "played": "Duelle",
+          "open": "Offen",
+          "buchholz": "Buchholz",
+          "now": "Jetzt"
+        },
+        "atTable": "Tisch {number}",
+        "inQueue": "Wartet · Nr. {position}",
+        "tied": "gleichauf",
+        "dropped": "ausgeschieden",
+        "disqualified": "disqualifiziert",
+        "progress": "{done} von {total} Duellen gespielt",
+        "remaining": "Noch etwa {hours} Std. {minutes} Min.",
+        "tablesTitle": "Tische",
+        "tablesHelp": "Sobald ein Tisch frei wird, startet automatisch das nächste Duell. Es beginnen zuerst die Spieler mit den meisten offenen Duellen, bei Gleichstand wer am längsten wartet.",
+        "tableFree": "Tisch {number}: frei",
+        "tableDuel": "Tisch {number}",
+        "vs": "gegen",
+        "winnerLabel": "Sieger",
+        "wonBy": "{name} hat gewonnen",
+        "setWinner": "{name} hat gewonnen",
+        "correct": "Ergebnis ändern",
+        "nextTitle": "Als Nächstes",
+        "nextEmpty": "Kein Duell wartet.",
+        "queueNumber": "Nr. {number}",
+        "scheduleTitle": "Plan",
+        "scheduleHelp": "Der Plan steht von Anfang an. Die Spieltage sind nur eine Anzeige: gespielt wird, sobald ein Tisch und beide Spieler frei sind.",
+        "scheduleHelpSwiss": "Im Schweizer System wird jede Runde gepaart, sobald die davor fertig ist. Spätere Runden erscheinen erst dann.",
+        "round": "Runde {number}",
+        "matchday": "Spieltag {number}",
+        "roundDone": "fertig",
+        "status": {
+          "planned": "Wartet",
+          "running": "Läuft",
+          "done": "Gespielt",
+          "void": "Gestrichen"
+        },
+        "kind": {
+          "makeup": "Nachholduell",
+          "rematch": "Wiederholung",
+          "decider": "Entscheidungsduell"
+        },
+        "resultFailed": "Das Ergebnis konnte nicht gespeichert werden."
+      },
+      "rematch": {
+        "title": "Wiederholungsduell nötig",
+        "text": "{a} und {b} haben schon gegeneinander gespielt, es gibt für den Ausgleich aber keinen anderen Gegner. Soll das Duell trotzdem angesetzt werden?",
+        "confirm": "Duell ansetzen",
+        "failed": "Das Duell konnte nicht angesetzt werden."
+      },
+      "decider": {
+        "title": "Gleichstand auf Platz 1",
+        "text": "{names} liegen gleichauf. Ein Entscheidungsduell klärt den ersten Platz.",
+        "schedule": "Entscheidungsduell ansetzen",
+        "failed": "Das Entscheidungsduell konnte nicht angesetzt werden."
+      },
+      "recompute": {
+        "button": "Paarungen neu berechnen",
+        "hint": "Nur Paarungen, die noch nicht gestartet sind, werden nach dem aktuellen Tabellenstand neu gelost. Gespielte und laufende Duelle bleiben.",
+        "previewTitle": "Das würde sich ändern",
+        "round": "Runde {number}",
+        "apply": "Übernehmen",
+        "cancel": "Abbrechen",
+        "noChange": "Mit dem aktuellen Stand würde sich nichts ändern.",
+        "failed": "Die Paarungen konnten nicht neu berechnet werden."
+      },
+      "undecided": {
+        "title": "Entscheidung offen",
+        "text": "{names} ist ausgeschieden. Bis du entschieden hast, warten die offenen Duelle.",
+        "decide": "Jetzt entscheiden"
+      },
+      "leave": {
+        "menu": "Ausscheiden lassen …",
+        "decideMenu": "Entscheidung treffen …",
+        "title": "{name} scheidet aus",
+        "decideTitle": "Entscheidung für {name}",
+        "intro": "Was soll mit den Duellen von {name} passieren? In der Tabelle bleibt {name} grau und ohne Platz stehen und sieht das eigene Ergebnis weiterhin.",
+        "optionA": {
+          "label": "A · Als wäre die Person nie dabei gewesen",
+          "description": "Alle Duelle werden gestrichen, auch die gespielten. Wer gegen die Person gespielt hat oder spielen sollte, bekommt ein Ersatzduell."
+        },
+        "optionB": {
+          "label": "B · Gespielte Duelle bleiben",
+          "description": "Nur die offenen Duelle werden gestrichen. Wer noch ein offenes Duell gegen die Person hatte, bekommt ein Ersatzduell."
+        },
+        "unavailable": "Geht bei diesem Stand nicht auf: Danach hätten nicht mehr alle gleich viele Duelle.",
+        "later": "Später entscheiden",
+        "laterHint": "Die Duelle der Person warten, bis du entschieden hast.",
+        "inDuel": "Die Person spielt gerade. Trage zuerst das Ergebnis ein.",
+        "submit": "Ausscheiden lassen",
+        "submitDecide": "Entscheiden",
+        "cancel": "Abbrechen",
+        "failed": "Das Ausscheiden konnte nicht gespeichert werden."
+      },
+      "disqualify": {
+        "menu": "Disqualifizieren …",
+        "title": "{name} disqualifizieren?",
+        "description": "{name} verschwindet ganz aus der Tabelle, alle Duelle werden gestrichen, als wäre die Person nie dabei gewesen. Das lässt sich nicht rückgängig machen.",
+        "failed": "Die Disqualifikation konnte nicht gespeichert werden."
+      },
+      "finish": {
+        "save": "Turnier speichern & beenden",
+        "title": "Turnier speichern und beenden?",
+        "description": "Alles, was gespielt wurde, bleibt als Ergebnis stehen. Duelle, die noch offen sind, werden nicht mehr gespielt."
+      },
+      "help": {
+        "title": "So funktioniert das",
+        "point1": "Ein Duell ist eine einzelne Partie. Es gibt kein Unentschieden und kein Zeitlimit – eingetragen wird nur, wer gewonnen hat.",
+        "point2": "Alle Spieler enden mit gleich vielen Duellen. Das Turnier läuft, bis jeder seine Duelle gespielt hat.",
+        "point3": "Sobald ein Tisch frei wird, startet das nächste mögliche Duell. Wer am Tisch sitzt, steht unter „Jetzt“; wer wartet, sieht seine Nummer in der Warteschlange.",
+        "point4": "Fällt jemand aus, rechnet die App die Duelle so um, dass wieder alle gleich viele haben."
+      }
+    },
     "status": {
       "registration": "Anmeldung",
       "running": "Läuft",

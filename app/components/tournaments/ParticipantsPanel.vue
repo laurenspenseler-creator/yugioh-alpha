@@ -9,6 +9,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   updated: [detail: TournamentDetail]
+  /** Duel queue: the dialog for a player who leaves (`leave`) or whose duels still wait for a decision (`decide`). */
+  leave: [participantId: string, mode: 'leave' | 'decide']
 }>()
 
 const { t, n } = useI18n()
@@ -182,6 +184,34 @@ async function setWithdrawn(participant: TournamentParticipantDto, withdrawn: bo
   }
 }
 
+/** Out of the standing completely, every duel struck (ADR 0042); asks first, there is no way back. */
+async function disqualify(participant: TournamentParticipantDto) {
+  const confirmed = await confirm({
+    title: t('tournaments.queue.disqualify.title', { name: participant.name }),
+    description: t('tournaments.queue.disqualify.description', { name: participant.name }),
+  })
+  if (!confirmed) {
+    return
+  }
+
+  busyParticipantId.value = participant.id
+  rowError.value = ''
+
+  try {
+    const detail = await $fetch<TournamentDetail>(
+      `/api/tournaments/${props.tournament.id}/participants/${participant.id}/leave`,
+      { method: 'POST', body: { kind: 'disqualified' } },
+    )
+    emit('updated', detail)
+  }
+  catch (error) {
+    rowError.value = apiError(error, 'tournaments.queue.disqualify.failed')
+  }
+  finally {
+    busyParticipantId.value = null
+  }
+}
+
 async function removeParticipant(participant: TournamentParticipantDto) {
   // Destructive and irreversible — a registered deck is lost with the row —
   // so it gets the same confirm as every other destructive action in the
@@ -224,7 +254,30 @@ function menuItemsFor(participant: TournamentParticipantDto) {
     })
   }
 
-  if (props.tournament.role === 'organizer' && props.tournament.status === 'running') {
+  if (props.tournament.role === 'organizer' && props.tournament.status === 'running' && props.tournament.engine === 'queue') {
+    // In a duel queue leaving changes the schedule (ADR 0042): two options, decided in a dialog, no way back.
+    if (!participant.dropped) {
+      items.push({
+        label: t('tournaments.queue.leave.menu'),
+        icon: 'i-lucide-user-x',
+        onSelect: () => emit('leave', participant.id, 'leave'),
+      })
+      items.push({
+        label: t('tournaments.queue.disqualify.menu'),
+        icon: 'i-lucide-ban',
+        color: 'error' as const,
+        onSelect: () => disqualify(participant),
+      })
+    }
+    else if (props.tournament.queue?.undecided.includes(participant.id)) {
+      items.push({
+        label: t('tournaments.queue.leave.decideMenu'),
+        icon: 'i-lucide-scale',
+        onSelect: () => emit('leave', participant.id, 'decide'),
+      })
+    }
+  }
+  else if (props.tournament.role === 'organizer' && props.tournament.status === 'running') {
     items.push({
       label: participant.dropped ? t('tournaments.participants.menu.reinstate') : t('tournaments.participants.menu.drop'),
       icon: participant.dropped ? 'i-lucide-undo-2' : 'i-lucide-user-x',
@@ -548,11 +601,18 @@ function issueMessages(entry: TournamentParticipantDeckDto): string[] {
                   :title="t('tournaments.participants.accountHint')"
                 />
                 <UBadge
-                  v-if="participant.dropped"
+                  v-if="participant.disqualified"
+                  size="sm"
+                  color="error"
+                  variant="subtle"
+                  :label="t('tournaments.queue.board.disqualified')"
+                />
+                <UBadge
+                  v-else-if="participant.dropped"
                   size="sm"
                   color="neutral"
                   variant="subtle"
-                  :label="t('tournaments.dropped')"
+                  :label="tournament.engine === 'queue' ? t('tournaments.queue.board.dropped') : t('tournaments.dropped')"
                 />
                 <UBadge
                   v-if="participant.withdrawn"

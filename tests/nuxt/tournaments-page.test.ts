@@ -46,6 +46,8 @@ function item(overrides: Partial<TournamentListItem> = {}): TournamentListItem {
     description: null,
     status: 'registration',
     pairingSystem: 'swiss',
+    engine: 'classic',
+    queueMode: null,
     format: null,
     organizerName: 'Alice',
     role: 'organizer',
