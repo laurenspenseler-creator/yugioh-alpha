@@ -82,7 +82,12 @@ first pass sits on: it matches at 0.25 to 0.35, and with a window moved and zoom
 On five such photos (62 cards) it raised the cards found from 21 to 27 and the copies from 25 to 32
 at about half as many windows again. The places after the 24th are the poorer ones: of 106 sure
 right cards, 44 were found by the first pass, 43 by the first twelve places, 10 by the next twelve and
-9 by the 24 after those, which took two fifths of the windows.
+9 by the 24 after those, which took two fifths of the windows. A photo of one card or of the same
+card twelve times (its windows share one direction, the `own` of the correction is below 0.5) gets
+at most twelve places, and calls a card sure only from twice the windows (the cards of such photos
+had 17 to 161 windows, a card that was not there but that the frame or the glare of a card put at
+the top of a few windows 6 to 11): on four photos of twelve identical cards that found the same 22
+of 48 copies with none wrong in about a minute instead of two.
 
 ### Colour, a second cue
 

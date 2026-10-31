@@ -663,9 +663,16 @@ describe('cardsFromHits', () => {
   })
 
   it('lists only the sure cards when asked (a photo of one card has no room for doubtful ones)', () => {
-    const hits = [...around(1, 0.3, 8), ...around(2, 0.08, 5, 1000, 0.4)]
+    const hits = [...around(1, 0.3, 14), ...around(2, 0.08, 5, 1000, 0.4)]
 
     expect(cardsFromHits(hits).map(card => card.cardId)).toEqual([1, 2])
+    expect(cardsFromHits(hits, { onlySure: true }).map(card => card.cardId)).toEqual([1])
+  })
+
+  it('asks a photo that lists only the sure cards for twice the windows to call a card sure', () => {
+    const hits = [...around(1, 0.3, 14), ...around(2, 0.3, 8, 1000)]
+
+    expect(cardsFromHits(hits).map(card => [card.cardId, card.sure])).toEqual([[1, true], [2, true]])
     expect(cardsFromHits(hits, { onlySure: true }).map(card => card.cardId)).toEqual([1])
   })
 

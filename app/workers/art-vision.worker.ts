@@ -7,7 +7,7 @@
 import { AutoModel, env, Tensor } from '@huggingface/transformers'
 import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
 import { ART_COLOR_CANDIDATES, ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows, rerankByColor } from '~~/shared/card-art'
-import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtMatch, ArtWindow } from '~~/shared/card-art'
+import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtMatch, ArtWindow, PhotoCorrection } from '~~/shared/card-art'
 import { artColorDescriptor, meanColor } from '~~/shared/card-color'
 import { createGpuMatcher } from './art-gpu'
 import type { GpuMatcher } from './art-gpu'
@@ -108,6 +108,11 @@ const ROTATION_PROBE_REFERENCE = 40
 const ROTATION_PROBE_FLOOR = 0.05
 /** A photo whose windows are corrected mostly by the mean of other photos (see `photoCorrection`) shows few cards: only the sure ones are listed. */
 const FEW_CARDS_OWN = 0.5
+/**
+ * Such a photo (one card, or the same card twelve times) gets a closer look at this many places at most: there is
+ * not more than that to find, and the places after the twelfth took a second minute for the same cards.
+ */
+const FEW_CARDS_PLACES = 12
 /** A photo whose upright score is this much is upright, and the other two ways are not tried (upright photos scored 0.26 to 0.91, those on their side 0.07 and 0.16). */
 const ROTATION_UPRIGHT_SURE = 0.3
 /** The upright way is kept when its score is at least this share of the best way's, or when no way scores at least the minimum. */
@@ -425,16 +430,17 @@ async function lookCloser(
   index: ArtIndex,
   photo: OffscreenCanvas,
   first: ArtHit[],
-  correct: (vector: Float32Array) => Float32Array,
+  correct: PhotoCorrection,
   colorMean: Float32Array,
   report: (done: number, total: number) => void,
   deadline: number,
   tuning?: Partial<Plan>,
 ): Promise<{ hits: ArtHit[], embedded: number, windows: ArtWindow[], vectors: Float32Array[] }> {
   const plan = planFor(tuning)
+  const places = correct.own < FEW_CARDS_OWN ? Math.min(plan.places, FEW_CARDS_PLACES) : plan.places
   const seen = new Set(first.map(hit => windowKey(hit.window)))
   const windows: ArtWindow[] = []
-  for (const candidate of refinementCandidates(first, plan.minMargin, plan.places, plan.minSimilarity)) {
+  for (const candidate of refinementCandidates(first, plan.minMargin, places, plan.minSimilarity)) {
     for (const window of refinementWindows(candidate.window, photo.width, photo.height, plan.shifts, plan.zooms)) {
       if (!seen.has(windowKey(window))) {
         seen.add(windowKey(window))

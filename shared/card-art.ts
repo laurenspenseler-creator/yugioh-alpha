@@ -630,6 +630,8 @@ export const ART_SURE_SUPPORT = 6
 export const HUB_SURE_MARGIN = 0.15
 export const HUB_SURE_SIMILARITY = 0.5
 export const HUB_SURE_SUPPORT = 10
+/** A photo that lists only the sure cards needs this many times the windows for a sure card (cards of such photos had 17 to 161 windows, the cards that were not there 6 to 11). */
+export const FEW_CARDS_SURE_SUPPORT_FACTOR = 2
 /**
  * A further place counts as another copy of a card when it is as good as a card of its own would
  * have to be: at least this share as clear as the best place, clear enough to be sure, shown by
@@ -685,7 +687,8 @@ export function cardsFromHits(hits: readonly ArtHit[], options: { onlySure?: boo
   // A sparser look at the photo gives every card fewer windows: the support it needs shrinks with it.
   const scale = options.supportScale ?? 1
   const minSupport = Math.max(2, Math.round(ART_MIN_SUPPORT * scale))
-  const sureSupport = Math.max(minSupport, Math.round(ART_SURE_SUPPORT * scale))
+  // A photo of few cards (`onlySure`) shows each of them from many windows, and the frame and the glare of a card give a few windows to a card that is not there.
+  const sureSupport = Math.max(minSupport, Math.round(ART_SURE_SUPPORT * scale * (options.onlySure ? FEW_CARDS_SURE_SUPPORT_FACTOR : 1)))
   const hubSupport = Math.max(sureSupport, Math.round(HUB_SURE_SUPPORT * scale))
   const byCard = new Map<number, ArtHit[]>()
   const looseByCard = new Map<number, ArtHit[]>()
