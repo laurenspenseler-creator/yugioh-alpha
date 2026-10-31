@@ -20,7 +20,7 @@ const rows = [
 ]
 
 function fetchMock() {
-  return vi.fn(async (url: string) => {
+  return vi.fn(async (url: string, _options?: unknown) => {
     if (url === '/api/collections') {
       return { items: [{ id: 'box-1', name: 'Box 1' }], allCount: 0 }
     }
