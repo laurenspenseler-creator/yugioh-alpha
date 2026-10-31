@@ -41,7 +41,9 @@ corrections, both in `shared/card-art.ts`, fix this and are what makes the metho
 
 With these, cards are found that plain cosine never named. Things that did not help: whitening the catalog, correcting hubs by how close a catalog picture is to its
 neighbours or to the windows of this photo (the second even hurts, because a real card is close
-to many overlapping windows), and a colour layout check (not stable under light and foil).
+to many overlapping windows), and a colour layout check as a filter (not stable under light and
+foil; as a soft tie-break between the closest cards, with the tint of the light taken off, colour
+does help, see below).
 
 A photo of one card (or two) breaks the second correction: most of its windows show that card, so
 the photo's own mean is the card, and taking it off takes the card off (exact catalog pictures
@@ -66,15 +68,63 @@ it sure from 0.10, 0.40 and six windows. Places far apart with the same card are
 place holds one card: a card that claims the place of a clearer one is not sure (a look-alike
 or a generic picture), and neither of two that claim it about equally clearly is.
 
+A card that is listed also gets its copies counted by a looser measure: every place where it is
+the closest card of at least two windows that are 0.35 close and 0.03 ahead is a copy, unless one
+window holds two places (`looseCopies`). On a grid of twelve identical cards a look-alike is a hair
+behind at every place, so no place is clear enough for the strict measure, which saw one or two
+copies; the loose one sees four to nine. On 20 real photos (286 cards) the copies found went from
+67 to 112 with none counted too many, and on eleven older photos from 74 to 75.
+
+The places that get a closer look are the 48 best (it was 24) down to a similarity of 0.25 (it was
+0.35), as many as the time allows (140 seconds in all on the graphics card, usually 30 to 40
+places). On the hardest photos most of the cards that are missed are a card that no window of the
+first pass sits on: it matches at 0.25 to 0.35, and with a window moved and zoomed onto it, at 0.5.
+On five such photos (62 cards) it raised the cards found from 21 to 27 and the copies from 25 to 32
+at about half as many windows again. The places after the 24th are the poorer ones: of 106 sure
+right cards, 44 were found by the first pass, 43 by the first twelve places, 10 by the next twelve and
+9 by the 24 after those, which took two fifths of the windows.
+
+### Colour, a second cue
+
+The model sees shapes and is almost blind to colour, so two artworks with the same swirl or the same
+blob in other colours are a hair apart for it: twelve Polymerization cards (a blue swirl with orange
+dragons) were taken for Dowsing Fusion (green and purple) at half their windows. The colour of a
+window of the photo and of an artwork of the catalog tell them apart (`shared/card-color.ts`): per
+cell of a 3 × 3 grid, log(red / green) and log(blue / green), which does not depend on brightness.
+The colour of every artwork is in `colors.bin` (18 int8 numbers each, 0.5 MB). Both sides have what
+they share taken off first, the photo's windows their own mean (the tint of the light), the catalog
+its mean; with the agreement of the two colours between -1 and 1, `rerankByColor` orders the best
+eight cards of a window by similarity plus 0.1 times that agreement. The similarity stays the
+model's, so the thresholds hold, and the margin is the gap of the scores. On 20 photos it made the
+cards found 59 of 146 → 64, the sure ones 46 → 57, the wrong sure ones 25 → 20 and the wrong doubtful
+ones 32 → 16. Other designs gave the same within two cards (a grid of 2 × 2, 4 × 4 or 6 × 6, the Lab
+colour space, a hue histogram, the brightness of the cells); taking off the catalog's mean instead
+of the photo's own was worse. An index without `colors.bin` works without the colour.
+
+### Hubs
+
+All 25 sure cards that were not on their photo (on the 20 photos) were hubs: cards that win windows
+of photo after photo that they are not on, 40 to 500 windows each (Yum☆Yum☆Yummys, The Kaiju Files,
+Millennium Revelation: generic pictures that match a sleeve, a shadow or the table). `index.json` has a
+list of them (`hubs`, 50 cards that won at least five windows of at least four of 31 photos
+without being on them), and `cardsFromHits` calls such a card sure only with a lead of 0.15, a
+similarity of 0.5 and ten windows (a card needs 0.10, 0.40 and six). Taking the list from the other 19
+photos for each photo in turn (leave one out) kept all 46 sure true cards and left 6 of the 25 wrong
+sure ones. The list is estimated from photos with a known list of cards, like `photoMean`, and
+`scripts/art-index.mjs` keeps it (`pnpm ai:art:hubs <folder>` estimates it, see the header of `scripts/art-hubs.mjs`); a card that is really on a photo and a hub is still listed as a
+doubtful one, and confirmed by a name read from the photo or by the user in the review.
+
 ### The index
 
 `pnpm ai:art` (`scripts/art-index.mjs`) downloads the artworks the index does not have yet,
 embeds them with the same model and code (`artVectorFromTokens`) the browser uses and writes
 `public/ai/art/index.json` (card id, artwork id and kind of each vector) and `index.bin` (per vector
-two float32 scales and 768 int8 values: 23 MB). A rerun after a catalog sync fetches only the new
-cards; a first run downloads about 2.5 GB and takes an hour or two. The index is committed: its
-inputs are too big to fetch on every checkout. A new card is recognized only after the index
-was rebuilt for it.
+two float32 scales and 768 int8 values: 23 MB), next to `colors.bin` (the colour of each vector's
+artwork, 0.5 MB). A rerun after a catalog sync fetches only the new cards; a first run downloads
+about 2.5 GB and takes an hour or two (with `ART_CROPS_DIR` pointing at a folder of the cropped
+artworks they are read from there, and `--colors-only` gives an index without colours its colours
+and nothing else). The index is committed: its inputs are too big to fetch on every checkout. A new
+card is recognized only after the index was rebuilt for it.
 
 Every artwork has two vectors: the picture as it is, and a copy blurred by 1.5 pixels, which is
 what a photo that is not quite sharp makes of it. The matching takes the better of the two for
@@ -93,7 +143,9 @@ comes first and a score of 0.3 or more ends the probe, because upright photos sc
 windows of seven sizes (150 to 1,100 px: the art of a card is a tenth to two thirds of the
 photo, depending on how many cards are on it) out of it, three fifths of a window apart, about
 450 of them. The most textured windows go first (paper, mats and sleeves are flat). Then the
-closer look, up to 15 places and about 450 windows.
+closer look, up to 48 places and about 1,250 windows (a photo of sixteen cards takes about two
+minutes on a laptop's integrated graphics; the closer look is the last thing to be cut when the
+140 seconds run out).
 
 A pass of the model in WebAssembly takes a second per window, which would make a photo a matter
 of ten minutes. On a graphics card with WebGPU and half precision it takes 40 to 55 milliseconds,
@@ -156,6 +208,35 @@ which makes a wrong one look like a right one.
   larger, got 2 of 33 kinds (most places are text boxes and table, the cut misses the bar), and
   reading again the lines the OCR had located but misread got 2 of 33: on a phone photo of 16 cards
   the OCR finds only a handful of name lines, so the names cannot make up for the artwork.
+- A second round of real photos showed how much the first pass leaves. Twenty phone photos from the
+  tester (three sets of 13 to 16 cards in sleeves on a white table, and eight photos of twelve times
+  the same spell; 1500 × 2000 px) were read 59 of 146 kinds and 67 of 286 copies by the scan as it was,
+  with 25 wrong sure cards. What is missed is mostly **alignment**, not recognition: of 146 cards,
+  the right one was the closest card at the best of the ~1,000 windows for 99, among the three closest
+  for 116 and among the sixteen for 134; with windows that a person placed on the 16 artworks of one
+  photo (a fifth of a window off, three sizes) 11 of 16 cards were read where the scan read 5. The
+  artworks there are 130 to 180 px, below the smallest window of the first pass, so a window that
+  sits on one is rare; the closer look is what finds them, from places that match at 0.25 to 0.35.
+  With the colour, the hubs, the loose copies and the wider closer look, on all 26 test photos (these
+  20, the tester's three and three older real ones; colour weight 0.12, up to 190 s): sure cards
+  88 → 106, wrong sure 27 → 7, copies 114 → 160 of 366 (the hubs were taken from the same photos; left
+  out one photo at a time they keep every right card and 6 of the 25 wrong ones). With the final
+  settings (colour weight 0.1, at most 140 s) on eleven of them, the six older photos and the five
+  hardest: kinds 73 → 80 of 131, sure 58 → 70, copies 78 → 92, wrong sure 8 → 5, at about two minutes
+  per photo instead of a minute and a half. The gain is on the hard photos (21 → 28 kinds of 62, sure
+  15 → 23); on the six older ones, where the scan was already at 52 of 69 kinds, it is four sure cards
+  and two copies more at 76 → 120 s, and the doubtful ones the colour and the hubs push down. Tried
+  on these photos and dropped, each measured: windows of 128 and 150 px a third of a
+  window apart all over the photo (2,000 windows, no better, more wrong), the places for the closer
+  look chosen by texture instead of by similarity (+2 instead of +6 kinds), moving the windows of the
+  closer look along the two axes only (half the windows, most of the gain gone: the offsets are
+  diagonal), finding the lattice the found cards sit on and looking where it has gaps (the cards
+  found are too few and too irregular), finding cards as blobs of colour, of texture or by the border
+  of their artwork (works for cards with space between them, merges sleeves that touch, misses grey
+  and dark cards), and summing the evidence of all windows of a place instead of counting the
+  windows that name a card (+2 kinds, more wrong ones). Ideas left: card detection for exactly aligned
+  windows (the biggest lever by the numbers above, but brittle on touching cards), photo-like copies of
+  the artworks in the index (zoomed, tilted, glared; `buildindex2` in the lab builds them).
 - A card printed with an older artwork than the catalog's current one is not found by its
   picture (Don Zaloog in the first prints shows swords, the catalog guns), and families with
   near-identical pictures can blur (Magic Jammer and Trap Jammer, which differ mostly in

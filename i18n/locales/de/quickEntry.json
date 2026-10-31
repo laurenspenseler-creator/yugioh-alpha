@@ -37,7 +37,7 @@
     "photo": {
       "button": "Fotos auswerten",
       "camera": "Foto aufnehmen",
-      "hint": "Lege die Karten gut sichtbar nebeneinander, mit gut lesbarem Namen oben auf jeder Karte, bei gutem Licht. Die Auswertung läuft auf deinem Gerät (die Fotos werden nicht hochgeladen), dauert etwa eine Minute pro Foto und ist eine Hilfe: Prüfe die Karten unten, bevor etwas gespeichert wird. Karten, die quer liegen, werden erkannt; spiegelnde Folie und kleine Fotos sind schwer zu lesen.",
+      "hint": "Lege die Karten gut sichtbar nebeneinander, mit gut lesbarem Namen oben auf jeder Karte, bei gutem Licht. Die Auswertung läuft auf deinem Gerät (die Fotos werden nicht hochgeladen), dauert ein bis zwei Minuten pro Foto und ist eine Hilfe: Prüfe die Karten unten, bevor etwas gespeichert wird. Karten, die quer liegen, werden erkannt; spiegelnde Folie und kleine Fotos sind schwer zu lesen.",
       "starting": "Das Erkennungsmodul wird geladen …",
       "progress": "Foto {photo} von {photos} wird gelesen (Durchlauf {pass} von {passes}) …",
       "art": {

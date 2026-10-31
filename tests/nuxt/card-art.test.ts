@@ -10,6 +10,7 @@ import {
   ART_SURE_MARGIN,
   ART_SURE_SIMILARITY,
   ART_SURE_SUPPORT,
+  ART_COLOR_WEIGHT,
   ART_VECTOR,
   artPlaces,
   artVectorFromTokens,
@@ -27,9 +28,11 @@ import {
   quantizeVector,
   refinementCandidates,
   refinementWindows,
+  rerankByColor,
   similarities,
 } from '../../shared/card-art'
 import type { ArtHit, ArtIndexMeta } from '../../shared/card-art'
+import { ART_COLOR_DIMENSION, quantizeColor } from '../../shared/card-color'
 
 /** A repeatable pseudo-random unit vector of one part. */
 function part(seed: number): Float32Array {
@@ -159,6 +162,88 @@ describe('parseArtIndex', () => {
     expect(() => parseArtIndex({ ...meta, parts: 1 }, binary)).toThrow('Unknown')
     expect(() => parseArtIndex({ ...meta, count: 2, cardIds: [7, 8] }, binary)).toThrow('incomplete')
     expect(() => parseArtIndex(meta, binary.slice(0, 100))).toThrow('incomplete')
+  })
+})
+
+/** `buildIndex` with the colour of every entry (`ART_COLOR_DIMENSION` numbers each), stored the way the index file does. */
+function buildColoredIndex(entries: Array<{ cardId: number, vector: Float32Array, color: number[] }>) {
+  const { meta, binary } = buildIndex(entries)
+  const colors = new Int8Array(entries.length * ART_COLOR_DIMENSION)
+  entries.forEach((entry, i) => colors.set(quantizeColor(entry.color), i * ART_COLOR_DIMENSION))
+  return { meta: { ...meta, colors: ART_COLOR_DIMENSION, colorMean: new Array<number>(ART_COLOR_DIMENSION).fill(0) } satisfies ArtIndexMeta, binary, colors: colors.buffer }
+}
+
+/** A colour that leans towards red (first of each pair of numbers) or towards blue (second). */
+const RED = Array.from({ length: ART_COLOR_DIMENSION }, (_, i) => (i % 2 === 0 ? 1 : -0.5))
+const BLUE = Array.from({ length: ART_COLOR_DIMENSION }, (_, i) => (i % 2 === 0 ? -0.5 : 1))
+
+describe('parseArtIndex with colours', () => {
+  const built = buildColoredIndex([{ cardId: 7, vector: vector(1), color: RED }, { cardId: 8, vector: vector(2), color: BLUE }, { cardId: 7, vector: vector(3), color: RED }])
+
+  it('reads the colour of every artwork and finds the first one of a card', () => {
+    const index = parseArtIndex(built.meta, built.binary, built.colors)
+
+    expect(index.colors!.values).toHaveLength(3 * ART_COLOR_DIMENSION)
+    expect(index.colors!.rowOfCard.get(7)).toBe(0)
+    expect(index.colors!.rowOfCard.get(8)).toBe(1)
+    expect(index.colors!.mean).toHaveLength(ART_COLOR_DIMENSION)
+  })
+
+  it('goes without colours when none are given, and refuses colours that do not fit', () => {
+    expect(parseArtIndex(built.meta, built.binary).colors).toBeUndefined()
+    expect(() => parseArtIndex(built.meta, built.binary, built.colors.slice(0, 10))).toThrow('incomplete')
+  })
+
+  it('keeps the colours when the index is centred', () => {
+    const centered = centerArtIndex(parseArtIndex(built.meta, built.binary, built.colors))
+
+    expect(centered.colors?.rowOfCard.get(8)).toBe(1)
+  })
+})
+
+describe('rerankByColor', () => {
+  const built = buildColoredIndex([{ cardId: 1, vector: vector(1), color: BLUE }, { cardId: 2, vector: vector(2), color: RED }, { cardId: 3, vector: vector(3), color: RED }])
+  const index = parseArtIndex(built.meta, built.binary, built.colors)
+  const red = Float32Array.from(RED)
+  const noCast = new Float32Array(ART_COLOR_DIMENSION)
+
+  it('puts the card whose colour the window has ahead of one that is a hair closer to it for the model', () => {
+    const match = { cardId: 1, similarity: 0.5, margin: 0.02, runnersUp: [{ cardId: 2, similarity: 0.48 }] }
+
+    const reranked = rerankByColor(match, index, red, noCast)
+
+    expect(reranked.cardId).toBe(2)
+    // The similarity is still the model's; the margin is the gap of the scores with the colour in.
+    expect(reranked.similarity).toBe(0.48)
+    expect(reranked.margin).toBeGreaterThan(ART_COLOR_WEIGHT)
+    expect(reranked.runnersUp).toEqual([{ cardId: 1, similarity: 0.5 }])
+  })
+
+  it('does not move a card that is much closer for the model, and takes a little off its margin when the colour disagrees', () => {
+    const match = { cardId: 1, similarity: 0.7, margin: 0.3, runnersUp: [{ cardId: 2, similarity: 0.4 }] }
+
+    const reranked = rerankByColor(match, index, red, noCast)
+
+    expect(reranked.cardId).toBe(1)
+    expect(reranked.margin).toBeLessThan(0.3)
+    expect(reranked.margin).toBeGreaterThan(0)
+  })
+
+  it('leaves a match alone when the index has no colours or the match no rivals', () => {
+    const plain = parseArtIndex(built.meta, built.binary)
+    const match = { cardId: 1, similarity: 0.5, margin: 0.02, runnersUp: [{ cardId: 2, similarity: 0.48 }] }
+
+    expect(rerankByColor(match, plain, red, noCast)).toBe(match)
+    expect(rerankByColor({ cardId: 1, similarity: 0.5, margin: 0.5 }, index, red, noCast)).toEqual({ cardId: 1, similarity: 0.5, margin: 0.5 })
+  })
+
+  it('scores a card without a colour by the model alone, and remembers at most three rivals', () => {
+    const match = { cardId: 99, similarity: 0.7, margin: 0.08, runnersUp: [{ cardId: 2, similarity: 0.62 }, { cardId: 3, similarity: 0.55 }, { cardId: 1, similarity: 0.5 }, { cardId: 4, similarity: 0.45 }, { cardId: 5, similarity: 0.4 }] }
+
+    const reranked = rerankByColor(match, index, red, noCast)
+
+    expect(reranked.cardId).toBe(2)
+    expect(reranked.runnersUp).toHaveLength(3)
   })
 })
 
@@ -314,6 +399,12 @@ describe('similarities and matchFromSimilarities', () => {
     expect(match!.cardId).toBe(1)
     expect(match!.runnersUp).toEqual([{ cardId: 5, similarity: 0.7 }, { cardId: 2, similarity: 0.65 }, { cardId: 3, similarity: 0.6 }])
     expect(match!.margin).toBeCloseTo(0.2, 5)
+  })
+
+  it('remembers more other cards when asked to', () => {
+    const match = matchFromSimilarities([1, 2, 3, 4, 5, 6], [0.9, 0.5, 0.6, 0.3, 0.7, 0.2], 0, 5)
+
+    expect(match!.runnersUp!.map(other => other.cardId)).toEqual([5, 3, 2, 4, 6])
   })
 
   it('does not take another vector of the best card for a rival', () => {
@@ -513,6 +604,14 @@ describe('cardsFromHits', () => {
     expect(cards.every(card => !card.sure)).toBe(true)
   })
 
+  it('calls a hub (a card that wins windows of photo after photo it is not on) sure only with overwhelming evidence', () => {
+    const hits = [...around(1, 0.2, 8), ...around(2, 0.3, 12, 1000, 0.6), ...around(3, 0.2, 8, 2000)]
+
+    expect(cardsFromHits(hits).map(card => [card.cardId, card.sure])).toEqual([[2, true], [1, true], [3, true]])
+    // Card 1 leads by 0.2 with eight windows: enough for a card, not for a hub. Card 2 leads by 0.3 with twelve.
+    expect(cardsFromHits(hits, { hubs: new Set([1, 2]) }).map(card => [card.cardId, card.sure])).toEqual([[2, true], [1, false], [3, true]])
+  })
+
   it('needs fewer windows per card when the support scale shrinks (a sparser look at the photo)', () => {
     const hits = [...around(1, 0.3, 4), ...around(2, 0.3, 3, 400)]
 
@@ -529,10 +628,28 @@ describe('cardsFromHits', () => {
   })
 
   it('counts a card seen at places far apart as several copies, if each is shown by several windows and about as clear as the best', () => {
-    const [card] = cardsFromHits([...around(1, 0.2, 4), ...around(1, 0.18, 3, 500), hit(1, 0.19, 0, 900), ...around(1, 0.09, 4, 1500), ...around(1, 0.15, 2, 2000)])
+    const [card] = cardsFromHits([...around(1, 0.2, 4), ...around(1, 0.18, 3, 500), hit(1, 0.19, 0, 900), ...around(1, 0.02, 4, 1500), hit(1, 0.15, 2000)])
 
-    // The lone window, the weak place and the place of two windows are not copies of their own.
+    // The lone windows and the place whose windows are hardly ahead of the look-alikes are not copies of their own.
     expect(card!.copies).toBe(2)
+  })
+
+  it('counts the places of a card that is listed by the windows that put it first, though a look-alike is a hair behind at each (a grid of identical cards)', () => {
+    const [card] = cardsFromHits([
+      ...around(1, 0.2, 6),
+      ...[1, 2, 3, 4, 5].flatMap(place => around(1, 0.035, 3, place * 400)),
+      // Not a copy: a lone window, and two windows that hardly lead.
+      hit(1, 0.2, 3000),
+      ...around(1, 0.02, 3, 3500),
+    ])
+
+    expect(card).toMatchObject({ cardId: 1, copies: 6 })
+  })
+
+  it('does not count the places of a card by windows that are not close to its artwork', () => {
+    const [card] = cardsFromHits([...around(1, 0.2, 6), ...around(1, 0.06, 3, 600, 0.31), ...around(1, 0.06, 3, 1200, 0.34)])
+
+    expect(card!.copies).toBe(1)
   })
 
   it('does not take windows far apart on one large picture for copies', () => {

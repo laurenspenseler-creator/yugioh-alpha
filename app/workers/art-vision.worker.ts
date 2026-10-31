@@ -6,8 +6,9 @@
 // only card ids come back.
 import { AutoModel, env, Tensor } from '@huggingface/transformers'
 import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
-import { ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows } from '~~/shared/card-art'
-import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtWindow } from '~~/shared/card-art'
+import { ART_COLOR_CANDIDATES, ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows, rerankByColor } from '~~/shared/card-art'
+import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtMatch, ArtWindow } from '~~/shared/card-art'
+import { artColorDescriptor, meanColor } from '~~/shared/card-color'
 import { createGpuMatcher } from './art-gpu'
 import type { GpuMatcher } from './art-gpu'
 
@@ -34,6 +35,13 @@ export interface ArtScanResult {
   /** Where the model ran: the graphics card, or the processor (thirty times slower). */
   device: 'webgpu' | 'wasm'
   seconds: number
+  /** Every window that was matched, with its best card and the runners-up: only with `tuning.keepHits`, for finding out why a photo went wrong. */
+  hits?: ArtHit[]
+  /** The photo's own mean correction share (`photoCorrection`), also for tuning. */
+  own?: number
+  /** The windows that were turned into a vector (x, y, size), and their uncorrected vectors one after the other, also only with `tuning.keepHits`. */
+  windowList?: number[][]
+  vectors?: Float32Array
 }
 
 export type ArtStage = 'model' | 'index' | 'turning' | 'scanning' | 'matching' | 'refining'
@@ -56,7 +64,10 @@ const batchSize = () => device === 'webgpu' ? 16 : 8
 /**
  * What to look at. The artwork of a card is 9 % to 70 % of a photo's long edge, depending on how many
  * cards are on the photo, hence the window sizes. The graphics card looks at about 450 windows and
- * then 450 more around the places that matched; the processor takes thirty times as long per window
+ * then at windows around up to 48 places that matched, the best first and as many as the time allows
+ * (a place that matched only weakly is often a card that no window sits on yet: it matches at 0.25 to
+ * 0.35 and, with a window moved and zoomed onto it, at 0.5; the places after the 24th found about one
+ * card in ten and took two fifths of the time); the processor takes thirty times as long per window
  * and gets a sparser first pass (a card is matched from up to half a window off) and a short closer
  * look, and the time it may take is longer.
  */
@@ -78,7 +89,7 @@ export interface Plan {
   supportScale: number
 }
 const PLANS: Record<'webgpu' | 'wasm', Plan> = {
-  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 24, probeWindows: 40, milliseconds: 150_000, supportScale: 1, minSimilarity: 0.35 },
+  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 48, probeWindows: 40, milliseconds: 140_000, supportScale: 1, minSimilarity: 0.25 },
   wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65 },
 }
 
@@ -186,11 +197,13 @@ async function loadModel(id: number): Promise<Model> {
 
 async function loadIndex(): Promise<ArtIndex> {
   indexLoading ??= (async () => {
-    const [meta, binary] = await Promise.all([
+    const [meta, binary, colors] = await Promise.all([
       fetch(`${AI_ASSETS}/art/index.json`).then(response => response.ok ? response.json() as Promise<ArtIndexMeta> : Promise.reject(new Error(`The artwork index answered ${response.status}`))),
       fetch(`${AI_ASSETS}/art/index.bin`).then(response => response.ok ? response.arrayBuffer() : Promise.reject(new Error(`The artwork index answered ${response.status}`))),
+      // The colours are a help, not a need: an index without them recognizes by the model alone.
+      fetch(`${AI_ASSETS}/art/colors.bin`).then(response => response.ok ? response.arrayBuffer() : undefined).catch(() => undefined),
     ])
-    return centerArtIndex(parseArtIndex(meta, binary))
+    return centerArtIndex(parseArtIndex(meta, binary, colors))
   })().catch((error) => {
     indexLoading = null
     throw error
@@ -261,13 +274,15 @@ const patchCanvas = new OffscreenCanvas(MODEL_INPUT, MODEL_INPUT)
 const patchContext = patchCanvas.getContext('2d', { willReadFrequently: true })!
 patchContext.imageSmoothingQuality = 'high'
 
-/** The windows' pixels as normalized CHW floats for the model, resampled from the photo by the browser. */
-function windowTensor(photo: OffscreenCanvas, windows: ArtWindow[]): Tensor {
+/** The windows' pixels as normalized CHW floats for the model, resampled from the photo by the browser, and each window's colour. */
+function windowTensor(photo: OffscreenCanvas, windows: ArtWindow[]): { tensor: Tensor, colors: Float32Array[] } {
   const plane = MODEL_INPUT * MODEL_INPUT
   const data = new Float32Array(windows.length * 3 * plane)
+  const colors: Float32Array[] = []
   windows.forEach((window, n) => {
     patchContext.drawImage(photo, window.x, window.y, window.size, window.size, 0, 0, MODEL_INPUT, MODEL_INPUT)
     const rgba = patchContext.getImageData(0, 0, MODEL_INPUT, MODEL_INPUT).data
+    colors.push(artColorDescriptor(rgba, MODEL_INPUT, MODEL_INPUT, 4))
     const base = n * 3 * plane
     for (let i = 0, j = 0; i < plane; i += 1, j += 4) {
       data[base + i] = rgba[j]! * SCALE[0]! - OFFSET[0]!
@@ -275,7 +290,7 @@ function windowTensor(photo: OffscreenCanvas, windows: ArtWindow[]): Tensor {
       data[base + 2 * plane + i] = rgba[j + 2]! * SCALE[2]! - OFFSET[2]!
     }
   })
-  return new Tensor('float32', data, [windows.length, 3, MODEL_INPUT, MODEL_INPUT])
+  return { tensor: new Tensor('float32', data, [windows.length, 3, MODEL_INPUT, MODEL_INPUT]), colors }
 }
 
 /** One batch through the model: the vector of each window. */
@@ -293,6 +308,13 @@ function breathe(): Promise<void> {
 interface Embedded {
   windows: ArtWindow[]
   vectors: Float32Array[]
+  colors: Float32Array[]
+}
+
+/** The colours of windows (`ArtWindow` by `ArtWindow`) and the colour the photo's windows share: what the match is checked against. */
+interface WindowColors {
+  list: Float32Array[]
+  mean: Float32Array
 }
 
 /**
@@ -307,18 +329,20 @@ async function embedWindows(
   deadline: number,
   report?: (done: number, total: number) => void,
 ): Promise<Embedded> {
-  const embedded: Embedded = { windows: [], vectors: [] }
-  let running: { batch: ArtWindow[], vectors: Promise<Float32Array[]> } | null = null
+  const embedded: Embedded = { windows: [], vectors: [], colors: [] }
+  let running: { batch: ArtWindow[], vectors: Promise<Float32Array[]>, colors: Float32Array[] } | null = null
   const collect = async () => {
     if (running) {
       embedded.vectors.push(...await running.vectors)
       embedded.windows.push(...running.batch)
+      embedded.colors.push(...running.colors)
       report?.(embedded.windows.length, windows.length)
     }
   }
   for (let at = 0; at < windows.length && performance.now() < deadline; at += batchSize()) {
     const batch = windows.slice(at, at + batchSize())
-    const next = { batch, vectors: runModel(model, windowTensor(photo, batch), batch.length) }
+    const { tensor, colors } = windowTensor(photo, batch)
+    const next = { batch, vectors: runModel(model, tensor, batch.length), colors }
     await collect()
     running = next
   }
@@ -335,15 +359,20 @@ function gpuMatcher(index: ArtIndex): Promise<GpuMatcher | null> {
   return matcherLoading
 }
 
-/** What each window shows, as the best card for it. `vectors` are the windows' corrected vectors (`photoCorrection`). */
-async function matchWindows(index: ArtIndex, windows: ArtWindow[], vectors: Float32Array[], report?: (done: number, total: number) => void): Promise<ArtHit[]> {
+/**
+ * What each window shows, as the best card for it. `vectors` are the windows' corrected vectors (`photoCorrection`).
+ * With `colors` the colour of the window decides between the closest cards (`rerankByColor`).
+ */
+async function matchWindows(index: ArtIndex, windows: ArtWindow[], vectors: Float32Array[], colors?: WindowColors, report?: (done: number, total: number) => void): Promise<ArtHit[]> {
   const hits: ArtHit[] = []
+  const others = colors && index.colors ? ART_COLOR_CANDIDATES : undefined
+  const decided = (match: ArtMatch | null, n: number): ArtMatch | null => match && colors ? rerankByColor(match, index, colors.list[n]!, colors.mean) : match
   const matcher = await gpuMatcher(index)
   if (matcher) {
     try {
       const scores = await matcher.similarities(vectors)
       vectors.forEach((_vector, n) => {
-        const match = matchFromSimilarities(index.cardIds, scores, n * index.cardIds.length)
+        const match = decided(matchFromSimilarities(index.cardIds, scores, n * index.cardIds.length, others), n)
         if (match) {
           hits.push({ ...match, window: windows[n]! })
         }
@@ -358,7 +387,7 @@ async function matchWindows(index: ArtIndex, windows: ArtWindow[], vectors: Floa
     }
   }
   for (const [n, vector] of vectors.entries()) {
-    const match = bestMatch(index, vector)
+    const match = decided(bestMatch(index, vector, others), n)
     if (match) {
       hits.push({ ...match, window: windows[n]! })
     }
@@ -397,10 +426,11 @@ async function lookCloser(
   photo: OffscreenCanvas,
   first: ArtHit[],
   correct: (vector: Float32Array) => Float32Array,
+  colorMean: Float32Array,
   report: (done: number, total: number) => void,
   deadline: number,
   tuning?: Partial<Plan>,
-): Promise<{ hits: ArtHit[], embedded: number }> {
+): Promise<{ hits: ArtHit[], embedded: number, windows: ArtWindow[], vectors: Float32Array[] }> {
   const plan = planFor(tuning)
   const seen = new Set(first.map(hit => windowKey(hit.window)))
   const windows: ArtWindow[] = []
@@ -413,7 +443,8 @@ async function lookCloser(
     }
   }
   const embedded = await embedWindows(model, photo, windows, deadline, report)
-  return { hits: await matchWindows(index, embedded.windows, embedded.vectors.map(vector => correct(vector))), embedded: embedded.windows.length }
+  const hits = await matchWindows(index, embedded.windows, embedded.vectors.map(vector => correct(vector)), { list: embedded.colors, mean: colorMean })
+  return { hits, embedded: embedded.windows.length, windows: embedded.windows, vectors: embedded.vectors }
 }
 
 /**
@@ -464,13 +495,23 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   const photo = drawPhoto(request.bitmap, WORKING_EDGE, rotation)
   const windows = byTexture(photo, artWindows(photo.width, photo.height, plan.sizes, plan.stride))
   const embedded = await embedWindows(model, photo, windows, performance.now() + plan.milliseconds * FIRST_PASS_SHARE, progress('scanning'))
-  // What the photo itself looks like is learned from all its windows, then every window is matched.
+  // What the photo itself looks like (its light, in vectors and in colour) is learned from all its windows, then every window is matched.
   const correct = photoCorrection(embedded.vectors, undefined, index.photoMean)
-  const first = await matchWindows(index, embedded.windows, embedded.vectors.map(vector => correct(vector)), progress('matching'))
-  const closer = await lookCloser(model, index, photo, first, correct, progress('refining'), deadline, request.tuning)
+  const colorMean = meanColor(embedded.colors)
+  const first = await matchWindows(index, embedded.windows, embedded.vectors.map(vector => correct(vector)), { list: embedded.colors, mean: colorMean }, progress('matching'))
+  const closer = await lookCloser(model, index, photo, first, correct, colorMean, progress('refining'), deadline, request.tuning)
 
+  const keep = (request.tuning as unknown as { keepHits?: boolean } | undefined)?.keepHits === true
   return {
-    cards: cardsFromHits([...first, ...closer.hits], { onlySure: correct.own < FEW_CARDS_OWN, supportScale: plan.supportScale }),
+    cards: cardsFromHits([...first, ...closer.hits], { onlySure: correct.own < FEW_CARDS_OWN, supportScale: plan.supportScale, hubs: index.hubs }),
+    ...(keep
+      ? {
+          hits: [...first, ...closer.hits],
+          own: correct.own,
+          windowList: [...embedded.windows, ...closer.windows].map(window => [window.x, window.y, window.size]),
+          vectors: Float32Array.from([...embedded.vectors, ...closer.vectors].flatMap(vector => Array.from(vector))),
+        }
+      : {}),
     rotation,
     rotationScores: scores,
     windowMean: Array.from(meanVector(embedded.vectors)),

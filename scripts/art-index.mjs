@@ -1,20 +1,26 @@
 // Builds the index of catalog artworks that recognizes cards on photos (ADR 0041):
 //
-//   node scripts/art-index.mjs            add the artworks the index does not have yet (all of them on a first run)
-//   node scripts/art-index.mjs --limit 50 stop after 50 new artworks (to try it)
+//   node scripts/art-index.mjs               add the artworks the index does not have yet (all of them on a first run)
+//   node scripts/art-index.mjs --limit 50    stop after 50 new artworks (to try it)
+//   node scripts/art-index.mjs --colors-only give the artworks of an older index their colours, nothing else
 //
 // The cropped artwork of every card in the catalog (`catalog_card_image`) is downloaded from
 // YGOPRODeck, turned into two vectors of 384 numbers (the class token and the mean of the patch
 // tokens) by the same vision model the browser uses (DINOv2-small, 8-bit), and stored in
-// `public/ai/art/index.json` + `index.bin` (about 11 MB; the format is described in
-// shared/card-art.ts; the file is committed). Nothing but the vectors is kept, so a rerun after a
-// catalog sync only fetches the new cards. A first run downloads about 2.5 GB and takes an hour.
+// `public/ai/art/index.json` + `index.bin` (about 23 MB; the format is described in
+// shared/card-art.ts; the file is committed), together with the colour of every artwork
+// (`colors.bin`, see shared/card-color.ts). Nothing but the vectors and the colours is kept, so a
+// rerun after a catalog sync only fetches the new cards. A first run downloads about 2.5 GB and
+// takes an hour. With ART_CROPS_DIR set to a folder of cropped artworks (`<artwork id>.jpg`) they
+// are read from there instead of being downloaded; an index that has no colours yet gets them
+// from the artworks again (this is the only thing it then does, the vectors stay as they are).
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import Database from 'better-sqlite3'
 import { AutoModel, RawImage, Tensor } from '@huggingface/transformers'
 import { ART_DIMENSION, ART_PARTS, ART_VECTOR, artVectorFromTokens, quantizeArtVector } from '../shared/card-art.ts'
+import { ART_COLOR_DIMENSION, artColorDescriptor, dequantizeColor, meanColor, quantizeColor } from '../shared/card-color.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = process.env.ART_INDEX_DIR || join(root, 'public', 'ai', 'art')
@@ -45,24 +51,44 @@ const BLURS = [0, 1.5]
 const known = new Map()
 const metaFile = join(outDir, 'index.json')
 const binFile = join(outDir, 'index.bin')
+const colorsFile = join(outDir, 'colors.bin')
+const cropsDir = process.env.ART_CROPS_DIR
+/** The colour of every artwork (int8, see `quantizeColor`) and the place its vectors have in the index, so that it keeps it. */
+const colors = new Map()
+const position = new Map()
 // The mean window vector of many photos (what a photo of few cards is corrected by, see
 // `photoCorrection` in shared/card-art.ts) is estimated from photos, not from the artworks: it is kept.
+// The hubs (cards that win windows of photo after photo that they are not on, see `ArtIndexMeta.hubs`) are
+// estimated from photos with a known list of cards as well, and kept the same way.
 let photoMean
+let hubs
 if (existsSync(metaFile) && existsSync(binFile)) {
   const meta = JSON.parse(readFileSync(metaFile, 'utf8'))
   photoMean = meta.photoMean
+  hubs = meta.hubs
   // An index of an older format (or one without blurred copies) is rebuilt from scratch.
   if (meta.version === 2 && meta.variants) {
     const binary = readFileSync(binFile)
     const scaleBytes = meta.count * ART_PARTS * 4
     const scales = new Float32Array(binary.buffer.slice(binary.byteOffset, binary.byteOffset + scaleBytes))
     const values = new Int8Array(binary.buffer.slice(binary.byteOffset + scaleBytes, binary.byteOffset + scaleBytes + meta.count * ART_VECTOR))
-    meta.imageIds.forEach((imageId, i) => known.set(`${imageId}:${meta.variants[i]}`, { imageId, variant: meta.variants[i], cardId: meta.cardIds[i], scales: [...scales.slice(i * ART_PARTS, (i + 1) * ART_PARTS)], values: values.slice(i * ART_VECTOR, (i + 1) * ART_VECTOR) }))
+    meta.imageIds.forEach((imageId, i) => {
+      known.set(`${imageId}:${meta.variants[i]}`, { imageId, variant: meta.variants[i], cardId: meta.cardIds[i], scales: [...scales.slice(i * ART_PARTS, (i + 1) * ART_PARTS)], values: values.slice(i * ART_VECTOR, (i + 1) * ART_VECTOR) })
+      position.set(`${imageId}:${meta.variants[i]}`, i)
+    })
+    if (meta.colors === ART_COLOR_DIMENSION && existsSync(colorsFile)) {
+      const stored = new Int8Array(readFileSync(colorsFile).buffer.slice(0))
+      meta.imageIds.forEach((imageId, i) => colors.set(imageId, stored.slice(i * ART_COLOR_DIMENSION, (i + 1) * ART_COLOR_DIMENSION)))
+    }
   }
 }
 
-const todo = rows.filter(row => BLURS.some((_blur, variant) => !known.has(`${row.imageId}:${variant}`))).slice(0, limit)
-console.log(`${rows.length} artworks in the catalog, ${known.size} vectors in the index, ${todo.length} artworks to add`)
+const needsVectors = row => BLURS.some((_blur, variant) => !known.has(`${row.imageId}:${variant}`))
+const needsColor = row => !colors.has(row.imageId)
+// With --colors-only the artworks the index does not have are left for the next real update.
+const colorsOnly = process.argv.includes('--colors-only')
+const todo = rows.filter(row => colorsOnly ? !needsVectors(row) && needsColor(row) : needsVectors(row) || needsColor(row)).slice(0, limit)
+console.log(`${rows.length} artworks in the catalog, ${known.size} vectors in the index, ${todo.length} artworks to add or to give a colour`)
 
 /** An RGB picture (bytes, `size` x `size`) blurred with a Gaussian of standard deviation `sigma` pixels. */
 function blurred(pixels, size, sigma) {
@@ -93,18 +119,32 @@ function blurred(pixels, size, sigma) {
 
 const failed = []
 if (todo.length > 0) {
-  const model = await AutoModel.from_pretrained(MODEL, { dtype: 'q8' })
+  // The vision model is only needed for artworks that have no vectors yet.
+  const model = todo.some(needsVectors) ? await AutoModel.from_pretrained(MODEL, { dtype: 'q8' }) : null
 
+  /** The picture of an artwork, from the folder of crops or from the web. */
+  const picture = async (row) => {
+    const file = cropsDir ? join(cropsDir, `${row.imageId}.jpg`) : null
+    if (file && existsSync(file)) {
+      return await RawImage.fromBlob(new Blob([readFileSync(file)]))
+    }
+    const response = await fetch(row.url)
+    if (!response.ok) {
+      throw new Error(String(response.status))
+    }
+    return await RawImage.fromBlob(await response.blob())
+  }
+
+  /** The colour of the artwork, and the model's input for each blur that has no vector yet (null for the others). */
   const pixels = async (row) => {
     for (let attempt = 0; attempt < 4; attempt += 1) {
       try {
-        const response = await fetch(row.url)
-        if (!response.ok) {
-          throw new Error(String(response.status))
-        }
-        const image = (await RawImage.fromBlob(await response.blob())).rgb()
-        const resized = await image.resize(SIZE, SIZE)
-        return BLURS.map((sigma) => {
+        const resized = await (await picture(row)).rgb().resize(SIZE, SIZE)
+        colors.set(row.imageId, quantizeColor(artColorDescriptor(resized.data, SIZE, SIZE, 3)))
+        return BLURS.map((sigma, variant) => {
+          if (known.has(`${row.imageId}:${variant}`)) {
+            return null
+          }
           const source = blurred(resized.data, SIZE, sigma)
           const data = new Float32Array(3 * SIZE * SIZE)
           const plane = SIZE * SIZE
@@ -132,7 +172,7 @@ if (todo.length > 0) {
     // Downloads run side by side; the model gets the pictures eight at a time.
     const chunk = todo.slice(at, at + BATCH * DOWNLOADS_AT_ONCE)
     const decoded = await Promise.all(chunk.map(pixels))
-    const ready = chunk.flatMap((row, i) => (decoded[i] ?? []).map((data, variant) => ({ row, variant, data })))
+    const ready = chunk.flatMap((row, i) => (decoded[i] ?? []).flatMap((data, variant) => data ? [{ row, variant, data }] : []))
     for (let b = 0; b < ready.length; b += BATCH) {
       const group = ready.slice(b, b + BATCH)
       const input = new Float32Array(group.length * 3 * SIZE * SIZE)
@@ -148,14 +188,19 @@ if (todo.length > 0) {
   }
 }
 
-// Only artworks of cards that are still in the catalog stay; the order is the catalog's.
+// Only artworks of cards that are still in the catalog stay. What the index had keeps its place, so that
+// a rerun that adds nothing writes the same file; new artworks follow in the catalog's order. An artwork
+// whose colour could not be fetched leaves the index as it is.
 const current = new Set(rows.map(row => row.imageId))
-const entries = [...known.values()].filter(entry => current.has(entry.imageId)).sort((a, b) => a.imageId - b.imageId || a.variant - b.variant)
+const placeOf = entry => position.get(`${entry.imageId}:${entry.variant}`) ?? Infinity
+const entries = [...known.values()].filter(entry => current.has(entry.imageId) && colors.has(entry.imageId)).sort((a, b) => placeOf(a) - placeOf(b) || a.imageId - b.imageId || a.variant - b.variant)
 const scales = new Float32Array(entries.length * ART_PARTS)
 const values = new Int8Array(entries.length * ART_VECTOR)
+const stored = new Int8Array(entries.length * ART_COLOR_DIMENSION)
 entries.forEach((entry, i) => {
   scales.set(entry.scales, i * ART_PARTS)
   values.set(entry.values, i * ART_VECTOR)
+  stored.set(colors.get(entry.imageId), i * ART_COLOR_DIMENSION)
 })
 const meta = {
   version: 2,
@@ -167,8 +212,12 @@ const meta = {
   imageIds: entries.map(entry => entry.imageId),
   variants: entries.map(entry => entry.variant),
   ...(photoMean ? { photoMean } : {}),
+  ...(hubs ? { hubs } : {}),
+  colors: ART_COLOR_DIMENSION,
+  colorMean: [...meanColor(entries.map((_entry, i) => dequantizeColor(stored, i * ART_COLOR_DIMENSION)))].map(value => Math.round(value * 1e4) / 1e4),
 }
 mkdirSync(outDir, { recursive: true })
 writeFileSync(metaFile, JSON.stringify(meta))
 writeFileSync(binFile, Buffer.concat([Buffer.from(scales.buffer), Buffer.from(values.buffer)]))
+writeFileSync(colorsFile, Buffer.from(stored.buffer))
 console.log(`index: ${meta.count} vectors of ${new Set(meta.imageIds).size} artworks of ${new Set(meta.cardIds).size} cards -> public/ai/art${failed.length ? `; ${failed.length} could not be fetched (no cropped artwork online)` : ''}`)

@@ -37,7 +37,7 @@
     "photo": {
       "button": "Read photos",
       "camera": "Take a photo",
-      "hint": "Lay the cards next to each other in good light, with the name at the top of each card easy to read. Reading happens on your device (the photos are not uploaded), takes about a minute per photo and is an aid: check the cards below before anything is saved. Cards lying on their side are recognized; shiny foil and small photos are hard to read.",
+      "hint": "Lay the cards next to each other in good light, with the name at the top of each card easy to read. Reading happens on your device (the photos are not uploaded), takes a minute or two per photo and is an aid: check the cards below before anything is saved. Cards lying on their side are recognized; shiny foil and small photos are hard to read.",
       "starting": "Loading the recognition module …",
       "progress": "Reading photo {photo} of {photos} (pass {pass} of {passes}) …",
       "art": {
