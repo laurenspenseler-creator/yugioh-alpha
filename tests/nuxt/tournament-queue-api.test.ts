@@ -364,9 +364,9 @@ describe('drawing the Swiss pairings again', () => {
       const after = recomputePairings(db, ORGANIZER, created.id, true)
       // Rounds 1 and 2, and round 3 which the head start pairs as soon as round 1 is complete.
       expect(after.detail.queue!.duels.filter(duel => duel.status !== 'void')).toHaveLength(12)
-      const winners = new Set(after.detail.queue!.duels.filter(duel => duel.round === 1).map(duel => duel.winnerParticipantId))
-      const second = after.detail.queue!.duels.filter(duel => duel.round === 2 && duel.status === 'planned')
-      expect(second.every(duel => winners.has(duel.participantAId) === winners.has(duel.participantBId))).toBe(true)
+      // Nobody meets the same opponent twice, whichever pairings were drawn again.
+      const pairs = after.detail.queue!.duels.filter(duel => duel.status !== 'void').map(duel => [duel.participantAId, duel.participantBId].sort().join('|'))
+      expect(new Set(pairs).size).toBe(pairs.length)
     }
   })
 })

@@ -27,7 +27,14 @@ const GERMAN_WORDS = /\b(?:der|die|das|und|nicht|kein|keine|mit|für|oder|wird|w
  * (`sicher`/`unsicher`/`ohne_treffer` in app/utils/card-entry.ts, key
  * segments rather than copy) match neither pattern, so they need no entry.
  */
-const ALLOWLIST: Array<{ file: string, literal: string, reason: string }> = []
+// The German filler words of the card-name search are game data, not interface copy: a name like "Der Drache und
+// die Bestie" is compared by its content words (ADR 0041 follow-up, shared/card-name-words.ts).
+const NAME_WORDS_FILE = join('shared', 'card-name-words.ts')
+const ALLOWLIST: Array<{ file: string, literal: string, reason: string }> = ['der', 'die', 'das', 'und'].map(literal => ({
+  file: NAME_WORDS_FILE,
+  literal,
+  reason: 'German article/conjunction skipped when card names are compared word by word',
+}))
 
 function listFiles(dir: string, extensions: string[]): string[] {
   const entries = readdirSync(resolve(ROOT, dir), { recursive: true, withFileTypes: true })

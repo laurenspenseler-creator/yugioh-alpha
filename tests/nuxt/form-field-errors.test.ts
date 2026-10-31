@@ -126,6 +126,9 @@ describe('new tournament form', () => {
 
   it('caps planned rounds at the server limit (#65)', async () => {
     const component = await mountSuspended(NewTournamentPage)
+    // The duel queue is the default type and has no field for planned rounds; this one is the classic type's.
+    ;(component.vm as unknown as { form: { engine: string } }).form.engine = 'classic'
+    await nextTick()
 
     const plannedRounds = component.find<HTMLInputElement>('input[type="number"]').element
     expect(plannedRounds.max).toBe(String(MAX_PLANNED_ROUNDS))
