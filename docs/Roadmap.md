@@ -209,6 +209,12 @@ collections are built by moving copies out of it, per deck if wanted
       one; [ADR 0041](adr/0041-card-recognition-by-artwork.md)). On three real photos
       22 of 36 cards are found sure and without a wrong one where the lettering found 3
       of 15; a card printed with an older picture still needs its name read.
+- [x] Tester feedback, round 6: a tournament with tables and a queue (round robin,
+      Champions League, Swiss with an optional head start): the schedule is fixed from the
+      start, a free table gets the next duel at once, everybody ends with the same number
+      of duels, a player who leaves is made up for (options A and B), the standings stay
+      fixed at the top; "Turnier löschen" gives way to "Turnier speichern & beenden" while
+      a tournament runs ([ADR 0042](adr/0042-tournament-duel-queue.md)).
 - [ ] Stronger photo reading with a vision model as an option (the assistant's API
       key, for example a free Gemini tier), next to the on-device reading.
 - [ ] Later, once the features are done: a speed pass (the artwork scan takes about a minute
