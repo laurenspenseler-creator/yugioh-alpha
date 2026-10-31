@@ -42,7 +42,7 @@ const remaining = computed(() => {
       </p>
     </div>
 
-    <div class="mt-2 max-h-[42vh] overflow-y-auto">
+    <div class="mt-2 max-h-[26vh] overflow-y-auto sm:max-h-[42vh]">
       <table class="w-full text-sm">
         <thead class="sticky top-0 bg-default text-xs text-muted">
           <tr class="text-left">
@@ -111,7 +111,7 @@ const remaining = computed(() => {
                 :label="t('tournaments.queue.board.dropped')"
               />
               <UBadge
-                v-else-if="row.tied"
+                v-else-if="row.tied && row.played > 0"
                 class="ml-1.5"
                 size="sm"
                 color="neutral"
@@ -155,7 +155,8 @@ const remaining = computed(() => {
       </table>
     </div>
 
-    <p class="mt-2 text-xs text-muted">
+    <!-- On a phone the card stays pinned, so the explanation moves to the help at the bottom of the page. -->
+    <p class="mt-2 hidden text-xs text-muted sm:block">
       {{ t('tournaments.queue.board.tableHelp') }}
     </p>
   </section>

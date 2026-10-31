@@ -414,6 +414,7 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
           <li>{{ t('tournaments.queue.help.point2') }}</li>
           <li>{{ t('tournaments.queue.help.point3') }}</li>
           <li>{{ t('tournaments.queue.help.point4') }}</li>
+          <li>{{ t('tournaments.queue.board.tableHelp') }}</li>
         </ul>
       </template>
     </UCollapsible>

@@ -44,11 +44,11 @@ function choose(participantId: string) {
 
 <template>
   <div
-    class="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-default px-3 py-2"
+    class="flex flex-col gap-2 rounded-lg border border-default px-3 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3"
     :class="isVoid ? 'opacity-60' : ''"
     data-testid="queue-duel"
   >
-    <div class="min-w-0 flex-1">
+    <div class="min-w-0 sm:min-w-44 sm:flex-1">
       <div
         class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-highlighted"
         :class="isVoid ? 'line-through' : ''"
@@ -95,7 +95,7 @@ function choose(participantId: string) {
 
     <div
       v-if="entering"
-      class="flex flex-wrap gap-2"
+      class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap"
     >
       <UButton
         size="sm"
