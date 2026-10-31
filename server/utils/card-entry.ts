@@ -2,6 +2,7 @@ import { and, between, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { createError } from 'h3'
 import { foldCardName } from '../../shared/card-name-fold'
+import { isFillerWord, nameWords, wordOverlap } from '../../shared/card-name-words'
 import { mergeDecklistEntries } from '../../shared/decklist'
 import type { DecklistEntry } from '../../shared/decklist'
 import { DECK_SECTIONS } from '../../shared/deck-sections'
@@ -29,6 +30,11 @@ const MIN_FUZZY_SCORE = 0.3
 const LETTER_SEARCH_BELOW = 0.85
 /** A name found by its letters must be at least this similar to count. */
 const MIN_LETTER_SEARCH_SCORE = 0.5
+/** Without a candidate this close, the words of the names are compared (`wordOverlap`), and a name that shares at least this much of them counts... */
+const WORD_SEARCH_BELOW = 0.85
+const MIN_WORD_SCORE = 0.55
+/** ...as a suggestion, never as a sure hit: a word that was swapped for another is a guess. */
+const MAX_WORD_SCORE = 0.8
 /** Two lines whose best candidate is the same card, at least this similar, are one row with their copies added. */
 const MERGE_BY_CARD_MIN_SCORE = 0.6
 const DEFAULT_SUGGEST_LIMIT = 5
@@ -157,6 +163,8 @@ function selectCards(db: Db, where: SQL, limit: number, orderBy?: SQL): Candidat
 interface GermanCandidateRow extends CandidateRow {
   /** The folded German name (`catalog_card_translation.name_search`). */
   nameDeSearch: string
+  /** The German name as printed. */
+  nameDe: string
 }
 
 /**
@@ -183,6 +191,7 @@ function selectGermanCards(db: Db, foldedQuery: string, foldedTokens: string[], 
       type: catalogCard.type,
       frameType: catalogCard.frameType,
       nameDeSearch: nameSearch,
+      nameDe: catalogCardTranslation.name,
     })
     .from(catalogCardTranslation)
     .innerJoin(catalogCard, eq(catalogCard.id, catalogCardTranslation.cardId))
@@ -244,9 +253,9 @@ function tokenize(query: string): string[] {
   const tokens = query
     .split(/[^\p{L}\p{N}]+/u)
     .map(token => token.trim())
-    .filter(token => token.length >= 3)
+    .filter(token => token.length >= 3 && !isFillerWord(token))
 
-  return [...new Set(tokens.map(token => token.toLowerCase()))].slice(0, 3)
+  return [...new Set(tokens.map(token => token.toLowerCase()))].slice(0, 4)
 }
 
 const TIER_RANK: Record<EntryMatchedBy, number> = {
@@ -404,6 +413,10 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
     }
   }
 
+  // Names a word-by-word comparison may find (the words the query and the name share): the English pool
+  // and the German pool, each row once.
+  const wordRows: Array<{ row: CandidateRow, names: string[] }> = pool.map(row => ({ row, names: [row.name] }))
+
   // The German pool: scored against the German name with the same match
   // levels; `remember` keeps whichever language matched better.
   for (const germanSpelling of [query, ...germanNameVariants(query)]) {
@@ -413,10 +426,24 @@ function collectScoredCandidates(db: Db, parsed: ParsedEntryLine, limit: number)
     }
     const germanTokens = [...new Set(tokenize(germanSpelling).map(normalizeCardName).filter(token => token.length >= 3))]
     for (const row of selectGermanCards(db, germanQuery, germanTokens, CANDIDATE_POOL_LIMIT)) {
-      const { nameDeSearch, ...candidate } = row
+      const { nameDeSearch, nameDe, ...candidate } = row
       const scored = scoreName(candidate, germanQuery, nameDeSearch)
       if (scored) {
         remember(scored)
+      }
+      wordRows.push({ row: candidate, names: [nameDe] })
+    }
+  }
+
+  // A name with a word of its own in it ("Gaia der wilde Ritter" for "Gaia, zorniger Ritter") is close by the
+  // words it shares, though not by its letters. Only when nothing is a near-sure match yet.
+  const queryWords = nameWords(query)
+  if (queryWords.length >= 2 && Math.max(0, ...[...byCardId.values()].map(candidate => candidate.score)) < WORD_SEARCH_BELOW) {
+    for (const { row, names } of wordRows) {
+      const overlap = Math.max(...names.map(name => wordOverlap(queryWords, nameWords(name))))
+      const existing = byCardId.get(row.cardId)
+      if (overlap >= MIN_WORD_SCORE && (existing?.score ?? 0) < Math.min(overlap, MAX_WORD_SCORE)) {
+        remember({ ...row, score: Math.min(overlap, MAX_WORD_SCORE), matchedBy: 'fuzzy' })
       }
     }
   }

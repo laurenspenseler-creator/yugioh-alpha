@@ -322,6 +322,47 @@ describe('suggestCatalogMatches with German names (ADR 0015)', () => {
   })
 })
 
+describe('suggestCatalogMatches by the words of a name', () => {
+  const FIERCE = 6368038
+  const POLAR = 14882493
+  const JADE = 9999001
+  let db: TestDb
+
+  beforeAll(() => {
+    db = createTestDb()
+    db.insert(schema.catalogCard).values([
+      { id: FIERCE, name: 'Gaia The Fierce Knight', type: 'Normal Monster', desc: 'A knight.', syncedAt: SYNCED_AT },
+      { id: POLAR, name: 'Gaia, the Polar Knight', type: 'Effect Monster', desc: 'A polar knight.', syncedAt: SYNCED_AT },
+      { id: JADE, name: 'Jade Knight', type: 'Effect Monster', desc: 'A jade knight.', syncedAt: SYNCED_AT },
+    ]).run()
+    db.insert(schema.catalogCardTranslation).values([
+      { cardId: FIERCE, locale: 'de', name: 'Gaia, zorniger Ritter', nameSearch: 'gaiazornigerritter', source: 'ygoresources-git', syncedAt: SYNCED_AT },
+      { cardId: POLAR, locale: 'de', name: 'Gaia, der Polarritter', nameSearch: 'gaiaderpolarritter', source: 'ygoresources-git', syncedAt: SYNCED_AT },
+      { cardId: JADE, locale: 'de', name: 'Jaderitter', nameSearch: 'jaderitter', source: 'ygoresources-git', syncedAt: SYNCED_AT },
+    ]).run()
+  })
+
+  it('finds a name whose one word was swapped for a synonym ("Gaia der wilde Ritter" for "Gaia, zorniger Ritter")', () => {
+    const candidates = suggestCatalogMatches(db, parseEntryLine('Gaia der wilde Ritter'))
+
+    expect(candidates[0]).toMatchObject({ cardId: FIERCE, nameDe: 'Gaia, zorniger Ritter', matchedBy: 'fuzzy' })
+    // A guess is a suggestion for the review, never a sure hit.
+    expect(candidates[0]!.score).toBeLessThan(0.85)
+    expect(candidates.map(candidate => candidate.cardId)).toContain(POLAR)
+  })
+
+  it('still finds the name written as it is, and with the German article', () => {
+    expect(suggestCatalogMatches(db, parseEntryLine('Gaia zorniger Ritter'))[0]).toMatchObject({ cardId: FIERCE, matchedBy: 'exact' })
+    expect(suggestCatalogMatches(db, parseEntryLine('Gaia der zornige Ritter'))[0]).toMatchObject({ cardId: FIERCE })
+  })
+
+  it('does not take a name for a guess when only a filler word is shared', () => {
+    const candidates = suggestCatalogMatches(db, parseEntryLine('Der Drache'))
+
+    expect(candidates.map(candidate => candidate.cardId)).not.toContain(FIERCE)
+  })
+})
+
 describe('suggestCatalogMatches with retired cards (ADR 0019)', () => {
   const RETIRED_RENUMBERED = 12345678
   const RETIRED_DROPPED = 87654321
