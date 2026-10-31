@@ -434,9 +434,23 @@ function matchLine(index: NameIndex, counts: Map<string, number>, line: OcrLine)
   return taken
 }
 
+/**
+ * The OCR reads the title bar of a card in capitals ("MEHRMARSHMALLON"), an effect text in running case. A whole
+ * name read in capitals is a title even when the photo is so small that its letters are barely taller than the
+ * body text (the height test below then misses it: a 1.06 for a name that is plainly there).
+ */
+function isShout(text: string): boolean {
+  const letters = text.replace(/[^\p{L}]/gu, '')
+  return letters.length >= 5 && letters === letters.toUpperCase()
+}
+
+/** The words of a title are at least as tall as the photo's usual word; the small print of an effect text is smaller. */
+const SHOUT_SIZE = 1
+
 /** Whether one window reads like the name printed on a card, not like a word of an effect text. */
 function isHeader(window: WindowMatch): boolean {
-  return window.size >= HEADER_SIZE && ((window.score >= SURE_SCORE && window.everyday <= EVERYDAY_WORD_TEXTS) || window.score >= EXACT_SCORE)
+  const bigEnough = window.size >= HEADER_SIZE || (window.size >= SHOUT_SIZE && isShout(window.text) && window.score >= EXACT_SCORE && window.everyday <= EVERYDAY_WORD_TEXTS)
+  return bigEnough && ((window.score >= SURE_SCORE && window.everyday <= EVERYDAY_WORD_TEXTS) || window.score >= EXACT_SCORE)
 }
 
 /**

@@ -215,10 +215,19 @@ describe('matchFragments: the printed name against the effect text', () => {
   })
 
   it('reads a card twice with a high score even when the name is not printed large (a name quoted in its own text)', () => {
-    const lines = [{ text: 'DARK MAGICIAN', heights: [small, small] }, { text: 'once per turn, “Dark Magician” can', heights: [small, small, small, small, small, small] }]
+    const lines = [{ text: 'Dark Magician', heights: [small, small] }, { text: 'once per turn, “Dark Magician” can', heights: [small, small, small, small, small, small] }]
 
     expect(matchFragments(db, [lines]).map(match => match.name)).toEqual(['Dark Magician'])
     expect(matchFragments(db, [[lines[0]!]])).toEqual([])
+  })
+
+  it('takes a whole name read in capitals as a title even on a small photo where it is barely taller than the body text', () => {
+    // Round 6: MEHRMARSHMALLON read with a height of 1.06 was dropped, the card was never listed.
+    expect(matchFragments(db, [[{ text: 'KURIBOH. @', heights: [1.06, 1.56] }]]).map(match => match.name)).toEqual(['Kuriboh'])
+    // Running case at that size is still a quote.
+    expect(matchFragments(db, [[{ text: 'Kuriboh', heights: [1.06] }]])).toEqual([])
+    // A capital word that is only part of a name (or a short one) is no title.
+    expect(matchFragments(db, [[{ text: 'ATK/ 300 DEF/ 200', heights: [1.06, 1.06, 1.06, 1.06] }]])).toEqual([])
   })
 
   it('does not take everyday words of card texts for a card, unless a whole name is read', () => {
