@@ -148,6 +148,13 @@
       "when": 1792974947733,
       "tag": "0020_tournament_participant_decks",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1793468290463,
+      "tag": "0021_tournament_duel_queue",
+      "breakpoints": true
     }
   ]
 }

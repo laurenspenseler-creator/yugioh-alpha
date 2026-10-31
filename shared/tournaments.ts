@@ -3,6 +3,8 @@
 // the labels and error messages live in the i18n catalogues (ADR 0014).
 
 import type { ValidationIssue } from './rule-formats'
+import type { DropOption, DuelKind, DuelStatus } from './tournament-duels'
+import type { QueueMode } from './tournament-modes'
 import type { StandingsRow } from './tournament-standings'
 
 // Scoring constants live in tournament-standings.ts (the standings path);
@@ -23,6 +25,10 @@ export type TournamentStatus = typeof TOURNAMENT_STATUSES[number]
 
 export const PAIRING_SYSTEMS = ['swiss', 'round_robin'] as const
 export type PairingSystem = typeof PAIRING_SYSTEMS[number]
+
+/** 'classic' = rounds of matches; 'queue' = the duel queue with tables of ADR 0042. */
+export const TOURNAMENT_ENGINES = ['classic', 'queue'] as const
+export type TournamentEngine = typeof TOURNAMENT_ENGINES[number]
 
 /**
  * How a match is turned into points (ADR 0031). `games`: 3 for a win without
@@ -134,6 +140,10 @@ export interface TournamentParticipantDto {
    * participant's matches count for anybody, and they are listed last.
    */
   withdrawn: boolean
+  /** Duel queue only: thrown out, completely out of the standing. */
+  disqualified: boolean
+  /** Duel queue only: what was decided for the duels of a player who left; null while undecided. */
+  dropOption: DropOption | null
   seed: number
   /** The decks this participant plays, in the order they were added; empty = none yet. */
   decks: TournamentParticipantDeckDto[]
@@ -214,12 +224,87 @@ export interface TournamentStandingRow extends StandingsRow {
   name: string
 }
 
+// --- Duel queue (ADR 0042) ----------------------------------------------------
+
+export interface QueueDuelDto {
+  id: string
+  /** The round (Swiss) or Spieltag the duel is shown under. */
+  round: number
+  kind: DuelKind
+  status: DuelStatus
+  participantAId: string
+  participantAName: string
+  participantBId: string
+  participantBName: string
+  winnerParticipantId: string | null
+  /** The table of a running or a played duel. */
+  tableNumber: number | null
+  startedAt: string | null
+  endedAt: string | null
+  /** 1 = next up; null when the duel is not waiting (or one of its players left). */
+  queuePosition: number | null
+}
+
+export interface QueueTableRowDto {
+  participantId: string
+  name: string
+  /** Equal for a tie; null for a player who left (listed grey, last). */
+  place: number | null
+  wins: number
+  played: number
+  /** Duels still to play. */
+  open: number
+  buchholz: number
+  left: boolean
+  tied: boolean
+  /** The table the player is playing at right now. */
+  tableNumber: number | null
+  /** The player's place in the queue (1 = next up) while they wait for a table. */
+  queuePosition: number | null
+}
+
+export interface QueuePendingRematchDto {
+  participantAId: string
+  participantAName: string
+  participantBId: string
+  participantBName: string
+}
+
+export interface QueueDetail {
+  mode: QueueMode
+  /** R; null for a round robin. */
+  rounds: number | null
+  prelaunch: boolean
+  tables: number
+  duelMinutes: number
+  /** The table, sorted; shown fixed at the top of the page. */
+  table: QueueTableRowDto[]
+  /** Every duel of the schedule, struck ones included. */
+  duels: QueueDuelDto[]
+  /** Make-up duels between players who have met before: the organizer confirms each one. */
+  pendingRematches: QueuePendingRematchDto[]
+  /** Players who left and wait for the organizer to decide between A and B. */
+  undecided: string[]
+  /** What the organizer may choose for each player who is still playing (organizer only). */
+  dropOptions: Record<string, { A: boolean, B: boolean }>
+  /** Minutes the rest of the tournament takes at the pace planned, or null when it is over. */
+  remainingMinutes: number | null
+  /** Players level on first place after the last duel: a deciding duel is due. */
+  firstPlaceTie: string[]
+  /** The Swiss pairings that have not started could be drawn again (organizer only). */
+  canRecompute: boolean
+  duelsDone: number
+  duelsTotal: number
+}
+
 export interface TournamentListItem {
   id: string
   name: string
   description: string | null
   status: TournamentStatus
   pairingSystem: PairingSystem
+  engine: TournamentEngine
+  queueMode: QueueMode | null
   format: TournamentFormatRef | null
   organizerName: string
   role: TournamentRole
@@ -248,6 +333,12 @@ export interface TournamentDetail {
   scoring: ScoringSystem
   byeScoring: ByeScoring
   plannedRounds: number | null
+  /** 'queue' = the duel queue of ADR 0042; `queue` carries its state. */
+  engine: TournamentEngine
+  /** The settings of a duel queue (editable until the start), or null for a classic tournament. */
+  queueSetup: QueueSetupDto | null
+  /** The schedule, table and queue of a started duel-queue tournament, else null. */
+  queue: QueueDetail | null
   format: TournamentFormatRef | null
   organizerName: string
   role: TournamentRole
@@ -270,6 +361,15 @@ export interface TournamentDetail {
   updatedAt: string
 }
 
+/** The settings of a duel-queue tournament; chosen at the creation and changeable until the start. */
+export interface QueueSetupDto {
+  mode: QueueMode
+  rounds: number | null
+  prelaunch: boolean
+  tables: number
+  duelMinutes: number
+}
+
 // --- Error codes -----------------------------------------------------------
 
 // Codes the API returns in `data.code`; the client shows `errors.api.<code>`.
@@ -283,6 +383,12 @@ export const TOURNAMENT_ERROR_CODES = [
   'round_not_complete', 'round_completed', 'results_missing', 'results_reported',
   'planned_rounds_reached', 'bye_not_editable', 'no_rounds',
   'draws_not_allowed', 'match_voided', 'pairings_fixed',
+  // Duel queue (ADR 0042); the first seven are the codes of `validateSetup`.
+  'too_few_players', 'rounds_missing', 'rounds_must_be_even', 'rounds_too_small', 'rounds_too_large',
+  'tables_invalid', 'duel_minutes_invalid',
+  'invalid_engine', 'invalid_mode', 'not_queue_tournament', 'classic_only', 'unknown_duel', 'duel_not_running',
+  'invalid_winner', 'player_in_duel', 'drop_option_unavailable', 'nothing_to_decide', 'rematch_not_pending',
+  'tournament_not_running', 'no_open_pairings',
 ] as const
 export type TournamentErrorCode = typeof TOURNAMENT_ERROR_CODES[number]
 

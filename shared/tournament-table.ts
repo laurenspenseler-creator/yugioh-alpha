@@ -26,20 +26,23 @@ type Counted = Omit<TableRow, 'place' | 'tied'>
 /** How the two players stand against each other: their wins in the done duels between them. */
 function headToHead(duels: readonly Duel[], x: string, y: string): { x: number, y: number } {
   const result = { x: 0, y: 0 }
+  const decider = { x: 0, y: 0 }
   for (const duel of duels) {
     if (duel.status !== 'done' || !duel.winner) {
       continue
     }
     if ((duel.a === x && duel.b === y) || (duel.a === y && duel.b === x)) {
+      const score = duel.kind === 'decider' ? decider : result
       if (duel.winner === x) {
-        result.x += 1
+        score.x += 1
       }
       else if (duel.winner === y) {
-        result.y += 1
+        score.y += 1
       }
     }
   }
-  return result
+  // The deciding duel settles the tie whatever the earlier duels said.
+  return decider.x !== decider.y ? decider : result
 }
 
 /**

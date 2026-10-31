@@ -5,7 +5,9 @@ import type { AssistantMessageMetadata, AssistantUIMessagePart } from '../../sha
 import type { RuleSet } from '../../shared/rule-formats'
 import type { AppLocale } from '../../shared/locale'
 import type { ShareResourceType, Visibility, WishlistVisibility } from '../../shared/sharing'
-import type { ByeScoring, PairingSystem, ScoringSystem, TournamentDeckSnapshot, TournamentStatus } from '../../shared/tournaments'
+import type { ByeScoring, PairingSystem, ScoringSystem, TournamentDeckSnapshot, TournamentEngine, TournamentStatus } from '../../shared/tournaments'
+import type { DropOption, DuelKind, DuelStatus, Pause } from '../../shared/tournament-duels'
+import type { QueueMode } from '../../shared/tournament-modes'
 
 // Better Auth core tables (email/password only).
 // Generated to match Better Auth's expected schema for the Drizzle adapter (provider: "sqlite").
@@ -594,6 +596,18 @@ export const tournament = sqliteTable(
     // NULL until the tournament starts: resolved from the participant count
     // (Swiss: ceil(log2(n)); round robin: the circle length).
     plannedRounds: integer('planned_rounds'),
+    // 'classic' = rounds with matches (everything before ADR 0042), 'queue' = the
+    // duel queue of the spec of 2026-10-31: a fixed schedule, tables, no rigid
+    // rounds. The columns below are only read for 'queue'.
+    engine: text('engine').notNull().$type<TournamentEngine>().default('classic'),
+    // 'round_robin' | 'champions_league' | 'swiss'. `planned_rounds` holds R (NULL for a round robin).
+    queueMode: text('queue_mode').$type<QueueMode>(),
+    // Swiss only: rounds 1 and 2 are paired before the start (the spec's "Vorlauf").
+    prelaunch: integer('prelaunch', { mode: 'boolean' }).notNull().default(false),
+    tables: integer('tables'),
+    duelMinutes: integer('duel_minutes'),
+    // Swiss: who sat out which round (an odd field); the pairing rule reads it.
+    queuePauses: text('queue_pauses', { mode: 'json' }).$type<Pause[]>(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     startedAt: integer('started_at', { mode: 'timestamp' }),
     finishedAt: integer('finished_at', { mode: 'timestamp' }),
@@ -636,6 +650,12 @@ export const tournamentParticipant = sqliteTable(
     // with this participant, past and future, is ignored by everyone's
     // standings. Reversible while the tournament runs.
     withdrawn: integer('withdrawn', { mode: 'boolean' }).notNull().default(false),
+    // Duel-queue tournaments (ADR 0042): thrown out, completely out of the standing
+    // (the same as a dropout with option A). `dropped` is set as well.
+    disqualified: integer('disqualified', { mode: 'boolean' }).notNull().default(false),
+    // What was decided for the duels of a player who left: 'A' all struck, 'B' the
+    // played ones stay. NULL while undecided, or for a player who did not leave.
+    dropOption: text('drop_option').$type<DropOption>(),
     // Registration order, renumbered to 1..n when the tournament starts.
     // Drives the round-robin circle and is the final standings tiebreak.
     seed: integer('seed').notNull(),
@@ -743,12 +763,52 @@ export const tournamentMatch = sqliteTable(
   ],
 )
 
+// A duel of a duel-queue tournament (ADR 0042). Unlike a match it belongs to no
+// round: `round` is the round (Swiss) or Spieltag it is shown under, nothing waits
+// for it. A struck duel stays with status 'void'.
+export const tournamentDuel = sqliteTable(
+  'tournament_duel',
+  {
+    id: text('id').primaryKey(),
+    tournamentId: text('tournament_id')
+      .notNull()
+      .references(() => tournament.id, { onDelete: 'cascade' }),
+    participantAId: text('participant_a_id')
+      .notNull()
+      .references(() => tournamentParticipant.id, { onDelete: 'cascade' }),
+    participantBId: text('participant_b_id')
+      .notNull()
+      .references(() => tournamentParticipant.id, { onDelete: 'cascade' }),
+    round: integer('round').notNull(),
+    kind: text('kind').notNull().$type<DuelKind>().default('regular'),
+    status: text('status').notNull().$type<DuelStatus>().default('planned'),
+    winnerParticipantId: text('winner_participant_id')
+      .references(() => tournamentParticipant.id, { onDelete: 'set null' }),
+    tableNumber: integer('table_number'),
+    // The order the duels were fixed in: the last tiebreak of the queue.
+    position: integer('position').notNull(),
+    startedAt: integer('started_at', { mode: 'timestamp_ms' }),
+    endedAt: integer('ended_at', { mode: 'timestamp_ms' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  table => [
+    index('idx_tournament_duel_tournament').on(table.tournamentId, table.status),
+    index('idx_tournament_duel_participant_a').on(table.participantAId),
+    index('idx_tournament_duel_participant_b').on(table.participantBId),
+  ],
+)
+
+export const tournamentDuelRelations = relations(tournamentDuel, ({ one }) => ({
+  tournament: one(tournament, { fields: [tournamentDuel.tournamentId], references: [tournament.id] }),
+}))
+
 export const tournamentRelations = relations(tournament, ({ one, many }) => ({
   organizer: one(user, { fields: [tournament.organizerUserId], references: [user.id] }),
   format: one(ruleFormat, { fields: [tournament.formatId], references: [ruleFormat.id] }),
   participants: many(tournamentParticipant),
   rounds: many(tournamentRound),
   matches: many(tournamentMatch),
+  duels: many(tournamentDuel),
 }))
 
 export const tournamentParticipantRelations = relations(tournamentParticipant, ({ one, many }) => ({

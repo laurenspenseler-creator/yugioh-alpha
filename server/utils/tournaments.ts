@@ -10,8 +10,8 @@
 
 import { randomUUID } from 'node:crypto'
 import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
-import { createError } from 'h3'
 import type { useDb } from '../db'
+import { badRequest, conflict, fail, forbidden, notFound } from './tournament-errors'
 import {
   deck,
   ruleFormat,
@@ -51,14 +51,39 @@ import {
   SCORING_SYSTEMS,
   swissRoundCount,
   TOURNAMENT_DESCRIPTION_MAX_LENGTH,
+  TOURNAMENT_ENGINES,
   TOURNAMENT_NAME_MAX_LENGTH,
   TOURNAMENT_STATUSES,
 } from '../../shared/tournaments'
+import {
+  DEFAULT_DUEL_MINUTES,
+  MAX_DUEL_MINUTES,
+  MAX_TABLES,
+  MIN_DUEL_MINUTES,
+  QUEUE_MODES,
+} from '../../shared/tournament-modes'
+import type { QueueMode } from '../../shared/tournament-modes'
+import type { DropOption } from '../../shared/tournament-duels'
+import type { LeaveKind } from '../../shared/tournament-dropout'
+import {
+  applyQueueRecompute,
+  buildQueueDetail,
+  confirmQueueRematch,
+  decideQueueLeave,
+  leaveQueuePlayer,
+  previewQueueRecompute,
+  queueSetupOf,
+  reportQueueDuel,
+  scheduleQueueDecider,
+  startQueueTournament,
+} from './queue-tournaments'
+import type { RecomputePreview } from './queue-tournaments'
 import type {
   ByeScoring,
   PairingSystem,
   ScoringSystem,
   TournamentDeckOptions,
+  TournamentEngine,
   TournamentDeckSnapshot,
   TournamentDeckSnapshotCard,
   TournamentDetail,
@@ -79,28 +104,8 @@ type Db = ReturnType<typeof useDb>
 
 const DEFAULT_PAGE_SIZE = 20
 const MAX_PAGE_SIZE = 60
-
-// --- Error helpers (D11: every 400/403/409 carries `data.code`) ------------
-
-// `params` are the named values the client's `errors.api.<code>` message
-// needs (e.g. `{ max }`); the English `statusMessage` is never shown (ADR 0014).
-type ErrorParams = Record<string, string | number>
-
-function fail(statusCode: number, code: TournamentErrorCode, message: string, params?: ErrorParams): never {
-  throw createError({ statusCode, statusMessage: message, data: params ? { code, params } : { code } })
-}
-function badRequest(code: TournamentErrorCode, message: string, params?: ErrorParams): never {
-  fail(400, code, message, params)
-}
-function forbidden(code: TournamentErrorCode, message: string, params?: ErrorParams): never {
-  fail(403, code, message, params)
-}
-function conflict(code: TournamentErrorCode, message: string, params?: ErrorParams): never {
-  fail(409, code, message, params)
-}
-function notFound(): never {
-  throw createError({ statusCode: 404, statusMessage: 'Tournament not found' })
-}
+/** Tables of a new duel-queue tournament until the organizer says how many there are. */
+const DEFAULT_TABLES = 4
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -199,6 +204,9 @@ export interface TournamentInput {
   byeScoring: ByeScoring
   plannedRounds: number | null
   includeSelf: boolean
+  engine: TournamentEngine
+  /** The settings of a duel queue; null for a classic tournament. `plannedRounds` is its R. */
+  queue: { mode: QueueMode, prelaunch: boolean, tables: number, duelMinutes: number } | null
 }
 
 function normalizeDescription(raw: unknown): string | null {
@@ -283,16 +291,65 @@ export function validateTournamentInput(body: unknown): TournamentInput {
     badRequest('invalid_name', `name must be 1-${TOURNAMENT_NAME_MAX_LENGTH} characters`, { max: TOURNAMENT_NAME_MAX_LENGTH })
   }
 
+  const engine = normalizeEngine(body.engine)
+  let queue: TournamentInput['queue'] = null
+  if (engine === 'queue') {
+    const mode = body.mode === undefined ? 'round_robin' : normalizeQueueMode(body.mode)
+    queue = {
+      mode,
+      prelaunch: mode === 'swiss' && body.prelaunch === true,
+      tables: body.tables === undefined ? DEFAULT_TABLES : normalizeTables(body.tables),
+      duelMinutes: body.duelMinutes === undefined ? DEFAULT_DUEL_MINUTES : normalizeDuelMinutes(body.duelMinutes),
+    }
+  }
+  const plannedRounds = normalizePlannedRounds(body.plannedRounds)
+
   return {
     name,
     description: normalizeDescription(body.description),
     formatId: normalizeFormatId(body.formatId),
-    pairingSystem: normalizePairingSystem(body.pairingSystem),
+    pairingSystem: queue ? (queue.mode === 'round_robin' ? 'round_robin' : 'swiss') : normalizePairingSystem(body.pairingSystem),
     scoring: normalizeScoring(body.scoring),
     byeScoring: normalizeByeScoring(body.byeScoring),
-    plannedRounds: normalizePlannedRounds(body.plannedRounds),
+    // A round robin has no R of its own: every player meets every other.
+    plannedRounds: queue?.mode === 'round_robin' ? null : plannedRounds,
     includeSelf: body.includeSelf !== false,
+    engine,
+    queue,
   }
+}
+
+function normalizeEngine(raw: unknown): TournamentEngine {
+  if (raw === undefined || raw === null) {
+    return 'classic'
+  }
+  if (typeof raw !== 'string' || !(TOURNAMENT_ENGINES as readonly string[]).includes(raw)) {
+    badRequest('invalid_engine', 'Unknown kind of tournament')
+  }
+  return raw as TournamentEngine
+}
+
+function normalizeQueueMode(raw: unknown): QueueMode {
+  if (typeof raw !== 'string' || !(QUEUE_MODES as readonly string[]).includes(raw)) {
+    badRequest('invalid_mode', 'Unknown mode')
+  }
+  return raw as QueueMode
+}
+
+function normalizeTables(raw: unknown): number {
+  const value = typeof raw === 'string' ? Number(raw) : raw
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 1 || value > MAX_TABLES) {
+    badRequest('tables_invalid', `tables must be an integer 1-${MAX_TABLES}`, { max: MAX_TABLES })
+  }
+  return value
+}
+
+function normalizeDuelMinutes(raw: unknown): number {
+  const value = typeof raw === 'string' ? Number(raw) : raw
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < MIN_DUEL_MINUTES || value > MAX_DUEL_MINUTES) {
+    badRequest('duel_minutes_invalid', 'duelMinutes out of range', { min: MIN_DUEL_MINUTES, max: MAX_DUEL_MINUTES })
+  }
+  return value
 }
 
 export interface TournamentUpdateInput {
@@ -303,6 +360,11 @@ export interface TournamentUpdateInput {
   scoring?: ScoringSystem
   byeScoring?: ByeScoring
   plannedRounds?: number | null
+  /** Duel queue only (until the start). */
+  queueMode?: QueueMode
+  prelaunch?: boolean
+  tables?: number
+  duelMinutes?: number
 }
 
 export function validateTournamentUpdateInput(body: unknown): TournamentUpdateInput {
@@ -339,6 +401,18 @@ export function validateTournamentUpdateInput(body: unknown): TournamentUpdateIn
   }
   if (body.plannedRounds !== undefined) {
     patch.plannedRounds = normalizePlannedRounds(body.plannedRounds)
+  }
+  if (body.queueMode !== undefined) {
+    patch.queueMode = normalizeQueueMode(body.queueMode)
+  }
+  if (body.prelaunch !== undefined) {
+    patch.prelaunch = body.prelaunch === true
+  }
+  if (body.tables !== undefined) {
+    patch.tables = normalizeTables(body.tables)
+  }
+  if (body.duelMinutes !== undefined) {
+    patch.duelMinutes = normalizeDuelMinutes(body.duelMinutes)
   }
 
   return patch
@@ -704,6 +778,8 @@ function toParticipantDto(
     isSelf,
     dropped: participant.dropped,
     withdrawn: participant.withdrawn,
+    disqualified: participant.disqualified,
+    dropOption: participant.dropOption,
     seed: participant.seed,
     decks,
     createdAt: participant.createdAt.toISOString(),
@@ -799,11 +875,14 @@ function buildTournamentDetail(
 
   const activeParticipantCount = participants.filter(p => !p.dropped && !p.withdrawn).length
 
+  const isQueue = row.engine === 'queue'
+
   const canStart = role === 'organizer'
     && row.status === 'registration'
     && participants.length >= MIN_PARTICIPANTS_TO_START
 
-  const canCreateRound = role === 'organizer'
+  const canCreateRound = !isQueue
+    && role === 'organizer'
     && row.status === 'running'
     && rounds.length > 0
     && lastRound!.status === 'completed'
@@ -815,14 +894,15 @@ function buildTournamentDetail(
     && currentRoundDto !== null
     && currentRoundDto.matches.every(match => match.reported || match.voided)
 
+  // A duel queue can be ended at any time: what is not played yet stays unplayed (ADR 0042).
   const canFinish = role === 'organizer'
     && row.status === 'running'
-    && rounds.length > 0
-    && lastRound!.status === 'completed'
+    && (isQueue || (rounds.length > 0 && lastRound!.status === 'completed'))
 
   // A round-robin schedule is fixed by the circle method (ADR 0031): moving a
   // player to another table would break "everyone plays everyone once".
-  const canEditPairings = role === 'organizer'
+  const canEditPairings = !isQueue
+    && role === 'organizer'
     && row.pairingSystem === 'swiss'
     && currentRoundDto !== null
     && currentRoundDto.matches.every(match => match.isBye || !match.reported)
@@ -836,6 +916,9 @@ function buildTournamentDetail(
     scoring: row.scoring,
     byeScoring: row.byeScoring,
     plannedRounds: row.plannedRounds,
+    engine: row.engine,
+    queueSetup: isQueue ? queueSetupOf(row) : null,
+    queue: isQueue && row.status !== 'registration' ? buildQueueDetail(db, row, participants, role) : null,
     format,
     organizerName: organizer?.name ?? '',
     role,
@@ -989,6 +1072,8 @@ export function listTournaments(db: Db, userId: string, options: TournamentListO
     description: row.description,
     status: row.status,
     pairingSystem: row.pairingSystem,
+    engine: row.engine,
+    queueMode: row.queueMode,
     format: row.formatId ? formatById.get(row.formatId) ?? null : null,
     organizerName: organizerNameById.get(row.organizerUserId) ?? '',
     role: row.organizerUserId === userId ? 'organizer' : 'participant',
@@ -1036,6 +1121,11 @@ export function createTournament(db: Db, userId: string, input: TournamentInput)
       byeScoring: input.byeScoring,
       status: 'registration',
       plannedRounds: input.plannedRounds,
+      engine: input.engine,
+      queueMode: input.queue?.mode ?? null,
+      prelaunch: input.queue?.prelaunch ?? false,
+      tables: input.queue?.tables ?? null,
+      duelMinutes: input.queue?.duelMinutes ?? null,
       createdAt: now,
       updatedAt: now,
     }).run()
@@ -1067,6 +1157,10 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
     || patch.scoring !== undefined
     || patch.byeScoring !== undefined
     || patch.plannedRounds !== undefined
+    || patch.queueMode !== undefined
+    || patch.prelaunch !== undefined
+    || patch.tables !== undefined
+    || patch.duelMinutes !== undefined
 
   if (!touchesAnything) {
     return getTournamentDetail(db, userId, id)
@@ -1074,6 +1168,19 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
 
   if (row.status === 'finished') {
     conflict('tournament_finished', 'Tournament is finished')
+  }
+
+  const touchesQueue = patch.queueMode !== undefined || patch.prelaunch !== undefined
+    || patch.tables !== undefined || patch.duelMinutes !== undefined
+  if (touchesQueue && row.engine !== 'queue') {
+    conflict('not_queue_tournament', 'Only a duel-queue tournament has these settings')
+  }
+  // Mode, rounds and tables are the schedule: once it is drawn they stay.
+  if (row.engine === 'queue' && (touchesQueue || patch.plannedRounds !== undefined) && row.status !== 'registration') {
+    conflict('tournament_started', 'Tournament has already started')
+  }
+  if (row.engine === 'queue' && patch.pairingSystem !== undefined) {
+    conflict('classic_only', 'The mode of a duel queue is set with queueMode')
   }
 
   // Changing how points are awarded mid-tournament would silently re-rank
@@ -1103,14 +1210,22 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
     }
   }
 
+  const queueMode = patch.queueMode ?? row.queueMode
   db.update(tournament).set({
     name: patch.name ?? row.name,
     description: patch.description !== undefined ? patch.description : row.description,
     formatId: patch.formatId !== undefined ? patch.formatId : row.formatId,
-    pairingSystem: patch.pairingSystem ?? row.pairingSystem,
+    pairingSystem: row.engine === 'queue' ? (queueMode === 'round_robin' ? 'round_robin' : 'swiss') : patch.pairingSystem ?? row.pairingSystem,
     scoring: patch.scoring ?? row.scoring,
     byeScoring: patch.byeScoring ?? row.byeScoring,
-    plannedRounds: patch.plannedRounds !== undefined ? patch.plannedRounds : row.plannedRounds,
+    // A round robin has no R of its own; the others keep what was set.
+    plannedRounds: row.engine === 'queue' && queueMode === 'round_robin'
+      ? null
+      : patch.plannedRounds !== undefined ? patch.plannedRounds : row.plannedRounds,
+    queueMode,
+    prelaunch: queueMode === 'swiss' ? patch.prelaunch ?? row.prelaunch : false,
+    tables: patch.tables ?? row.tables,
+    duelMinutes: patch.duelMinutes ?? row.duelMinutes,
     updatedAt: new Date(),
   }).where(eq(tournament.id, id)).run()
 
@@ -1229,6 +1344,10 @@ export function updateParticipant(
 
     if ((patch.dropped !== undefined || patch.withdrawn !== undefined) && row.status !== 'running') {
       conflict('invalid_status', 'A participant can only drop or be withdrawn while the tournament is running')
+    }
+    // In a duel queue leaving has two options and changes the schedule: it goes through leaveParticipant.
+    if ((patch.dropped !== undefined || patch.withdrawn !== undefined) && row.engine === 'queue') {
+      conflict('classic_only', 'Use the leave action of the duel queue')
     }
 
     txDb.update(tournamentParticipant).set({
@@ -1474,6 +1593,14 @@ export function startTournament(db: Db, userId: string, id: string): TournamentD
   }
 
   const now = new Date()
+
+  if (row.engine === 'queue') {
+    db.transaction((tx) => {
+      startQueueTournament(tx as unknown as Db, row, participants, now)
+    })
+    return getTournamentDetail(db, userId, id)
+  }
+
   const plannedRounds = row.pairingSystem === 'round_robin'
     ? roundRobinRoundCount(participants.length)
     : (row.plannedRounds ?? swissRoundCount(participants.length))
@@ -1512,8 +1639,16 @@ export function startTournament(db: Db, userId: string, id: string): TournamentD
   return getTournamentDetail(db, userId, id)
 }
 
+/** Rounds, matches and byes belong to the classic tournament; the duel queue has its own operations. */
+function assertClassic(row: { engine: TournamentEngine }): void {
+  if (row.engine === 'queue') {
+    conflict('classic_only', 'This is a duel-queue tournament')
+  }
+}
+
 export function createNextRound(db: Db, userId: string, id: string): TournamentDetail {
   const { row } = requireOrganizerTournament(db, userId, id)
+  assertClassic(row)
   assertStatus(row, ['running'], 'invalid_status')
 
   const rounds = db
@@ -1602,6 +1737,7 @@ export function reportMatchResult(
   body: unknown,
 ): TournamentDetail {
   const { row } = requireOrganizerTournament(db, userId, id)
+  assertClassic(row)
 
   const match = db
     .select()
@@ -1654,6 +1790,7 @@ export function reportMatchResult(
 
 export function swapPairing(db: Db, userId: string, id: string, input: PairingSwapInput): TournamentDetail {
   const { row } = requireOrganizerTournament(db, userId, id)
+  assertClassic(row)
 
   if (row.pairingSystem === 'round_robin') {
     conflict('pairings_fixed', 'Round-robin pairings follow a fixed schedule')
@@ -1755,7 +1892,8 @@ export function swapPairing(db: Db, userId: string, id: string, input: PairingSw
 }
 
 export function completeRound(db: Db, userId: string, id: string, roundId: string): TournamentDetail {
-  requireOrganizerTournament(db, userId, id)
+  const { row: tournamentRow } = requireOrganizerTournament(db, userId, id)
+  assertClassic(tournamentRow)
 
   const round = db
     .select()
@@ -1790,6 +1928,13 @@ export function finishTournament(db: Db, userId: string, id: string): Tournament
   const { row } = requireOrganizerTournament(db, userId, id)
   assertStatus(row, ['running'], 'invalid_status')
 
+  if (row.engine === 'queue') {
+    // "Speichern und beenden": whatever is played is the result, open duels stay open (ADR 0042).
+    const ended = new Date()
+    db.update(tournament).set({ status: 'finished', finishedAt: ended, updatedAt: ended }).where(eq(tournament.id, id)).run()
+    return getTournamentDetail(db, userId, id)
+  }
+
   const rounds = db
     .select()
     .from(tournamentRound)
@@ -1811,5 +1956,109 @@ export function finishTournament(db: Db, userId: string, id: string): Tournament
     updatedAt: now,
   }).where(eq(tournament.id, id)).run()
 
+  return getTournamentDetail(db, userId, id)
+}
+
+// --- Duel queue operations (ADR 0042) -------------------------------------------
+
+function requireQueueOrganizer(db: Db, userId: string, id: string): typeof tournament.$inferSelect {
+  const { row } = requireOrganizerTournament(db, userId, id)
+  if (row.engine !== 'queue') {
+    conflict('not_queue_tournament', 'This is not a duel-queue tournament')
+  }
+  return row
+}
+
+/** The winner of a duel (best of one); the same call corrects a result that is already in. */
+export function reportDuelResult(db: Db, userId: string, id: string, duelId: string, body: unknown): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  const winner = isRecord(body) ? body.winnerParticipantId : undefined
+  db.transaction((tx) => {
+    reportQueueDuel(tx as unknown as Db, row, duelId, winner, new Date())
+  })
+  return getTournamentDetail(db, userId, id)
+}
+
+export interface LeaveInput { kind: LeaveKind, option: DropOption | null }
+
+function normalizeDropOption(raw: unknown): DropOption | null {
+  if (raw === undefined || raw === null || raw === '') {
+    return null
+  }
+  if (raw !== 'A' && raw !== 'B') {
+    badRequest('invalid_body', 'option must be A or B')
+  }
+  return raw
+}
+
+export function validateLeaveInput(body: unknown): LeaveInput {
+  if (!isRecord(body)) {
+    badRequest('invalid_body', 'Request body must be an object')
+  }
+  if (body.kind !== undefined && body.kind !== 'dropped' && body.kind !== 'disqualified') {
+    badRequest('invalid_body', 'kind must be dropped or disqualified')
+  }
+  const kind: LeaveKind = body.kind === 'disqualified' ? 'disqualified' : 'dropped'
+  return { kind, option: kind === 'disqualified' ? null : normalizeDropOption(body.option) }
+}
+
+/** A player leaves or is disqualified; `option` null leaves the choice between A and B for later. */
+export function leaveParticipant(db: Db, userId: string, id: string, participantId: string, input: LeaveInput): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  db.transaction((tx) => {
+    leaveQueuePlayer(tx as unknown as Db, row, participantId, input.kind, input.option, new Date())
+  })
+  return getTournamentDetail(db, userId, id)
+}
+
+export function decideParticipantLeave(db: Db, userId: string, id: string, participantId: string, body: unknown): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  const option = isRecord(body) ? normalizeDropOption(body.option) : null
+  if (option === null) {
+    badRequest('invalid_body', 'option must be A or B')
+  }
+  db.transaction((tx) => {
+    decideQueueLeave(tx as unknown as Db, row, participantId, option, new Date())
+  })
+  return getTournamentDetail(db, userId, id)
+}
+
+/** The organizer agrees to a make-up duel between two players who have met before. */
+export function confirmRematch(db: Db, userId: string, id: string, body: unknown): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  if (!isRecord(body) || typeof body.participantAId !== 'string' || typeof body.participantBId !== 'string') {
+    badRequest('invalid_body', 'participantAId and participantBId are required')
+  }
+  const { participantAId, participantBId } = body as { participantAId: string, participantBId: string }
+  db.transaction((tx) => {
+    confirmQueueRematch(tx as unknown as Db, row, participantAId, participantBId, new Date())
+  })
+  return getTournamentDetail(db, userId, id)
+}
+
+export interface RecomputeResult {
+  /** What changed (or would change, when `apply` is false). */
+  changes: RecomputePreview[]
+  detail: TournamentDetail
+}
+
+/** "Neu berechnen" (Swiss): with `apply` false only shows the pairings that would change. */
+export function recomputePairings(db: Db, userId: string, id: string, apply: boolean): RecomputeResult {
+  const row = requireQueueOrganizer(db, userId, id)
+  const changes = previewQueueRecompute(db, row)
+  if (apply) {
+    db.transaction((tx) => {
+      applyQueueRecompute(tx as unknown as Db, row, new Date())
+    })
+  }
+  return { changes, detail: getTournamentDetail(db, userId, id) }
+}
+
+/** One duel that decides first place when the table ends level there. */
+export function scheduleDecider(db: Db, userId: string, id: string): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  db.transaction((tx) => {
+    scheduleQueueDecider(tx as unknown as Db, row, new Date())
+  })
   return getTournamentDetail(db, userId, id)
 }

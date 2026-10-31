@@ -15,8 +15,11 @@ export interface DuelPlayer {
   dropOption: DropOption | null
 }
 
-/** A planned duel of the draw, a duel that fills in for a missing one (`makeup`), or a second one between two who met (`rematch`). */
-export type DuelKind = 'regular' | 'makeup' | 'rematch'
+/**
+ * A planned duel of the draw, a duel that fills in for a missing one (`makeup`), a second one between two who met
+ * (`rematch`), or the duel that decides first place (`decider`: it settles the tie whatever the earlier duels were).
+ */
+export type DuelKind = 'regular' | 'makeup' | 'rematch' | 'decider'
 export type DuelStatus = 'planned' | 'running' | 'done' | 'void'
 
 export interface Duel {

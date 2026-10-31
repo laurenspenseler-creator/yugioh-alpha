@@ -54,16 +54,18 @@ export function planQueue(state: DuelsState, tables: number, startedAt: number):
   // The duels that start now: the best first, but only a duel that still lets the free tables all be filled (no table
   // stands empty because the best duel blocked two others), which is asked of a matching among the free players.
   const playable = waiting.filter(duel => !busy.has(duel.a) && !busy.has(duel.b))
+  // No more duels than can be played side by side: free players alone do not make a duel (they may have none left to play).
+  const startable = Math.min(usableFreeTables, largestMatching(playable))
   const chosen: Duel[] = []
   const taken = new Set<string>()
   for (const duel of playable) {
-    if (chosen.length >= usableFreeTables) {
+    if (chosen.length >= startable) {
       break
     }
     if (taken.has(duel.a) || taken.has(duel.b)) {
       continue
     }
-    const stillNeeded = usableFreeTables - chosen.length - 1
+    const stillNeeded = startable - chosen.length - 1
     const remaining = playable.filter(other => other.id !== duel.id && ![duel.a, duel.b, ...taken].some(id => other.a === id || other.b === id))
     if (stillNeeded === 0 || largestMatching(remaining) >= stillNeeded) {
       chosen.push(duel)
