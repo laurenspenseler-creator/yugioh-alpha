@@ -45,6 +45,8 @@ export interface PairingOptions {
   allowRematch?: boolean
   /** An odd number of players: one sits out (the lowest in the table of those who have not paused). Else the odd one stays unpaired. */
   pause?: boolean
+  /** Players that must not be the one who sits out (those who have met the player who paused in the round before, if possible). */
+  pauseNot?: ReadonlySet<string>
 }
 
 /** A weight that is large next to what the differences of records take off, so only the differences matter among full matchings. */
@@ -106,7 +108,9 @@ export function pairPlayers(players: readonly PairablePlayer[], options: Pairing
   }
 
   const fewest = Math.min(...sorted.map(player => player.pauses))
-  const candidates = [...sorted].sort((a, b) => a.pauses - b.pauses || b.rank - a.rank)
+  // Those who may sit out come first (not the ones that had met the player who sat out the round before), then those who paused least, then the lowest in the table.
+  const allowed = (player: PairablePlayer) => options.pauseNot?.has(player.id) ? 1 : 0
+  const candidates = [...sorted].sort((a, b) => a.pauses - b.pauses || allowed(a) - allowed(b) || b.rank - a.rank)
   let best: { result: { pairs: PairedDuel[], unpaired: string[] }, pause: PairablePlayer } | null = null
   for (const candidate of candidates) {
     const result = matchPlayers(sorted.filter(player => player.id !== candidate.id), options)
