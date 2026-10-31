@@ -1,7 +1,7 @@
 // How a queue tournament is built up (ADR 0042): which duels are fixed at the start, and, for the Swiss system, which round
 // is paired when. Pure: the server passes the state in and writes the new duels out.
 
-import { opponentIn } from './tournament-duels'
+import { opponentIn, pairedRounds } from './tournament-duels'
 import type { DuelKind, DuelsState, Pause } from './tournament-duels'
 import { championsLeagueDraw, matchdaysOf, roundRobinDuels, shuffled } from './tournament-draw'
 import type { QueueMode } from './tournament-modes'
@@ -45,7 +45,7 @@ function makeupBetween(state: DuelsState, previous: Pause | undefined, current: 
  * The pairing players get from the state: what every player has so far (wins, a pause as half a win), whom they have
  * met or are to meet, and their place in the table.
  */
-function pairablePlayers(state: DuelsState): PairablePlayer[] {
+export function pairablePlayers(state: DuelsState): PairablePlayer[] {
   const table = computeTable(state)
   const pauses = state.pauses ?? []
   const rank = new Map(table.filter(row => !row.left).map((row, i) => [row.playerId, i + 1]))
@@ -53,13 +53,21 @@ function pairablePlayers(state: DuelsState): PairablePlayer[] {
     const row = table.find(r => r.playerId === player.id)!
     const own = pauses.filter(pause => pause.playerId === player.id).length
     const opponents = new Set<string>()
+    let struck = 0
     for (const duel of state.duels) {
-      const other = duel.status === 'void' ? null : opponentIn(duel, player.id)
-      if (other) {
+      const other = opponentIn(duel, player.id)
+      if (other === null) {
+        continue
+      }
+      if (duel.status === 'void') {
+        struck += 1
+      }
+      else {
         opponents.add(other)
       }
     }
-    return { id: player.id, score: row.wins + own * 0.5, opponents, pauses: own, rank: rank.get(player.id) ?? 1_000 }
+    // A duel that was struck (the opponent left) is a duel missed like a pause: whoever missed one is not the first to sit out.
+    return { id: player.id, score: row.wins + own * 0.5, opponents, pauses: own + struck, rank: rank.get(player.id) ?? 1_000 }
   })
 }
 
@@ -138,7 +146,7 @@ export function swissRoundDue(state: DuelsState, setup: FlowSetup): PairedRound 
   if (setup.mode !== 'swiss' || setup.rounds === null) {
     return null
   }
-  const paired = Math.max(0, ...state.duels.filter(duel => duel.kind !== 'makeup').map(duel => duel.round), ...(state.pauses ?? []).map(pause => pause.round))
+  const paired = pairedRounds(state)
   const target = paired + 1
   if (target > setup.rounds || paired === 0) {
     return null

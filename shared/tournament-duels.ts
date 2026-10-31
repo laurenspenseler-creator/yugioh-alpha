@@ -49,6 +49,11 @@ export interface DuelsState {
   pauses?: Pause[]
 }
 
+/** The highest round that has been paired so far (0 before the start); make-up duels belong to rounds already counted. */
+export function pairedRounds(state: DuelsState): number {
+  return Math.max(0, ...state.duels.filter(duel => duel.kind !== 'makeup').map(duel => duel.round), ...(state.pauses ?? []).map(pause => pause.round))
+}
+
 /** The duels that count for the table: done and not struck. */
 export function playedDuels(state: DuelsState): Duel[] {
   return state.duels.filter(duel => duel.status === 'done')
