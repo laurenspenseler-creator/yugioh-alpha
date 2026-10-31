@@ -231,6 +231,27 @@
       },
       "searchCatalogFor": "Search the catalog for {line}"
     },
+    "toInventory": {
+      "button": "To inventory",
+      "hint": "Add the cards of this deck to the inventory",
+      "title": "Add the deck to the inventory",
+      "description": "Useful when you own the cards but have not entered them yet, or imported a deck from a list.",
+      "missing": {
+        "label": "Only the missing copies",
+        "copies": "{count} copy is missing | {count} copies are missing",
+        "none": "Every card of the deck is already in the inventory."
+      },
+      "all": {
+        "label": "All copies of the deck",
+        "copies": "{count} copy is added, even if it is already entered | {count} copies are added, even if they are already entered"
+      },
+      "collection": "Into the collection",
+      "noCollection": "No collection",
+      "submit": "Add",
+      "done": "{copies} copies ({cards} cards) added",
+      "doneDetail": "{created} new entries, {merged} increased",
+      "failed": "The cards could not be added."
+    },
     "export": {
       "menu": "Export",
       "empty": "The deck has no cards yet.",

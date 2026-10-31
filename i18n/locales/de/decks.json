@@ -231,6 +231,27 @@
       },
       "searchCatalogFor": "Katalog nach Karte für {line} durchsuchen"
     },
+    "toInventory": {
+      "button": "Zur Kartenliste",
+      "hint": "Die Karten dieses Decks in die Kartenliste übernehmen",
+      "title": "Deck in die Kartenliste übernehmen",
+      "description": "Nützlich, wenn du die Karten besitzt, sie aber noch nicht eingetragen hast – oder ein Deck aus einer Liste importiert hast.",
+      "missing": {
+        "label": "Nur fehlende Exemplare",
+        "copies": "{count} Exemplar fehlt | {count} Exemplare fehlen",
+        "none": "Alle Karten des Decks sind schon in der Kartenliste."
+      },
+      "all": {
+        "label": "Alle Exemplare des Decks",
+        "copies": "{count} Exemplar kommt dazu, auch wenn es schon eingetragen ist | {count} Exemplare kommen dazu, auch wenn sie schon eingetragen sind"
+      },
+      "collection": "In die Sammlung",
+      "noCollection": "Keine Sammlung",
+      "submit": "Übernehmen",
+      "done": "{copies} Exemplare ({cards} Karten) übernommen",
+      "doneDetail": "{created} neue Einträge, {merged} erhöht",
+      "failed": "Die Karten konnten nicht übernommen werden."
+    },
     "export": {
       "menu": "Exportieren",
       "empty": "Das Deck hat noch keine Karten.",

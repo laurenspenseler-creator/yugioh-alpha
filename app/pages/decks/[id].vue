@@ -129,6 +129,7 @@ const {
   data: deck,
   pending,
   error,
+  refresh: refreshDeck,
 } = await useFetch<DeckDetail>(() => `/api/decks/${deckId.value}`, {
   headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
 })
@@ -979,6 +980,10 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
               :name="deck.name"
               :sections="deck.sections"
               :cover-card-id="deck.cover?.catalogCardId ?? null"
+            />
+            <DecksDeckToInventoryButton
+              :rows="[...deck.sections.main, ...deck.sections.extra, ...deck.sections.side]"
+              @added="refreshDeck"
             />
             <UDropdownMenu :items="deckMenuItems">
               <UButton
