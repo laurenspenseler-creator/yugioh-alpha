@@ -111,13 +111,25 @@ of the photo's own was worse. An index without `colors.bin` works without the co
 All 25 sure cards that were not on their photo (on the 20 photos) were hubs: cards that win windows
 of photo after photo that they are not on, 40 to 500 windows each (Yum☆Yum☆Yummys, The Kaiju Files,
 Millennium Revelation: generic pictures that match a sleeve, a shadow or the table). `index.json` has a
-list of them (`hubs`, 50 cards that won at least five windows of at least four of 31 photos
+list of them (`hubs`, 86 cards since round 7 (50 before) that won at least five windows of at least four of 35 photos
 without being on them), and `cardsFromHits` calls such a card sure only with a lead of 0.15, a
 similarity of 0.5 and ten windows (a card needs 0.10, 0.40 and six). Taking the list from the other 19
 photos for each photo in turn (leave one out) kept all 46 sure true cards and left 6 of the 25 wrong
 sure ones. The list is estimated from photos with a known list of cards, like `photoMean`, and
 `scripts/art-index.mjs` keeps it (`pnpm ai:art:hubs <folder>` estimates it, see the header of `scripts/art-hubs.mjs`); a card that is really on a photo and a hub is still listed as a
 doubtful one, and confirmed by a name read from the photo or by the user in the review.
+
+Round 7 (the same tester's 27 WhatsApp photos, 15 of them run again): the list grew to 86 cards
+(Sacred Beasts Released, Red Medicine, Book of Moon, Maxx "C" … joined: half-covered windows of white
+sleeves and dark arts win them). Taking the list from the photos of the other card sets only (35 photos,
+14 groups of photos that show the same cards) kept all 114 sure true cards and left 8 of the 28 wrong
+sure ones; before, a half-covered Marshmallon in a white sleeve was called Sacred Beasts Released
+three times, "sure". Measured and not adopted the same day: a global photo-to-catalog shift of the
+window vectors (mean of the oracle pairs; with the card sets of the test left out the right card is at
+rank 1 for 63 % of the oracle windows instead of 55 %, but in the first pass it lists three times as
+many wrong cards as doubtful, and it is the same bias a hub list corrects); a kernel-ridge version of it
+did no better than the mean; runners-up of a place confirmed by some text (0 cards rescued on two
+photos); beams in Whisper (the pipeline of transformers.js ignores `num_beams`: same text, same time).
 
 ### The index
 
