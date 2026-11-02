@@ -845,9 +845,11 @@ export const BOX_COPY_SIMILARITY = 0.85
  * A card on a window that sits on its artwork is sure with this lead and closeness (a sliding window needs windows
  * from many sides instead). On 16 photos with a known list of cards, the cards sure / the wrong ones sure were 127 / 12
  * with a lead of 0.05, 126 / 8 at 0.06, 125 / 7 at 0.07, 121 / 3 at 0.08 and 110 / 1 at 0.10, the same in both groups of photos.
+ * With the adapter (32 photos, a map of its own for every family): 288 / 6 at a lead of 0.08 and a closeness of 0.40, 284 / 4 at 0.45,
+ * 272 / 1 at 0.50, 278 / 3 at a lead of 0.10 and 0.40.
  */
 export const ALIGNED_SURE_MARGIN = 0.08
-export const ALIGNED_SURE_SIMILARITY = 0.4
+export const ALIGNED_SURE_SIMILARITY = 0.45
 /** And it is worth listing, for a name read from the photo to confirm, with this much. */
 export const ALIGNED_MIN_MARGIN = 0.03
 export const ALIGNED_MIN_SIMILARITY = 0.35
