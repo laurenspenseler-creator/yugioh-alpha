@@ -261,3 +261,37 @@ export function alignedWindows(boxes: readonly ArtBox[], width: number, height: 
   })
   return windows
 }
+
+/** The ways a photo can lie, in degrees clockwise (what it has to be turned by to be upright is the opposite way). */
+export const BOX_TURNS = [0, 90, 180, 270] as const
+
+/** A photo is turned when its boxes match the catalog this much more closely (mean similarity) the other way than as it lies: upright photos reach 0.62 to 0.83, the same photos turned 90 degrees at most 0.64, turned 180 degrees 0.33 to 0.69. */
+export const BOX_TURN_MIN_GAIN = 0.08
+
+/** The window as it lies on the photo turned `turn` degrees clockwise (`width × height` is the photo as it was). */
+export function turnWindow<W extends { x: number, y: number, size: number }>(window: W, turn: (typeof BOX_TURNS)[number], width: number, height: number): W {
+  switch (turn) {
+    case 90:
+      return { ...window, x: height - window.y - window.size, y: window.x }
+    case 180:
+      return { ...window, x: width - window.x - window.size, y: height - window.y - window.size }
+    case 270:
+      return { ...window, x: window.y, y: width - window.x - window.size }
+    default:
+      return window
+  }
+}
+
+/**
+ * The way to turn a photo from how closely its boxes matched the catalog in each of `BOX_TURNS` (the first is the
+ * photo as it lies): the position in `BOX_TURNS` of the best way, or 0 (upright) unless that is clearly better.
+ */
+export function chooseBoxTurn(similarities: readonly number[]): number {
+  let best = 0
+  similarities.forEach((similarity, at) => {
+    if (similarity > similarities[best]!) {
+      best = at
+    }
+  })
+  return best !== 0 && similarities[best]! >= similarities[0]! + BOX_TURN_MIN_GAIN ? best : 0
+}

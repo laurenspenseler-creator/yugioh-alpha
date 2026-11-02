@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { ALIGNED_SHIFTS, ALIGNED_SIZES, alignedWindows, findArtBoxes, PATCH_SIZE } from '../../shared/card-art-boxes'
+import { ALIGNED_SHIFTS, ALIGNED_SIZES, alignedWindows, BOX_TURNS, chooseBoxTurn, findArtBoxes, PATCH_SIZE, turnWindow } from '../../shared/card-art-boxes'
 import type { PatchMap } from '../../shared/card-art-boxes'
 import { alignedCorrection, ART_DIMENSION, ART_VECTOR, boxVector, cardsFromBoxes, HUB_SURE_MARGIN, HUB_SURE_SIMILARITY } from '../../shared/card-art'
 
@@ -85,6 +85,47 @@ describe('alignedWindows', () => {
       expect(window.x + window.size).toBeLessThanOrEqual(700)
       expect(window.y + window.size).toBeLessThanOrEqual(800)
     }
+  })
+})
+
+describe('turnWindow', () => {
+  // A picture as rows of numbers, turned clockwise a quarter turn at a time, and the numbers a window covers.
+  const grid = (width: number, height: number) => Array.from({ length: height }, (_, y) => Array.from({ length: width }, (_, x) => y * width + x))
+  const turnedRight = (rows: number[][]) => rows[0]!.map((_, x) => rows.map(row => row[x]!).reverse())
+  const cover = (rows: number[][], window: { x: number, y: number, size: number }) => rows.slice(window.y, window.y + window.size).map(row => row.slice(window.x, window.x + window.size))
+
+  it('puts the window on the same pixels of the photo turned a quarter, a half and three quarters clockwise', () => {
+    const window = { x: 3, y: 1, size: 4 }
+    for (const turn of BOX_TURNS) {
+      let photo = grid(12, 7)
+      let expected = cover(photo, window)
+      for (let quarter = 0; quarter < turn / 90; quarter += 1) {
+        photo = turnedRight(photo)
+        expected = turnedRight(expected)
+      }
+      // The window of the turned photo shows the pixels of the first window, turned the same way.
+      expect(cover(photo, turnWindow(window, turn, 12, 7))).toEqual(expected)
+    }
+  })
+
+  it('keeps everything else of the window and leaves an upright photo alone', () => {
+    const window = { box: 3, x: 10, y: 20, size: 30 }
+
+    expect(turnWindow(window, 0, 100, 80)).toBe(window)
+    expect(turnWindow(window, 90, 100, 80)).toMatchObject({ box: 3, size: 30 })
+  })
+})
+
+describe('chooseBoxTurn', () => {
+  it('keeps a photo upright that matches best as it is, or whose best way is not clearly better', () => {
+    expect(chooseBoxTurn([0.74, 0.59, 0.33, 0.6])).toBe(0)
+    expect(chooseBoxTurn([0.62, 0.66, 0.5, 0.6])).toBe(0)
+  })
+
+  it('turns a photo whose boxes match much better another way, to that way', () => {
+    expect(chooseBoxTurn([0.58, 0.6, 0.4, 0.74])).toBe(3)
+    expect(chooseBoxTurn([0.6, 0.59, 0.745, 0.58])).toBe(2)
+    expect(chooseBoxTurn([0.59, 0.737, 0.585, 0.6])).toBe(1)
   })
 })
 

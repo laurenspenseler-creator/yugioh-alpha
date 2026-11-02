@@ -9,21 +9,21 @@
 // only card ids come back.
 import { AutoModel, env, Tensor } from '@huggingface/transformers'
 import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
-import { alignedCorrection, ART_COLOR_CANDIDATES, ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, boxVector, cardsFromBoxes, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows, rerankByColor } from '~~/shared/card-art'
+import { ALIGNED_SURE_MARGIN, ALIGNED_SURE_SIMILARITY, alignedCorrection, ART_COLOR_CANDIDATES, ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, boxVector, cardsFromBoxes, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows, rerankByColor } from '~~/shared/card-art'
 import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtMatch, ArtWindow, BoxMatch, PhotoCorrection } from '~~/shared/card-art'
 import { applyArtAdapter } from '~~/shared/card-art-adapter'
-import { ALIGNED_SHIFTS, alignedWindows, findArtBoxes, PATCH_SIZE, TILE_PATCHES, TILE_SIZE } from '~~/shared/card-art-boxes'
+import { ALIGNED_SHIFTS, alignedWindows, BOX_TURNS, chooseBoxTurn, findArtBoxes, PATCH_SIZE, TILE_PATCHES, TILE_SIZE, turnWindow } from '~~/shared/card-art-boxes'
 import type { AlignedWindow, ArtBox, PatchMap } from '~~/shared/card-art-boxes'
 import { artColorDescriptor, meanColor } from '~~/shared/card-color'
 import { createGpuMatcher } from './art-gpu'
 import type { GpuMatcher } from './art-gpu'
 
-export type ArtRotation = 0 | 90 | 270
+export type ArtRotation = 0 | 90 | 180 | 270
 
 export interface ArtScanRequest {
   id: number
   bitmap: ImageBitmap
-  /** Turned this many degrees clockwise before looking; `'auto'` tries the three ways and takes the one with the most clear cards. */
+  /** Turned this many degrees clockwise before looking; `'auto'` tries the ways and takes the one with the most clear cards. */
   rotation: ArtRotation | 'auto'
   /** What to look at, instead of the plan for where the model runs: for tuning and tests. */
   tuning?: Partial<Plan>
@@ -32,7 +32,7 @@ export interface ArtScanRequest {
 export interface ArtScanResult {
   cards: ArtCard[]
   rotation: ArtRotation
-  /** How clearly cards showed with the photo upright, turned right and turned left (empty when the way was given): for finding out why a photo was turned. */
+  /** How clearly cards showed with the photo upright, turned right and turned left, or (when the artworks were found upright) upright and turned 90, 180 and 270 degrees as similarity, margin and sure cards each (empty when the way was given): for finding out why a photo was turned. */
   rotationScores: number[]
   /** The mean vector of the first pass's windows: averaged over many photos of several cards it is the index's `photoMean` (for tuning, see `scripts/art-index.mjs`). */
   windowMean: number[]
@@ -101,12 +101,14 @@ export interface Plan {
   boxShifts: ReadonlyArray<readonly [number, number]>
   /** Move the vectors of the windows on the artworks by the index's adapter (`ArtIndex.adapter`); false: leave them. */
   boxAdapter: boolean
+  /** Which way the photo lies is judged on this many of its boxes at most (spread over the photo): the processor takes a second per window. */
+  turnBoxes: number
   /** An adapter to use instead of the index's: for tuning and tests. */
   adapter?: Float32Array
 }
 const PLANS: Record<'webgpu' | 'wasm', Plan> = {
-  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 48, probeWindows: 40, milliseconds: 140_000, supportScale: 1, minSimilarity: 0.25, boxes: true, boxShifts: ALIGNED_SHIFTS, boxAdapter: true },
-  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65, boxes: true, boxShifts: [[0, 0], [0.5, 0]], boxAdapter: true },
+  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 48, probeWindows: 40, milliseconds: 140_000, supportScale: 1, minSimilarity: 0.25, boxes: true, boxShifts: ALIGNED_SHIFTS, boxAdapter: true, turnBoxes: Infinity },
+  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65, boxes: true, boxShifts: [[0, 0], [0.5, 0]], boxAdapter: true, turnBoxes: 8 },
 }
 
 /** The plan for where the model runs, with whatever a test asked to change. */
@@ -239,7 +241,8 @@ function drawPhoto(bitmap: ImageBitmap, edge: number, rotation: ArtRotation): Of
   const scale = edge / Math.max(bitmap.width, bitmap.height)
   const width = Math.round(bitmap.width * scale)
   const height = Math.round(bitmap.height * scale)
-  const canvas = new OffscreenCanvas(rotation === 0 ? width : height, rotation === 0 ? height : width)
+  const sideways = rotation === 90 || rotation === 270
+  const canvas = new OffscreenCanvas(sideways ? height : width, sideways ? width : height)
   const context = canvas.getContext('2d', { willReadFrequently: true })!
   context.imageSmoothingQuality = 'high'
   if (rotation === 0) {
@@ -561,6 +564,8 @@ async function patchMap(model: Model, photo: OffscreenCanvas, deadline: number, 
   return { features, dimension: ART_DIMENSION, gridCols: cols, gridRows: rows, cols, rows, luminance }
 }
 
+type ProgressFor = (stage: ArtStage) => (done: number, total: number) => void
+
 interface BoxScan {
   cards: ArtCard[]
   boxes: ArtBox[]
@@ -571,13 +576,17 @@ interface BoxScan {
   hits: Array<ArtHit & { window: AlignedWindow }>
 }
 
+/** Where the artworks of a photo are: a box for each, and how many tiles it took to find them. */
+interface Boxes {
+  boxes: ArtBox[]
+  tiles: number
+}
+
 /**
- * Reads the photo by where its artworks are: the tiles' patch tokens give a box for every artwork, a few windows
- * on each box are matched (with the mean of those windows taken off, `alignedCorrection`) and every box is one
- * card, its best window's. Null when the plan does not ask for it, the index has no `artPrototype`, or fewer
- * than `MIN_BOXES` artworks showed.
+ * The artworks of the photo, from the patch tokens of its tiles. Null when the plan does not ask for boxes, the
+ * index has no `artPrototype`, or fewer than `MIN_BOXES` artworks showed.
  */
-async function scanBoxes(model: Model, index: ArtIndex, photo: OffscreenCanvas, plan: Plan, deadline: number, progress: (stage: ArtStage) => (done: number, total: number) => void): Promise<BoxScan | null> {
+async function locateBoxes(model: Model, index: ArtIndex, photo: OffscreenCanvas, plan: Plan, progress: ProgressFor): Promise<Boxes | null> {
   if (!plan.boxes || !index.artPrototype) {
     return null
   }
@@ -586,30 +595,69 @@ async function scanBoxes(model: Model, index: ArtIndex, photo: OffscreenCanvas, 
   if (!map || boxes.length < MIN_BOXES) {
     return null
   }
-  const tiles = Math.ceil(map.rows / TILE_PATCHES) * Math.ceil(map.cols / TILE_PATCHES)
-  const windows = alignedWindows(boxes, photo.width, photo.height, plan.boxShifts)
-  const embedded = await embedWindows(model, photo, windows, deadline, progress('refining'))
+  return { boxes, tiles: Math.ceil(map.rows / TILE_PATCHES) * Math.ceil(map.cols / TILE_PATCHES) }
+}
+
+/** The windows on a photo as vectors brought to the catalog's side (the mean of the windows taken off, then the adapter) and matched. */
+async function matchBoxWindows(model: Model, index: ArtIndex, photo: OffscreenCanvas, windows: AlignedWindow[], plan: Plan, deadline: number, progress?: ProgressFor) {
+  const embedded = await embedWindows(model, photo, windows, deadline, progress?.('refining'))
   const adapter = plan.boxAdapter ? (plan.adapter ?? index.adapter) : undefined
   const corrected = alignedCorrection(embedded.vectors, index.photoMean)
   const vectors = adapter ? corrected.map(vector => applyArtAdapter(adapter, vector)) : corrected
-  const hits = await matchWindows(index, embedded.windows, vectors, { list: embedded.colors, mean: meanColor(embedded.colors) }, progress('matching'))
+  const hits = await matchWindows(index, embedded.windows, vectors, { list: embedded.colors, mean: meanColor(embedded.colors) }, progress?.('matching'))
+  return { embedded, hits }
+}
 
-  // The box's card is its clearest window's, and the windows that agree with it are its support.
-  const best = new Map<number, ArtHit>()
+/** A box's card is its clearest window's. */
+function clearestHits<H extends ArtHit & { window: AlignedWindow }>(hits: H[]): Map<number, H> {
+  const best = new Map<number, H>()
   for (const hit of hits) {
     const known = best.get(hit.window.box)
     if (!known || hit.margin > known.margin) {
       best.set(hit.window.box, hit)
     }
   }
-  const matches: BoxMatch[] = [...best].map(([box, hit]) => ({
+  return best
+}
+
+/**
+ * Reads the photo by where its artworks are: a few windows on each box are matched and every box is one card,
+ * its clearest window's, the windows that agree with it being its support.
+ */
+async function readBoxes(model: Model, index: ArtIndex, photo: OffscreenCanvas, located: Boxes, plan: Plan, deadline: number, progress: ProgressFor): Promise<BoxScan> {
+  const windows = alignedWindows(located.boxes, photo.width, photo.height, plan.boxShifts)
+  const { embedded, hits } = await matchBoxWindows(model, index, photo, windows, plan, deadline, progress)
+  const matches: BoxMatch[] = [...clearestHits(hits)].map(([box, hit]) => ({
     cardId: hit.cardId,
     similarity: hit.similarity,
     margin: hit.margin,
     support: hits.filter(other => other.window.box === box && other.cardId === hit.cardId).length,
     vector: boxVector(embedded.vectors.filter((_vector, n) => embedded.windows[n]!.box === box)),
   }))
-  return { cards: cardsFromBoxes(matches, { hubs: index.hubs }), boxes, embedded: tiles + embedded.windows.length, windows: embedded.windows, vectors: embedded.vectors, hits }
+  return { cards: cardsFromBoxes(matches, { hubs: index.hubs }), boxes: located.boxes, embedded: located.tiles + embedded.windows.length, windows: embedded.windows, vectors: embedded.vectors, hits }
+}
+
+/**
+ * Which way a photo with artworks found upright lies: one window on every box is matched with the photo as it is
+ * and turned the other three ways (the same windows, as a turned photo would have them). Upright unless another
+ * way matches the catalog clearly more closely (`chooseBoxTurn`). The scores are, for each way, the mean
+ * similarity, the mean margin and the number of boxes that are sure.
+ */
+async function findBoxTurn(bitmap: ImageBitmap, model: Model, index: ArtIndex, plan: Plan, upright: OffscreenCanvas, boxes: ArtBox[], progress: ProgressFor): Promise<{ rotation: ArtRotation, embedded: number, scores: number[] }> {
+  const every = Math.max(1, Math.ceil(boxes.length / plan.turnBoxes))
+  const windows = alignedWindows(boxes, upright.width, upright.height, [[0, 0]]).filter(window => window.box % every === 0)
+  const similarities: number[] = []
+  const scores: number[] = []
+  for (const [step, turn] of BOX_TURNS.entries()) {
+    const photo = turn === 0 ? upright : drawPhoto(bitmap, WORKING_EDGE, turn)
+    const { hits } = await matchBoxWindows(model, index, photo, windows.map(window => turnWindow(window, turn, upright.width, upright.height)), plan, Infinity)
+    const clearest = [...clearestHits(hits).values()]
+    const mean = (value: (hit: ArtHit) => number) => clearest.reduce((sum, hit) => sum + value(hit), 0) / Math.max(1, clearest.length)
+    similarities.push(mean(hit => hit.similarity))
+    scores.push(similarities[step]!, mean(hit => hit.margin), clearest.filter(hit => hit.margin >= ALIGNED_SURE_MARGIN && hit.similarity >= ALIGNED_SURE_SIMILARITY).length)
+    progress('turning')(step + 1, BOX_TURNS.length)
+  }
+  return { rotation: BOX_TURNS[chooseBoxTurn(similarities)]!, embedded: windows.length * BOX_TURNS.length, scores: scores.map(value => Math.round(value * 1000) / 1000) }
 }
 
 async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
@@ -622,12 +670,52 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   const progress = (stage: ArtStage) => (done: number, total: number) => {
     scope.postMessage({ id: request.id, type: 'progress', stage, percent: Math.round((done / Math.max(1, total)) * 100), device })
   }
-
-  const { rotation, embedded: probed, scores } = await findRotation(request, model, index, plan)
-  const photo = drawPhoto(request.bitmap, WORKING_EDGE, rotation)
   const keep = (request.tuning as unknown as { keepHits?: boolean } | undefined)?.keepHits === true
 
-  const boxed = await scanBoxes(model, index, photo, plan, deadline, progress)
+  // A photo is looked at upright first: the artworks tell which way it lies far better than the probe of sliding
+  // windows (which a photo with too few artworks still takes), and a photo that lies upright costs little extra.
+  let rotation: ArtRotation = request.rotation === 'auto' ? 0 : request.rotation
+  let probed: number
+  let scores: number[]
+  let photo: OffscreenCanvas
+  let boxed: BoxScan | null
+  if (request.rotation === 'auto' && plan.boxes) {
+    photo = drawPhoto(request.bitmap, WORKING_EDGE, 0)
+    let located = await locateBoxes(model, index, photo, plan, progress)
+    if (located) {
+      const turn = await findBoxTurn(request.bitmap, model, index, plan, photo, located.boxes, progress)
+      probed = turn.embedded
+      scores = turn.scores
+      if (turn.rotation !== 0) {
+        const turnedPhoto = drawPhoto(request.bitmap, WORKING_EDGE, turn.rotation)
+        const again = await locateBoxes(model, index, turnedPhoto, plan, progress)
+        if (again) {
+          rotation = turn.rotation
+          photo = turnedPhoto
+          located = again
+        }
+      }
+      boxed = await readBoxes(model, index, photo, located, plan, deadline, progress)
+    }
+    else {
+      const found = await findRotation(request, model, index, plan)
+      rotation = found.rotation
+      probed = found.embedded
+      scores = found.scores
+      photo = drawPhoto(request.bitmap, WORKING_EDGE, rotation)
+      located = rotation === 0 ? null : await locateBoxes(model, index, photo, plan, progress)
+      boxed = located ? await readBoxes(model, index, photo, located, plan, deadline, progress) : null
+    }
+  }
+  else {
+    const found = await findRotation(request, model, index, plan)
+    rotation = found.rotation
+    probed = found.embedded
+    scores = found.scores
+    photo = drawPhoto(request.bitmap, WORKING_EDGE, rotation)
+    const located = await locateBoxes(model, index, photo, plan, progress)
+    boxed = located ? await readBoxes(model, index, photo, located, plan, deadline, progress) : null
+  }
   if (boxed) {
     return {
       cards: boxed.cards,

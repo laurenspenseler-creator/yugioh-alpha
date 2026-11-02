@@ -231,6 +231,29 @@ recognizes (3,600 windows instead of 2,700), gave 365 and 367 cards sure with 2 
 windows the pipeline already knew; it was 5 families only), and it can be refitted with `fitArtAdapter` from a
 list of (window vector, centred catalog vector) pairs.
 
+### Which way a photo lies (round 9)
+
+The probe that turns a photo (the 40 most textured sliding windows, matched upright and turned, with the margins above 0.05 added
+up; an upright photo had to score 0.3) was made for the sliding scan and no longer separates anything with the box pipeline: the
+upright photos of 5 decks scored 0.0 to 0.1, so did the same photos turned, and a photo turned a quarter was left lying (10 and 9 of
+12 cards sure, 12 of 12 with the right turn). A photo turned half way was not turned at all (the probe tried only a quarter each way);
+it is read a little worse as it lies (7 sure against 8 and 11 against 12), and not with the whole of the time saved by the box pipeline.
+
+The boxes tell it better. After the tiles are read upright (the boxes do not care much which way the cards lie), one window per box
+(the two sizes of `alignedWindows`, shift 0) is matched with the photo as it is and with the same windows on the photo turned 90,
+180 and 270 degrees (`turnWindow`: the window where it lies on the turned photo; the windows are cut from a canvas the photo is drawn
+on turned, so they show what a turned photo would). The mean similarity of each box's clearest window is 0.62 to 0.83 the right way
+up on 27 upright photos of 7 decks and 3 real phone photos, and at most 0.69 any other way on them (0.33 to 0.69 half a turn away,
+0.48 to 0.67 a quarter away); the photo is turned when another way is at least 0.08 more similar than the way it lies (`chooseBoxTurn`). All 15
+photos of 5 decks turned a quarter, a half or three quarters were turned back (8 of 11 cards for w01 and w05, 11 of 12, 12 of 12 and 12 of
+12 for the others, the same as upright, none wrong more than upright), no upright photo was turned (42 photos), and the two real
+phone photos of the tester's deck that lie on their side (rot1, rot2) were turned a quarter and read 11 of 15 sure instead of 10.
+A photo that lies upright pays about one second for the three other ways; a turned photo pays the second read of the tiles too (23 to
+26 seconds in all instead of 18). The sure count, the number of boxes above the sure thresholds, was the first score
+tried and separated worse (a turned photo showed 11 sure boxes upright and 13 turned). The processor judges on at most 8 boxes
+(`Plan.turnBoxes`, 64 windows instead of the up to 120 of the old probe): a photo turned a quarter was turned back and read 11 of 12
+sure in 262 seconds, the same photo upright 12 of 12 in 196. A photo with fewer than three boxes upright still takes the old probe, and the sliding scan.
+
 ### The index
 
 `pnpm ai:art` (`scripts/art-index.mjs`) downloads the artworks the index does not have yet,
