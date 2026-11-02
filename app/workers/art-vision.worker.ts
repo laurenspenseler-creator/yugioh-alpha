@@ -1,13 +1,18 @@
 // The background thread that recognizes cards on a photo by their artwork (ADR 0041). It loads the
 // vision model (DINOv2-small) and the index of all catalog artworks, cuts square windows out of the
 // photo, turns each into a vector, brings the vectors of the whole photo to the catalog's side
-// and asks the index which card's artwork each window shows. `app/utils/art-vision.ts` is the
+// and asks the index which card's artwork each window shows. A photo of several cards is first
+// looked at in tiles to find where the artworks are (the patch tokens of the model separate the
+// table, the cards and their pictures), and then only the windows on those artworks are matched;
+// where that finds too little, windows slide over the whole photo. `app/utils/art-vision.ts` is the
 // page's side of this. Everything stays on the device: the photo is handed over as a bitmap and
 // only card ids come back.
 import { AutoModel, env, Tensor } from '@huggingface/transformers'
 import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
-import { ART_COLOR_CANDIDATES, ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows, rerankByColor } from '~~/shared/card-art'
-import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtMatch, ArtWindow, PhotoCorrection } from '~~/shared/card-art'
+import { alignedCorrection, ART_COLOR_CANDIDATES, ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, boxVector, cardsFromBoxes, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows, rerankByColor } from '~~/shared/card-art'
+import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtMatch, ArtWindow, BoxMatch, PhotoCorrection } from '~~/shared/card-art'
+import { ALIGNED_SHIFTS, alignedWindows, findArtBoxes, PATCH_SIZE, TILE_PATCHES, TILE_SIZE } from '~~/shared/card-art-boxes'
+import type { AlignedWindow, ArtBox, PatchMap } from '~~/shared/card-art-boxes'
 import { artColorDescriptor, meanColor } from '~~/shared/card-color'
 import { createGpuMatcher } from './art-gpu'
 import type { GpuMatcher } from './art-gpu'
@@ -42,6 +47,8 @@ export interface ArtScanResult {
   /** The windows that were turned into a vector (x, y, size), and their uncorrected vectors one after the other, also only with `tuning.keepHits`. */
   windowList?: number[][]
   vectors?: Float32Array
+  /** The artwork boxes the photo was read by (x0, y0, x1, y1 in patches), when it was (see `Plan.boxes`), only with `tuning.keepHits`. */
+  boxes?: number[][]
 }
 
 export type ArtStage = 'model' | 'index' | 'turning' | 'scanning' | 'matching' | 'refining'
@@ -87,10 +94,14 @@ export interface Plan {
   minSimilarity?: number
   /** How much of the usual number of windows a card needs to be listed or sure (see `cardsFromHits`): a sparser plan gives every card fewer windows. */
   supportScale: number
+  /** Look for the artworks in tiles first, and read the photo by the windows on them when there are at least `MIN_BOXES`; the sliding windows are for the rest. */
+  boxes: boolean
+  /** How the windows on an artwork are moved (in patches): the processor takes fewer, a second per window. */
+  boxShifts: ReadonlyArray<readonly [number, number]>
 }
 const PLANS: Record<'webgpu' | 'wasm', Plan> = {
-  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 48, probeWindows: 40, milliseconds: 140_000, supportScale: 1, minSimilarity: 0.25 },
-  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65 },
+  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 48, probeWindows: 40, milliseconds: 140_000, supportScale: 1, minSimilarity: 0.25, boxes: true, boxShifts: ALIGNED_SHIFTS },
+  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65, boxes: true, boxShifts: [[0, 0], [0.5, 0]] },
 }
 
 /** The plan for where the model runs, with whatever a test asked to change. */
@@ -310,8 +321,8 @@ function breathe(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0))
 }
 
-interface Embedded {
-  windows: ArtWindow[]
+interface Embedded<W extends ArtWindow = ArtWindow> {
+  windows: W[]
   vectors: Float32Array[]
   colors: Float32Array[]
 }
@@ -327,15 +338,15 @@ interface WindowColors {
  * (on the graphics card) works on one batch, the pixels of the next are prepared here; the model
  * calls themselves run one after the other.
  */
-async function embedWindows(
+async function embedWindows<W extends ArtWindow>(
   model: Model,
   photo: OffscreenCanvas,
-  windows: ArtWindow[],
+  windows: W[],
   deadline: number,
   report?: (done: number, total: number) => void,
-): Promise<Embedded> {
-  const embedded: Embedded = { windows: [], vectors: [], colors: [] }
-  let running: { batch: ArtWindow[], vectors: Promise<Float32Array[]>, colors: Float32Array[] } | null = null
+): Promise<Embedded<W>> {
+  const embedded: Embedded<W> = { windows: [], vectors: [], colors: [] }
+  let running: { batch: W[], vectors: Promise<Float32Array[]>, colors: Float32Array[] } | null = null
   const collect = async () => {
     if (running) {
       embedded.vectors.push(...await running.vectors)
@@ -368,8 +379,8 @@ function gpuMatcher(index: ArtIndex): Promise<GpuMatcher | null> {
  * What each window shows, as the best card for it. `vectors` are the windows' corrected vectors (`photoCorrection`).
  * With `colors` the colour of the window decides between the closest cards (`rerankByColor`).
  */
-async function matchWindows(index: ArtIndex, windows: ArtWindow[], vectors: Float32Array[], colors?: WindowColors, report?: (done: number, total: number) => void): Promise<ArtHit[]> {
-  const hits: ArtHit[] = []
+async function matchWindows<W extends ArtWindow>(index: ArtIndex, windows: W[], vectors: Float32Array[], colors?: WindowColors, report?: (done: number, total: number) => void): Promise<Array<ArtHit & { window: W }>> {
+  const hits: Array<ArtHit & { window: W }> = []
   const others = colors && index.colors ? ART_COLOR_CANDIDATES : undefined
   const decided = (match: ArtMatch | null, n: number): ArtMatch | null => match && colors ? rerankByColor(match, index, colors.list[n]!, colors.mean) : match
   const matcher = await gpuMatcher(index)
@@ -486,6 +497,112 @@ async function findRotation(request: ArtScanRequest, model: Model, index: ArtInd
   return { rotation: turned ? best.rotation : 0, embedded, scores }
 }
 
+/** A photo with fewer artworks than this found in its tiles is read by sliding windows instead (a photo of one card or two has no table to tell it from). */
+const MIN_BOXES = 3
+/** The tiles may take this share of the time. */
+const TILES_SHARE = 0.5
+
+/**
+ * The tokens of every patch of the photo, from tiles of 224 × 224 pixels (the last tile of a row or a column is
+ * moved back inside the photo, onto the patch grid), and how bright each patch is. Null when the photo is smaller
+ * than a tile or the time is up.
+ */
+async function patchMap(model: Model, photo: OffscreenCanvas, deadline: number, report: (done: number, total: number) => void): Promise<PatchMap | null> {
+  const cols = Math.floor(photo.width / PATCH_SIZE)
+  const rows = Math.floor(photo.height / PATCH_SIZE)
+  if (cols < TILE_PATCHES || rows < TILE_PATCHES) {
+    return null
+  }
+  const tiles: ArtWindow[] = []
+  for (let top = 0; top < rows; top += TILE_PATCHES) {
+    for (let left = 0; left < cols; left += TILE_PATCHES) {
+      tiles.push({ x: Math.min(left, cols - TILE_PATCHES) * PATCH_SIZE, y: Math.min(top, rows - TILE_PATCHES) * PATCH_SIZE, size: TILE_SIZE })
+    }
+  }
+  const features = new Float32Array(cols * rows * ART_DIMENSION)
+  for (let at = 0; at < tiles.length; at += batchSize()) {
+    if (performance.now() >= deadline) {
+      return null
+    }
+    const batch = tiles.slice(at, at + batchSize())
+    const { last_hidden_state: hidden } = await model({ pixel_values: windowTensor(photo, batch).tensor })
+    const tokens = hidden.dims[1]!
+    const data = hidden.data as ArrayLike<number>
+    batch.forEach((tile, n) => {
+      const left = tile.x / PATCH_SIZE
+      const top = tile.y / PATCH_SIZE
+      for (let py = 0; py < TILE_PATCHES; py += 1) {
+        for (let px = 0; px < TILE_PATCHES; px += 1) {
+          // The first token is the whole tile's, the patches follow row by row.
+          const from = (n * tokens + 1 + py * TILE_PATCHES + px) * ART_DIMENSION
+          const to = ((top + py) * cols + left + px) * ART_DIMENSION
+          for (let d = 0; d < ART_DIMENSION; d += 1) {
+            features[to + d] = data[from + d]!
+          }
+        }
+      }
+    })
+    report(at + batch.length, tiles.length)
+  }
+
+  const small = new OffscreenCanvas(cols, rows)
+  const context = small.getContext('2d', { willReadFrequently: true })!
+  context.imageSmoothingQuality = 'high'
+  context.drawImage(photo, 0, 0, cols * PATCH_SIZE, rows * PATCH_SIZE, 0, 0, cols, rows)
+  const pixels = context.getImageData(0, 0, cols, rows).data
+  const luminance = Float32Array.from({ length: cols * rows }, (_, i) => 0.299 * pixels[i * 4]! + 0.587 * pixels[i * 4 + 1]! + 0.114 * pixels[i * 4 + 2]!)
+  return { features, dimension: ART_DIMENSION, gridCols: cols, gridRows: rows, cols, rows, luminance }
+}
+
+interface BoxScan {
+  cards: ArtCard[]
+  boxes: ArtBox[]
+  /** Windows that were turned into a vector, the tiles included. */
+  embedded: number
+  windows: AlignedWindow[]
+  vectors: Float32Array[]
+  hits: Array<ArtHit & { window: AlignedWindow }>
+}
+
+/**
+ * Reads the photo by where its artworks are: the tiles' patch tokens give a box for every artwork, a few windows
+ * on each box are matched (with the mean of those windows taken off, `alignedCorrection`) and every box is one
+ * card, its best window's. Null when the plan does not ask for it, the index has no `artPrototype`, or fewer
+ * than `MIN_BOXES` artworks showed.
+ */
+async function scanBoxes(model: Model, index: ArtIndex, photo: OffscreenCanvas, plan: Plan, deadline: number, progress: (stage: ArtStage) => (done: number, total: number) => void): Promise<BoxScan | null> {
+  if (!plan.boxes || !index.artPrototype) {
+    return null
+  }
+  const map = await patchMap(model, photo, performance.now() + plan.milliseconds * TILES_SHARE, progress('scanning'))
+  const boxes = map ? findArtBoxes(map, index.artPrototype) : []
+  if (!map || boxes.length < MIN_BOXES) {
+    return null
+  }
+  const tiles = Math.ceil(map.rows / TILE_PATCHES) * Math.ceil(map.cols / TILE_PATCHES)
+  const windows = alignedWindows(boxes, photo.width, photo.height, plan.boxShifts)
+  const embedded = await embedWindows(model, photo, windows, deadline, progress('refining'))
+  const vectors = alignedCorrection(embedded.vectors, index.photoMean)
+  const hits = await matchWindows(index, embedded.windows, vectors, { list: embedded.colors, mean: meanColor(embedded.colors) }, progress('matching'))
+
+  // The box's card is its clearest window's, and the windows that agree with it are its support.
+  const best = new Map<number, ArtHit>()
+  for (const hit of hits) {
+    const known = best.get(hit.window.box)
+    if (!known || hit.margin > known.margin) {
+      best.set(hit.window.box, hit)
+    }
+  }
+  const matches: BoxMatch[] = [...best].map(([box, hit]) => ({
+    cardId: hit.cardId,
+    similarity: hit.similarity,
+    margin: hit.margin,
+    support: hits.filter(other => other.window.box === box && other.cardId === hit.cardId).length,
+    vector: boxVector(embedded.vectors.filter((_vector, n) => embedded.windows[n]!.box === box)),
+  }))
+  return { cards: cardsFromBoxes(matches, { hubs: index.hubs }), boxes, embedded: tiles + embedded.windows.length, windows: embedded.windows, vectors: embedded.vectors, hits }
+}
+
 async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   const started = performance.now()
   const model = await loadModel(request.id)
@@ -499,6 +616,30 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
 
   const { rotation, embedded: probed, scores } = await findRotation(request, model, index, plan)
   const photo = drawPhoto(request.bitmap, WORKING_EDGE, rotation)
+  const keep = (request.tuning as unknown as { keepHits?: boolean } | undefined)?.keepHits === true
+
+  const boxed = await scanBoxes(model, index, photo, plan, deadline, progress)
+  if (boxed) {
+    return {
+      cards: boxed.cards,
+      ...(keep
+        ? {
+            hits: boxed.hits,
+            own: 0,
+            windowList: boxed.windows.map(window => [window.x, window.y, window.size]),
+            vectors: Float32Array.from(boxed.vectors.flatMap(vector => Array.from(vector))),
+            boxes: boxed.boxes.map(box => [box.x0, box.y0, box.x1, box.y1]),
+          }
+        : {}),
+      rotation,
+      rotationScores: scores,
+      windowMean: [],
+      windows: probed + boxed.embedded,
+      device,
+      seconds: Math.round((performance.now() - started) / 100) / 10,
+    }
+  }
+
   const windows = byTexture(photo, artWindows(photo.width, photo.height, plan.sizes, plan.stride))
   const embedded = await embedWindows(model, photo, windows, performance.now() + plan.milliseconds * FIRST_PASS_SHARE, progress('scanning'))
   // What the photo itself looks like (its light, in vectors and in colour) is learned from all its windows, then every window is matched.
@@ -507,7 +648,6 @@ async function scanPhoto(request: ArtScanRequest): Promise<ArtScanResult> {
   const first = await matchWindows(index, embedded.windows, embedded.vectors.map(vector => correct(vector)), { list: embedded.colors, mean: colorMean }, progress('matching'))
   const closer = await lookCloser(model, index, photo, first, correct, colorMean, progress('refining'), deadline, request.tuning)
 
-  const keep = (request.tuning as unknown as { keepHits?: boolean } | undefined)?.keepHits === true
   return {
     cards: cardsFromHits([...first, ...closer.hits], { onlySure: correct.own < FEW_CARDS_OWN, supportScale: plan.supportScale, hubs: index.hubs }),
     ...(keep

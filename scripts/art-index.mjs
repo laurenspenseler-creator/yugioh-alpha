@@ -62,10 +62,13 @@ const position = new Map()
 // estimated from photos with a known list of cards as well, and kept the same way.
 let photoMean
 let hubs
+// The mean token of the patches inside many artworks (`ArtIndexMeta.artPrototype`, what `findArtBoxes` takes for the picture of a card) is kept as well.
+let artPrototype
 if (existsSync(metaFile) && existsSync(binFile)) {
   const meta = JSON.parse(readFileSync(metaFile, 'utf8'))
   photoMean = meta.photoMean
   hubs = meta.hubs
+  artPrototype = meta.artPrototype
   // An index of an older format (or one without blurred copies) is rebuilt from scratch.
   if (meta.version === 2 && meta.variants) {
     const binary = readFileSync(binFile)
@@ -213,6 +216,7 @@ const meta = {
   variants: entries.map(entry => entry.variant),
   ...(photoMean ? { photoMean } : {}),
   ...(hubs ? { hubs } : {}),
+  ...(artPrototype ? { artPrototype } : {}),
   colors: ART_COLOR_DIMENSION,
   colorMean: [...meanColor(entries.map((_entry, i) => dequantizeColor(stored, i * ART_COLOR_DIMENSION)))].map(value => Math.round(value * 1e4) / 1e4),
 }

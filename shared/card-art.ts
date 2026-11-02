@@ -42,6 +42,8 @@ export interface ArtIndexMeta {
    * Estimated from photos with a known list of cards, not from the artworks.
    */
   hubs?: number[]
+  /** The mean unit token of the patches inside many catalog artworks (ART_DIMENSION numbers): what findArtBoxes in shared/card-art-boxes.ts takes for the picture of a card. */
+  artPrototype?: number[]
 }
 
 /** The colours of the artworks, one per vector of the index, and the first vector of each card. */
@@ -58,6 +60,7 @@ export interface ArtIndex {
   photoMean?: Float32Array
   colors?: ArtColors
   hubs?: ReadonlySet<number>
+  artPrototype?: Float32Array
 }
 
 /** `colors` is the contents of `colors.bin`; an index that has none (or that is not told about them) works without colour. */
@@ -89,6 +92,7 @@ export function parseArtIndex(meta: ArtIndexMeta, binary: ArrayBuffer, colors?: 
     photoMean: meta.photoMean?.length === ART_VECTOR ? Float32Array.from(meta.photoMean) : undefined,
     colors: artColors,
     hubs: meta.hubs ? new Set(meta.hubs) : undefined,
+    artPrototype: meta.artPrototype?.length === ART_DIMENSION ? Float32Array.from(meta.artPrototype) : undefined,
   }
 }
 
@@ -182,7 +186,7 @@ export function centerArtIndex(index: ArtIndex): ArtIndex {
       values.set(quantized.values, start)
     }
   }
-  return { cardIds: index.cardIds, scales, values, photoMean: index.photoMean, colors: index.colors, hubs: index.hubs }
+  return { cardIds: index.cardIds, scales, values, photoMean: index.photoMean, colors: index.colors, hubs: index.hubs, artPrototype: index.artPrototype }
 }
 
 /** Where part `part` of vector `vectorIndex` starts in `ArtIndex.values`. */
@@ -768,3 +772,127 @@ function oneWindowCoversBoth(hits: readonly ArtHit[], a: ArtWindow, b: ArtWindow
   })
 }
 const COVERS_BOTH_RATIO = 1.5
+
+/**
+ * Windows on artworks of many different cards share little but the photo (its light, its sleeves): their mean
+ * vector is short (0.78 to 0.84 on 20 photos). Those of a photo of one card many times (a grid of twelve) are
+ * alike, their mean is the card and 0.89 to 0.94 long; taking it off takes the card off, so there the mean of
+ * many photos (`photoMean` of the index) is used instead, with a stretch in between.
+ */
+const ALIGNED_FEW_CARDS_FROM = 0.85
+const ALIGNED_FEW_CARDS_TO = 0.88
+
+/**
+ * Brings the vectors of windows that sit on artworks (`alignedWindows`) to the catalog's side: the photo's own
+ * mean of them is taken off (for a photo of few cards, the mean of many photos, see `ALIGNED_FEW_CARDS_FROM`),
+ * each part is made a unit vector again. Nothing more: the strongest directions of such windows are the artworks
+ * themselves, taking those off (`photoCorrection`) takes the cards away.
+ */
+export function alignedCorrection(vectors: readonly Float32Array[], photoMean?: ArrayLike<number>): Float32Array[] {
+  const mean = meanVector(vectors)
+  if (photoMean && photoMean.length === mean.length) {
+    // The length of the patch part of the mean (the class part is as long, but the patches are what the artwork is).
+    let length = 0
+    for (let d = ART_DIMENSION; d < mean.length; d += 1) {
+      length += mean[d]! ** 2
+    }
+    const own = Math.min(1, Math.max(0, (ALIGNED_FEW_CARDS_TO - Math.sqrt(length)) / (ALIGNED_FEW_CARDS_TO - ALIGNED_FEW_CARDS_FROM)))
+    for (let d = 0; d < mean.length; d += 1) {
+      mean[d] = own * mean[d]! + (1 - own) * photoMean[d]!
+    }
+  }
+  return vectors.map(vector => joinParts(part => normalize(vector.slice(part * ART_DIMENSION, (part + 1) * ART_DIMENSION).map((value, d) => value - mean[part * ART_DIMENSION + d]!))))
+}
+
+/**
+ * What a box looks like, for telling copies of one card from different cards: the mean of its windows' patch parts
+ * (unit vectors) as a unit vector. Two boxes of the same card were 0.83 to 0.98 alike (median 0.93, 63 pairs on 13
+ * photos); different cards 0.65 (median), 0.78 (95 % of the pairs below) to 0.88 (369 pairs).
+ */
+export function boxVector(windows: readonly Float32Array[]): Float32Array {
+  const sum = new Float32Array(ART_DIMENSION)
+  for (const window of windows) {
+    const part = normalize(window.slice(ART_DIMENSION, ART_VECTOR))
+    for (let d = 0; d < ART_DIMENSION; d += 1) {
+      sum[d]! += part[d]!
+    }
+  }
+  return normalize(sum)
+}
+
+/** What a box of `findArtBoxes` shows: its best window's card, and how many of the box's windows agree. */
+export interface BoxMatch {
+  cardId: number
+  similarity: number
+  margin: number
+  support: number
+  /** What the box looks like (`boxVector`): a box that looks like a box that is sure for a card is a copy of it. */
+  vector?: ArrayLike<number>
+}
+
+/** A box this alike a box that is sure for a card, and not sure for another card itself, is one more copy of that card. */
+export const BOX_COPY_SIMILARITY = 0.85
+
+/** A card on a window that sits on its artwork is sure with this lead and closeness (a sliding window needs windows from many sides instead). */
+export const ALIGNED_SURE_MARGIN = 0.05
+export const ALIGNED_SURE_SIMILARITY = 0.4
+/** And it is worth listing, for a name read from the photo to confirm, with this much. */
+export const ALIGNED_MIN_MARGIN = 0.03
+export const ALIGNED_MIN_SIMILARITY = 0.35
+
+function similarityOf(a: ArrayLike<number>, b: ArrayLike<number>): number {
+  let sum = 0
+  for (let d = 0; d < a.length; d += 1) {
+    sum += a[d]! * b[d]!
+  }
+  return sum
+}
+
+/**
+ * The cards of a photo from the boxes of its artworks: every box is one card, so a card on several boxes is that
+ * many copies. A box decides for its card with a clear lead (a hub with the larger lead and closeness it needs
+ * everywhere, see `HUB_SURE_MARGIN`); one that is only close is listed, doubtful. A box that looks like a box
+ * that is sure for a card (`BOX_COPY_SIMILARITY`) is another copy of that card whatever its own best card is (a
+ * look-alike a hair ahead is common in a grid of the same card), unless it is sure for another card itself.
+ */
+export function cardsFromBoxes(boxes: readonly BoxMatch[], options: { hubs?: ReadonlySet<number> } = {}): ArtCard[] {
+  const isSure = (box: BoxMatch) => options.hubs?.has(box.cardId) === true
+    ? box.margin >= HUB_SURE_MARGIN && box.similarity >= HUB_SURE_SIMILARITY
+    : box.margin >= ALIGNED_SURE_MARGIN && box.similarity >= ALIGNED_SURE_SIMILARITY
+  const isListed = (box: BoxMatch) => box.margin >= ALIGNED_MIN_MARGIN && box.similarity >= ALIGNED_MIN_SIMILARITY
+  const sureBoxes = boxes.filter(box => isSure(box))
+
+  // The card each box stands for: its own when sure, a sure card it looks like (the likest), or its own when listed.
+  const standsFor = boxes.map((box) => {
+    if (isSure(box)) {
+      return box.cardId
+    }
+    let like: { cardId: number, similarity: number } | null = null
+    for (const anchor of sureBoxes) {
+      const similarity = box.vector && anchor.vector ? similarityOf(box.vector, anchor.vector) : 0
+      if (similarity >= BOX_COPY_SIMILARITY && similarity > (like?.similarity ?? 0)) {
+        like = { cardId: anchor.cardId, similarity }
+      }
+    }
+    return like?.cardId ?? (isListed(box) ? box.cardId : null)
+  })
+
+  const cards: ArtCard[] = []
+  for (const cardId of new Set(standsFor.filter((id): id is number => id !== null))) {
+    const standing = boxes.filter((_box, i) => standsFor[i] === cardId)
+    const own = standing.filter(box => box.cardId === cardId && isListed(box))
+    if (own.length === 0) {
+      continue
+    }
+    const best = [...own].sort((a, b) => b.margin - a.margin)[0]!
+    cards.push({
+      cardId,
+      similarity: best.similarity,
+      margin: best.margin,
+      copies: Math.max(1, standing.length),
+      support: Math.max(1, own.reduce((sum, box) => sum + box.support, 0)),
+      sure: standing.some(box => box.cardId === cardId && isSure(box)),
+    })
+  }
+  return cards.sort((a, b) => b.margin - a.margin)
+}

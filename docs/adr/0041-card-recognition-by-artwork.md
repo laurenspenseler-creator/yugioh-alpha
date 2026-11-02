@@ -129,7 +129,50 @@ window vectors (mean of the oracle pairs; with the card sets of the test left ou
 rank 1 for 63 % of the oracle windows instead of 55 %, but in the first pass it lists three times as
 many wrong cards as doubtful, and it is the same bias a hub list corrects); a kernel-ridge version of it
 did no better than the mean; runners-up of a place confirmed by some text (0 cards rescued on two
-photos); beams in Whisper (the pipeline of transformers.js ignores `num_beams`: same text, same time).
+photos); beams in Whisper (the pipeline of transformers.js ignores `num_beams`: same text, same time);
+levelling a window's light before the model (lifting dark windows to a usual brightness: oracle rank 1
+on 8 photos 64 → 67 %, first pass unchanged; stretching each channel between its 2nd and 98th percentile:
+63 %); a frame-class prior (spell / trap / monster / other): even with the class known exactly, rank 1 at
+the oracle windows only goes from 85 to 93 of 146 cards, because most look-alikes share the class.
+
+### Where the artworks are (round 8)
+
+The sliding windows never sit on an artwork: a card is matched from windows half a window off, from the
+side of the neighbouring card, and the evidence for it is spread over a hundred windows of which a few
+count. The model itself knows where the artworks are. Looked at in tiles of 224 × 224 pixels (16 × 16
+patches of 14 pixels, 48 tiles for a photo of 1200 × 1600), its patch tokens separate the table, the
+cards and the pictures on them, also where sleeved cards touch (their borders are patches of their
+own). `shared/card-art-boxes.ts` takes the tokens of the brightest quarter of the patches for the table,
+calls the patches unlike it cards (Otsu on the cosine), and among them the patches like an artwork
+(`artPrototype` in `index.json`: the mean token of the patches of 300 random catalog artworks) the
+pictures; connected regions of a certain size and shape are the boxes. They sit within a patch of the real
+artwork: 15 to 18 boxes on photos of 13 to 18 cards, 11 or 12 on a grid of twelve of one card. A few windows
+(two sizes, five shifts of half a patch) are put on every box, about 150 for a photo, and **a box is a card**:
+its clearest window decides, and a card on several boxes is that many copies (`cardsFromBoxes`).
+
+What the windows are corrected by changed with it. They are all on artworks, so the strongest directions of
+their variation are the cards themselves and `photoCorrection` takes the cards away; only the mean of the
+windows is taken off (`alignedCorrection`). On seven photos of a deck of sixteen cards that found 63 cards sure
+with 2 wrong where the same photos found 32 with 1 by sliding windows (the mean of many photos instead: 46 with
+8 wrong). A photo of one card many times has a mean that is that card (its length is 0.89 to 0.94, that of
+the windows of many different cards 0.78 to 0.84): there the mean of many photos is used, as `photoCorrection`
+does for a photo of few cards, with a stretch between 0.85 and 0.88. Boxes of the same card look alike
+(0.83 to 0.98, median 0.93, 63 pairs), those of different cards less so (median 0.65, 95 % below 0.78, at most
+0.88 in 369 pairs); a box that is 0.85 alike a box that is sure for a card and not sure for another card is
+one more copy of it, whatever it matched itself (in a grid of twelve of one card a look-alike is often a hair ahead).
+
+Compared with the sliding scan, on the graphics card, over 44 photos with a known list of cards: 16 to 18
+seconds a photo instead of 90 to 150; the 11 photos of 13 to 18 different cards (q set) 91 of 137 kinds sure
+with 6 wrong sure, 118 of 178 copies; the 24 WhatsApp photos of the tester 125 of 182 kinds sure
+with 14 wrong sure; the 9 photos of twelve of one card all sure, none wrong, 95 of 108 copies
+(2 of 9 sure with the mean of the windows alone). Missed are cards the tokens do not set apart from the table
+(foil in a sleeve, overexposed) and boxes that are cut by the edge or by another card; the wrong sure ones
+are look-alikes of a hair's lead, as with sliding windows. Measured and not adopted: the card most windows of a box agree on instead of the
+clearest window's (117 vs 119 kinds sure on 14 photos, the same boxes right); four windows per box instead of ten, which
+loses little (95 against 98 kinds sure on 11 photos) and is what the processor's plan takes: a photo took 262 seconds
+there (10 of 13 cards sure, none wrong), where ten windows did not fit in the 240 seconds (5 of 13). A photo with fewer than three boxes (one card or two, no table to tell
+it from) is read by the sliding windows as before, so is a photo of an index without `artPrototype`
+(`scripts/art-index.mjs` keeps it like `photoMean` and `hubs`).
 
 ### The index
 
@@ -152,7 +195,9 @@ compressed to the point that a person has to guess is still not recognized.)
 
 ### The scan, in a worker, on the graphics card
 
-`app/workers/art-vision.worker.ts` draws the photo with a long edge of 1600 px (turned a
+`app/workers/art-vision.worker.ts` first looks for the artworks in tiles and reads a photo that has three or
+more of them by the windows on them (see above); what follows is the scan for the rest (and for every photo
+before round 8). It draws the photo with a long edge of 1600 px (turned a
 quarter if it lies on its side: the most textured windows of each of the three ways are
 compared by how clearly they match, which found the right way on every photo; the upright way
 comes first and a score of 0.3 or more ends the probe, because upright photos scored 0.26 to
