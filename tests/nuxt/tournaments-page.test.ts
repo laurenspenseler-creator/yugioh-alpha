@@ -105,6 +105,23 @@ describe('tournaments page', () => {
     expect(text).toContain('Runde 1/3')
   })
 
+  it('names the mode of a duel queue instead of a round count and a pairing system', async () => {
+    state.list = {
+      items: [item({ engine: 'queue', queueMode: 'champions_league', pairingSystem: 'swiss', status: 'running', roundCount: 0, plannedRounds: 4, participantCount: 10 })],
+      total: 1,
+      page: 1,
+      pageSize: 20,
+    }
+    state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+
+    const component = await mountSuspended(TournamentsPage)
+    const text = component.text()
+
+    expect(text).toContain('Champions League')
+    expect(text).not.toContain('Runde 0/4')
+    expect(text).not.toContain('Schweizer System')
+  })
+
   it('shows the organizer empty state and switches to the participant empty state', async () => {
     state.list = { items: [], total: 0, page: 1, pageSize: 20 }
     state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }

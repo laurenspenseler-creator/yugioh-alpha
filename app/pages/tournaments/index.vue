@@ -247,8 +247,11 @@ const emptyState = computed(() => {
 
         <dl class="mt-3 space-y-0.5 text-sm text-muted">
           <div>{{ count('tournaments.list.participantCount', item.participantCount) }}</div>
-          <div>{{ roundLabel(item) }}</div>
-          <div>{{ t(`tournaments.pairingSystem.${item.pairingSystem}.label`) }}</div>
+          <!-- A duel queue has no rounds of its own; its mode (Champions League is no pairing system of the classic kind) is what it is called. -->
+          <div v-if="item.engine === 'classic'">
+            {{ roundLabel(item) }}
+          </div>
+          <div>{{ item.engine === 'queue' && item.queueMode ? t(`tournaments.queue.mode.${item.queueMode}.label`) : t(`tournaments.pairingSystem.${item.pairingSystem}.label`) }}</div>
           <div v-if="role === 'participant'">
             {{ t('tournaments.list.organizedBy', { name: item.organizerName }) }}
           </div>
