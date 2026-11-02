@@ -1,8 +1,8 @@
 // Builds the index of catalog artworks that recognizes cards on photos (ADR 0041):
 //
-//   node scripts/art-index.mjs               add the artworks the index does not have yet (all of them on a first run)
-//   node scripts/art-index.mjs --limit 50    stop after 50 new artworks (to try it)
-//   node scripts/art-index.mjs --colors-only give the artworks of an older index their colours, nothing else
+//   pnpm ai:art                              add the artworks the index does not have yet (all of them on a first run)
+//   pnpm ai:art --limit 50                   stop after 50 new artworks (to try it)
+//   pnpm ai:art --colors-only                give the artworks of an older index their colours, nothing else
 //
 // The cropped artwork of every card in the catalog (`catalog_card_image`) is downloaded from
 // YGOPRODeck, turned into two vectors of 384 numbers (the class token and the mean of the patch

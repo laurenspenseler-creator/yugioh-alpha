@@ -1,7 +1,7 @@
 // Estimates the hubs of the artwork index (ADR 0041): cards that win windows of photo after photo
 // that they are not on, so that `cardsFromHits` calls them sure only with overwhelming evidence.
 //
-//   node scripts/art-hubs.mjs <photos folder> [--min-photos 4] [--min-windows 5]
+//   pnpm ai:art:hubs <photos folder> [--min-photos 4] [--min-windows 5]
 //
 // The folder holds, for every test photo, `<key>.json` with the hits the art worker returns for it
 // (`recognizeArt(photo, { tuning: { keepHits: true } })`, saved as JSON: `{ "hits": [{ "cardId": ... }] }`;
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const folder = process.argv[2]
 if (!folder || !existsSync(join(folder, 'truth.json'))) {
-  console.error('usage: node scripts/art-hubs.mjs <folder with <photo>.json hits and truth.json> [--min-photos 4] [--min-windows 5]')
+  console.error('usage: pnpm ai:art:hubs <folder with <photo>.json hits and truth.json> [--min-photos 4] [--min-windows 5]')
   process.exit(1)
 }
 const option = (name, fallback) => {
