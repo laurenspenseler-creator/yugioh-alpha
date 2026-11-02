@@ -170,7 +170,13 @@ with 14 wrong sure; the 9 photos of twelve of one card all sure, none wrong, 95 
 are look-alikes of a hair's lead, as with sliding windows. Measured and not adopted: the card most windows of a box agree on instead of the
 clearest window's (117 vs 119 kinds sure on 14 photos, the same boxes right); four windows per box instead of ten, which
 loses little (95 against 98 kinds sure on 11 photos) and is what the processor's plan takes: a photo took 262 seconds
-there (10 of 13 cards sure, none wrong), where ten windows did not fit in the 240 seconds (5 of 13). A photo with fewer than three boxes (one card or two, no table to tell
+there (10 of 13 cards sure, none wrong), where ten windows did not fit in the 240 seconds (5 of 13). Also tried: reading the name printed above each box (a strip a
+little wider than the box, from a third of its height above to a tenth below its top edge, twice the working
+size, as one line with Tesseract, grey and as ink on paper): on a photo of 13 cards it read 1 name correctly
+(with the first cut, a third higher, 2 names); the text of these WhatsApp photos is about 15 pixels high. Where
+the card is wrong it is nearly always a dark picture or a look-alike, and the boxes themselves are not the
+problem: 220 boxes for 224 cards on 14 photos, 161 of them with a card of the photo as the clearest window's
+(142 of them sure). A photo with fewer than three boxes (one card or two, no table to tell
 it from) is read by the sliding windows as before, so is a photo of an index without `artPrototype`
 (`scripts/art-index.mjs` keeps it like `photoMean` and `hubs`).
 
