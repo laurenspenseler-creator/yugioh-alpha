@@ -42,10 +42,11 @@ const rows = db.prepare(`
   where c.retired_at is null and i.image_url_cropped is not null
   order by i.id`).all()
 
-// Every artwork gets two vectors: as it is, and slightly blurred, which is what a photo that is not
-// quite sharp makes of it (the first looks for the second on blurred photos and finds it; the
-// matching takes the better of the two for a card). `variants[i]` says which one vector `i` is.
-const BLURS = [0, 1.5]
+// Every artwork gets two vectors: as it is, and blurred, which is what a photo that is not quite sharp
+// makes of it (the first looks for the second on blurred photos and finds it; the matching takes the
+// better of the two for a card). `variants[i]` says which one vector `i` is. The blur is 3 pixels (1.5
+// before round 8; of 1.5, 3, 4.5 and 6 it found the most boxes of 16 photos, 204 against 200 of 251).
+const BLURS = [0, 3]
 
 // What the index already has: the vectors stay as they are (int8 and their scale).
 const known = new Map()
