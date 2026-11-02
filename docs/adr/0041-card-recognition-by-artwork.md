@@ -161,13 +161,20 @@ does for a photo of few cards, with a stretch between 0.85 and 0.88. Boxes of th
 0.88 in 369 pairs); a box that is 0.85 alike a box that is sure for a card and not sure for another card is
 one more copy of it, whatever it matched itself (in a grid of twelve of one card a look-alike is often a hair ahead).
 
-Compared with the sliding scan, on the graphics card, over 44 photos with a known list of cards: 16 to 18
-seconds a photo instead of 90 to 150; the 11 photos of 13 to 18 different cards (q set) 91 of 137 kinds sure
-with 6 wrong sure, 118 of 178 copies; the 24 WhatsApp photos of the tester 125 of 182 kinds sure
-with 14 wrong sure; the 9 photos of twelve of one card all sure, none wrong, 95 of 108 copies
-(2 of 9 sure with the mean of the windows alone). Missed are cards the tokens do not set apart from the table
+Compared with the sliding scan, on the graphics card, over 44 photos with a known list of cards: 13 to 18
+seconds a photo instead of 90 to 150; the 11 photos of 13 to 18 different cards (q set) 85 of 137 kinds sure
+with 2 wrong sure, 118 of 178 copies; the 24 WhatsApp photos of the tester 116 of 182 kinds sure
+with 4 wrong sure; the 9 photos of twelve of one card all sure, none wrong, 91 of 108 copies
+(2 of 9 sure with the mean of the windows alone). A box is sure with a lead of 0.08 and a closeness of 0.4:
+the first guess, 0.05, gave 91 and 125 kinds sure with 6 and 14 wrong ones; the table of leads is in
+`ALIGNED_SURE_MARGIN` (on 16 photos 127 sure / 12 wrong at 0.05, 126 / 8 at 0.06, 125 / 7 at 0.07, 121 / 3 at 0.08,
+110 / 1 at 0.10, the same in both groups of photos), and what falls between 0.03 and 0.08 is a doubtful card, listed
+when a name read from the photo confirms it. Missed are cards the tokens do not set apart from the table
 (foil in a sleeve, overexposed) and boxes that are cut by the edge or by another card; the wrong sure ones
-are look-alikes of a hair's lead, as with sliding windows. Measured and not adopted: the card most windows of a box agree on instead of the
+are look-alikes of a hair's lead, as with sliding windows. Measured and not adopted: a larger weight for the colour on the windows on the artworks (0.2 and 0.3 for 0.1: 97 and
+90 kinds sure with 12 and 10 wrong ones, 11 photos, against 98 with 5); the true card among the first four of
+a box that was wrong (8 of 35 wrong boxes, 3 of them a kind not found otherwise: the model does not have these
+pictures, dark ones mostly, among its first guesses); the card most windows of a box agree on instead of the
 clearest window's (117 vs 119 kinds sure on 14 photos, the same boxes right); four windows per box instead of ten, which
 loses little (95 against 98 kinds sure on 11 photos) and is what the processor's plan takes: a photo took 262 seconds
 there (10 of 13 cards sure, none wrong), where ten windows did not fit in the 240 seconds (5 of 13). Also tried: reading the name printed above each box (a strip a

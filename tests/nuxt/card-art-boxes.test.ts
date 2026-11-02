@@ -144,7 +144,7 @@ describe('cardsFromBoxes', () => {
   const box = (cardId: number, similarity: number, margin: number, support = 5) => ({ cardId, similarity, margin, support })
 
   it('calls a card sure on a clear box and counts a box for each copy', () => {
-    const cards = cardsFromBoxes([box(1, 0.5, 0.2), box(1, 0.45, 0.1), box(1, 0.4, 0.06), box(2, 0.6, 0.3)])
+    const cards = cardsFromBoxes([box(1, 0.5, 0.2), box(1, 0.45, 0.1), box(1, 0.4, 0.08), box(2, 0.6, 0.3)])
 
     expect(cards.find(card => card.cardId === 1)).toMatchObject({ sure: true, copies: 3, similarity: 0.5, margin: 0.2 })
     expect(cards.find(card => card.cardId === 2)).toMatchObject({ sure: true, copies: 1 })

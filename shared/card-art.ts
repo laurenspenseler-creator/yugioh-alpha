@@ -833,8 +833,12 @@ export interface BoxMatch {
 /** A box this alike a box that is sure for a card, and not sure for another card itself, is one more copy of that card. */
 export const BOX_COPY_SIMILARITY = 0.85
 
-/** A card on a window that sits on its artwork is sure with this lead and closeness (a sliding window needs windows from many sides instead). */
-export const ALIGNED_SURE_MARGIN = 0.05
+/**
+ * A card on a window that sits on its artwork is sure with this lead and closeness (a sliding window needs windows
+ * from many sides instead). On 16 photos with a known list of cards, the cards sure / the wrong ones sure were 127 / 12
+ * with a lead of 0.05, 126 / 8 at 0.06, 125 / 7 at 0.07, 121 / 3 at 0.08 and 110 / 1 at 0.10, the same in both groups of photos.
+ */
+export const ALIGNED_SURE_MARGIN = 0.08
 export const ALIGNED_SURE_SIMILARITY = 0.4
 /** And it is worth listing, for a name read from the photo to confirm, with this much. */
 export const ALIGNED_MIN_MARGIN = 0.03
