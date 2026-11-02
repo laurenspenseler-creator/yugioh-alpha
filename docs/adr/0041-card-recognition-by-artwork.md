@@ -214,7 +214,9 @@ without it and 358 / 2 / 285 with λ = 12 (360 / 1 / 284 with 6); on 16 photos t
 its own for every family: 260 / 10 sure / wrong sure without, 288 / 6 with (λ = 10), copies counted 363 → 387, 17 seconds a photo
 either way; the 18 photos of twelve of one card stayed at 18 of 18 sure, none wrong. The map in the repository is trained on all 32 photos
 (λ = 10), so those photos are no longer a fair test of it: new photos of new decks are, and the first measurement to repeat
-on them is the plan with `boxAdapter: false` against the usual. A map from more photos should help (the pairs here are the
+on them is the plan with `boxAdapter: false` against the usual. A second and a third round of the fit, with the pairs taken from what the map of the round before
+recognizes (3,600 windows instead of 2,700), gave 365 and 367 cards sure with 2 and 5 wrong ones against 358 and 2 for the first
+(held out by family as above): within what these photos can tell, not adopted. A map from more photos should help (the pairs here are the
 windows the pipeline already knew; it was 5 families only), and it can be refitted with `fitArtAdapter` from a
 list of (window vector, centred catalog vector) pairs.
 
