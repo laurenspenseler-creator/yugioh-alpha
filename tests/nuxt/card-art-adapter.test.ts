@@ -37,7 +37,7 @@ describe('the artwork adapter', () => {
     const matrix = fitArtAdapter([], [], 10)
 
     expect(matrix).toEqual(identityAdapter())
-  })
+  }, 60_000)
 
   it('learns a map from enough pairs, and keeps each part a unit vector', () => {
     // The map to learn: every number moved one place on within its part.

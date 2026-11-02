@@ -223,7 +223,9 @@ The mean of each quarter of a picture's patch tokens, besides the vector of the 
 better on a mini catalog of 1,548 vectors without the adapter (216 of 251 boxes right against 204, 181 against 165 sure), and as a second look at
 the closest 100 vectors of a window (`layout.bin`, 45 MB for all 29,162 vectors) in the worker, held out by family as above, with the adapter: 384 boxes right without
 it, 391 with the quarters at a weight of 0.8 and 395 at 0.3, 288 / 294 cards sure with 6 wrong at the usual thresholds (0.3): not adopted, the
-adapter has taken most of what the quarters add and the quarters themselves are not adapted. A second and a third round of the fit, with the pairs taken from what the map of the round before
+adapter has taken most of what the quarters add and the quarters themselves are not adapted. The same windows embedded again changed in light and sharpness (darker, lighter, blurred by a pixel, less colour, hazy, warm: 6 times
+as many pairs) gave, held out by family and at the closeness of 0.45, 349 cards sure with 7 wrong for the lambda of 10 and 357 with 2
+for a lambda of 40 against 354 with 2: no gain. A second and a third round of the fit, with the pairs taken from what the map of the round before
 recognizes (3,600 windows instead of 2,700), gave 365 and 367 cards sure with 2 and 5 wrong ones against 358 and 2 for the first
 (held out by family as above): within what these photos can tell, not adopted. A map from more photos should help (the pairs here are the
 windows the pipeline already knew; it was 5 families only), and it can be refitted with `fitArtAdapter` from a
