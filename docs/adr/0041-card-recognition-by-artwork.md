@@ -221,7 +221,9 @@ made small and enlarged again: 197 and 198), and with the index rebuilt for it (
 for all 14,581 artworks, 15 minutes) the 44 photos with a known list of cards had 231 kinds sure instead of 210, with
 8 wrong ones instead of 6, and the copies counted rose from 469 to 495 (the 11 photos of different cards 131 of 178 instead
 of 118, none too many instead of 6). The tester's phone photos (rot1, rot2, user, three of a deck) stayed as they were, within a card.
-`scripts/art-index.mjs` builds the blurred copy with `BLURS = [0, 3]` now; `index.bin` was patched in place (the vectors with
+With that index, 15 photos of 13 to 18 different cards, the windows on a box: sizes 1 and 1.15 of the box and five shifts found
+132 kinds sure with 3 wrong ones; with a third size of 0.9 130 and 7, of 1.3 129 and 3 (7 copies too many), size 1.15 alone 101,
+nine shifts instead of five 133 and 5. `scripts/art-index.mjs` builds the blurred copy with `BLURS = [0, 3]` now; `index.bin` was patched in place (the vectors with
 `variants[i] === 1` replaced, the rest untouched).
 
 ### The scan, in a worker, on the graphics card
