@@ -11,6 +11,7 @@ import { AutoModel, env, Tensor } from '@huggingface/transformers'
 import { AI_ASSETS, ART_FULL_PRECISION_WORKER, ART_PROCESSOR_WORKER, aiAssetServed } from '~/utils/ai-assets'
 import { alignedCorrection, ART_COLOR_CANDIDATES, ART_DIMENSION, ART_REFINE_MIN_MARGIN, ART_REFINE_SHIFTS, ART_REFINE_ZOOMS, artVectorFromTokens, artWindows, bestMatch, boxVector, cardsFromBoxes, cardsFromHits, centerArtIndex, correctForPhoto, matchFromSimilarities, meanVector, parseArtIndex, photoCorrection, refinementCandidates, refinementWindows, rerankByColor } from '~~/shared/card-art'
 import type { ArtCard, ArtHit, ArtIndex, ArtIndexMeta, ArtMatch, ArtWindow, BoxMatch, PhotoCorrection } from '~~/shared/card-art'
+import { applyArtAdapter } from '~~/shared/card-art-adapter'
 import { ALIGNED_SHIFTS, alignedWindows, findArtBoxes, PATCH_SIZE, TILE_PATCHES, TILE_SIZE } from '~~/shared/card-art-boxes'
 import type { AlignedWindow, ArtBox, PatchMap } from '~~/shared/card-art-boxes'
 import { artColorDescriptor, meanColor } from '~~/shared/card-color'
@@ -98,10 +99,14 @@ export interface Plan {
   boxes: boolean
   /** How the windows on an artwork are moved (in patches): the processor takes fewer, a second per window. */
   boxShifts: ReadonlyArray<readonly [number, number]>
+  /** Move the vectors of the windows on the artworks by the index's adapter (`ArtIndex.adapter`); false: leave them. */
+  boxAdapter: boolean
+  /** An adapter to use instead of the index's: for tuning and tests. */
+  adapter?: Float32Array
 }
 const PLANS: Record<'webgpu' | 'wasm', Plan> = {
-  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 48, probeWindows: 40, milliseconds: 140_000, supportScale: 1, minSimilarity: 0.25, boxes: true, boxShifts: ALIGNED_SHIFTS },
-  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65, boxes: true, boxShifts: [[0, 0], [0.5, 0]] },
+  webgpu: { sizes: [150, 210, 290, 400, 560, 800, 1100], stride: 0.6, shifts: ART_REFINE_SHIFTS, zooms: ART_REFINE_ZOOMS, minMargin: ART_REFINE_MIN_MARGIN, places: 48, probeWindows: 40, milliseconds: 140_000, supportScale: 1, minSimilarity: 0.25, boxes: true, boxShifts: ALIGNED_SHIFTS, boxAdapter: true },
+  wasm: { sizes: [210, 290, 400, 800], stride: 0.75, shifts: ART_REFINE_SHIFTS, zooms: [1], minMargin: ART_REFINE_MIN_MARGIN, places: 10, probeWindows: 40, milliseconds: 240_000, supportScale: 0.65, boxes: true, boxShifts: [[0, 0], [0.5, 0]], boxAdapter: true },
 }
 
 /** The plan for where the model runs, with whatever a test asked to change. */
@@ -213,13 +218,15 @@ async function loadModel(id: number): Promise<Model> {
 
 async function loadIndex(): Promise<ArtIndex> {
   indexLoading ??= (async () => {
-    const [meta, binary, colors] = await Promise.all([
+    const [meta, binary, colors, adapter] = await Promise.all([
       fetch(`${AI_ASSETS}/art/index.json`).then(response => response.ok ? response.json() as Promise<ArtIndexMeta> : Promise.reject(new Error(`The artwork index answered ${response.status}`))),
       fetch(`${AI_ASSETS}/art/index.bin`).then(response => response.ok ? response.arrayBuffer() : Promise.reject(new Error(`The artwork index answered ${response.status}`))),
       // The colours are a help, not a need: an index without them recognizes by the model alone.
       fetch(`${AI_ASSETS}/art/colors.bin`).then(response => response.ok ? response.arrayBuffer() : undefined).catch(() => undefined),
+      // Likewise the adapter: an index without it matches the windows as they are.
+      fetch(`${AI_ASSETS}/art/adapter.bin`).then(response => response.ok ? response.arrayBuffer() : undefined).catch(() => undefined),
     ])
-    return centerArtIndex(parseArtIndex(meta, binary, colors))
+    return centerArtIndex(parseArtIndex(meta, binary, colors, adapter))
   })().catch((error) => {
     indexLoading = null
     throw error
@@ -582,7 +589,9 @@ async function scanBoxes(model: Model, index: ArtIndex, photo: OffscreenCanvas, 
   const tiles = Math.ceil(map.rows / TILE_PATCHES) * Math.ceil(map.cols / TILE_PATCHES)
   const windows = alignedWindows(boxes, photo.width, photo.height, plan.boxShifts)
   const embedded = await embedWindows(model, photo, windows, deadline, progress('refining'))
-  const vectors = alignedCorrection(embedded.vectors, index.photoMean)
+  const adapter = plan.boxAdapter ? (plan.adapter ?? index.adapter) : undefined
+  const corrected = alignedCorrection(embedded.vectors, index.photoMean)
+  const vectors = adapter ? corrected.map(vector => applyArtAdapter(adapter, vector)) : corrected
   const hits = await matchWindows(index, embedded.windows, vectors, { list: embedded.colors, mean: meanColor(embedded.colors) }, progress('matching'))
 
   // The box's card is its clearest window's, and the windows that agree with it are its support.

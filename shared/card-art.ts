@@ -13,6 +13,8 @@ export const ART_DIMENSION = 384
 /** A vector has two parts, each a unit vector: the model's class token and the mean of its patch tokens. */
 export const ART_PARTS = 2
 export const ART_VECTOR = ART_DIMENSION * ART_PARTS
+/** The size of the map of `adapter.bin` (`shared/card-art-adapter.ts`): `ART_VECTOR × ART_VECTOR` numbers, row by row (row `a` makes number `a` of the new vector). */
+export const ART_ADAPTER_SIZE = ART_VECTOR * ART_VECTOR
 
 /**
  * The index as it is stored (`public/ai/art/index.json` + `index.bin`): `count` vectors,
@@ -61,10 +63,15 @@ export interface ArtIndex {
   colors?: ArtColors
   hubs?: ReadonlySet<number>
   artPrototype?: Float32Array
+  /** What a photo does to the vector of an artwork, learned (`shared/card-art-adapter.ts`): the vectors of the windows on the artworks are moved by it. */
+  adapter?: Float32Array
 }
 
-/** `colors` is the contents of `colors.bin`; an index that has none (or that is not told about them) works without colour. */
-export function parseArtIndex(meta: ArtIndexMeta, binary: ArrayBuffer, colors?: ArrayBuffer): ArtIndex {
+/**
+ * `colors` is the contents of `colors.bin`; an index that has none (or that is not told about them) works without colour.
+ * `adapter` is the contents of `adapter.bin`, ignored when it is not of the right size.
+ */
+export function parseArtIndex(meta: ArtIndexMeta, binary: ArrayBuffer, colors?: ArrayBuffer, adapter?: ArrayBuffer): ArtIndex {
   if (meta.version !== 2 || meta.dimension !== ART_DIMENSION || meta.parts !== ART_PARTS) {
     throw new Error('Unknown artwork index format')
   }
@@ -93,6 +100,7 @@ export function parseArtIndex(meta: ArtIndexMeta, binary: ArrayBuffer, colors?: 
     colors: artColors,
     hubs: meta.hubs ? new Set(meta.hubs) : undefined,
     artPrototype: meta.artPrototype?.length === ART_DIMENSION ? Float32Array.from(meta.artPrototype) : undefined,
+    adapter: adapter?.byteLength === ART_ADAPTER_SIZE * 4 ? new Float32Array(adapter) : undefined,
   }
 }
 
@@ -186,7 +194,7 @@ export function centerArtIndex(index: ArtIndex): ArtIndex {
       values.set(quantized.values, start)
     }
   }
-  return { cardIds: index.cardIds, scales, values, photoMean: index.photoMean, colors: index.colors, hubs: index.hubs, artPrototype: index.artPrototype }
+  return { cardIds: index.cardIds, scales, values, photoMean: index.photoMean, colors: index.colors, hubs: index.hubs, artPrototype: index.artPrototype, adapter: index.adapter }
 }
 
 /** Where part `part` of vector `vectorIndex` starts in `ArtIndex.values`. */

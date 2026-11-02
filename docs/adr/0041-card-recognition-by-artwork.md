@@ -195,13 +195,37 @@ problem: 220 boxes for 224 cards on 14 photos, 161 of them with a card of the ph
 it from) is read by the sliding windows as before, so is a photo of an index without `artPrototype`
 (`scripts/art-index.mjs` keeps it like `photoMean` and `hubs`).
 
+### What a photo does to a picture: the adapter (round 8b)
+
+The blurred copy of the catalog (above) is one guess at the difference between a clean catalog picture and a window on a
+photo; the model's vectors show the rest of it. A linear map from the vectors of windows on photos to the vectors of the
+catalog pictures they show learns it, the same way for every card: a ridge regression towards the identity (`W = (T Xᵀ + λI)(X Xᵀ + λI)⁻¹`,
+`fitArtAdapter` in `shared/card-art-adapter.ts`; 768 × 768 numbers, `public/ai/art/adapter.bin`, 2.4 MB, loaded like
+`colors.bin` and left out when it is not there). The windows on the artworks (after `alignedCorrection`) are moved by it and each part is made a
+unit vector again (`applyArtAdapter`); the sliding windows of the fallback are not. The pairs: every window of a box that was
+sure and a card on the photo's known list (32 photos, 2,940 windows), against the vector of that card in the centred index (the
+better of its two copies). No label is needed beyond the list of cards of a photo.
+
+Held out by deck family (the cards of the photos that are tested are not in the pairs of the map that is tested; 5 families: the
+three decks of the tester's 44 photos, 3 real phone photos of the tester's 15-card deck, 3 of the Dark Magician deck): with
+the whole catalog and the plain matching, 477 boxes of 32 photos, the cards sure / wrong sure / kinds found were 294 / 14 / 248
+without it and 358 / 2 / 285 with λ = 12 (360 / 1 / 284 with 6); on 16 photos the table over λ was 183 / 2 (λ 2), 184 / 2 (6),
+184 / 1 (12), 180 / 2 (20), 175 / 3 (50), 169 / 5 (150) against 154 / 4. In the worker itself (colour and hub rule on), with a map of
+its own for every family: 260 / 10 sure / wrong sure without, 288 / 6 with (λ = 10), copies counted 363 → 387, 17 seconds a photo
+either way; the 18 photos of twelve of one card stayed at 18 of 18 sure, none wrong. The map in the repository is trained on all 32 photos
+(λ = 10), so those photos are no longer a fair test of it: new photos of new decks are, and the first measurement to repeat
+on them is the plan with `boxAdapter: false` against the usual. A map from more photos should help (the pairs here are the
+windows the pipeline already knew; it was 5 families only), and it can be refitted with `fitArtAdapter` from a
+list of (window vector, centred catalog vector) pairs.
+
 ### The index
 
 `pnpm ai:art` (`scripts/art-index.mjs`) downloads the artworks the index does not have yet,
 embeds them with the same model and code (`artVectorFromTokens`) the browser uses and writes
 `public/ai/art/index.json` (card id, artwork id and kind of each vector) and `index.bin` (per vector
 two float32 scales and 768 int8 values: 23 MB), next to `colors.bin` (the colour of each vector's
-artwork, 0.5 MB). A rerun after a catalog sync fetches only the new cards; a first run downloads
+artwork, 0.5 MB) and `adapter.bin` (what a photo does to a picture, 2.4 MB, learned from photos, see above; the
+tool does not touch it). A rerun after a catalog sync fetches only the new cards; a first run downloads
 about 2.5 GB and takes an hour or two (with `ART_CROPS_DIR` pointing at a folder of the cropped
 artworks they are read from there, and `--colors-only` gives an index without colours its colours
 and nothing else). The index is committed: its inputs are too big to fetch on every checkout. A new
