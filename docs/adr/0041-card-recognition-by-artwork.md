@@ -171,7 +171,12 @@ the first guess, 0.05, gave 91 and 125 kinds sure with 6 and 14 wrong ones; the 
 110 / 1 at 0.10, the same in both groups of photos), and what falls between 0.03 and 0.08 is a doubtful card, listed
 when a name read from the photo confirms it. Missed are cards the tokens do not set apart from the table
 (foil in a sleeve, overexposed) and boxes that are cut by the edge or by another card; the wrong sure ones
-are look-alikes of a hair's lead, as with sliding windows. Measured and not adopted: a larger weight for the colour on the windows on the artworks (0.2 and 0.3 for 0.1: 97 and
+are look-alikes of a hair's lead, as with sliding windows. Measured and not adopted: finding the boxes the filters drop (on a phone photo of 16 cards three had none: a dark picture
+split in two by a band, a bright one split by its glow, a third 9 x 6 patches, just too wide for the ratio of 1.5): putting pieces
+with at most one patch between them together and letting the ratio go to 1.7 gave the boxes (13 → 16 on that
+photo) and, on 15 photos, 80 to 82 kinds sure with 2 to 3 wrong for all four combinations of the two changes (without both: 81 and 2),
+and over all 44 photos 5 kinds fewer sure and 2 more wrong ones: the cards that were missing are the ones the model has
+trouble with anyway; a larger weight for the colour on the windows on the artworks (0.2 and 0.3 for 0.1: 97 and
 90 kinds sure with 12 and 10 wrong ones, 11 photos, against 98 with 5); the true card among the first four of
 a box that was wrong (8 of 35 wrong boxes, 3 of them a kind not found otherwise: the model does not have these
 pictures, dark ones mostly, among its first guesses); the card most windows of a box agree on instead of the
