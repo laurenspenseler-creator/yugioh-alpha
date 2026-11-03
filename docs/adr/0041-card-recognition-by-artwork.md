@@ -254,6 +254,11 @@ tried and separated worse (a turned photo showed 11 sure boxes upright and 13 tu
 (`Plan.turnBoxes`, 64 windows instead of the up to 120 of the old probe): a photo turned a quarter was turned back and read 11 of 12
 sure in 262 seconds, the same photo upright 12 of 12 in 196. A photo with fewer than three boxes upright still takes the old probe, and the sliding scan.
 
+Photos without a card (six wallpaper photos, pure noise, twelve plain coloured rectangles on a white table, a page of text) gave no
+card sure on seven of the nine; a landscape and the noise gave one each (a card that won 50 and 151 of the roughly 450 sliding windows),
+which is what the table of cards to check is for; not looked at further (a stricter rule for the sliding scan would have to be weighed
+against the photos of a single card, which it also reads).
+
 ### The index
 
 `pnpm ai:art` (`scripts/art-index.mjs`) downloads the artworks the index does not have yet,
