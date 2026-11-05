@@ -254,6 +254,13 @@ tried and separated worse (a turned photo showed 11 sure boxes upright and 13 tu
 (`Plan.turnBoxes`, 64 windows instead of the up to 120 of the old probe): a photo turned a quarter was turned back and read 11 of 12
 sure in 262 seconds, the same photo upright 12 of 12 in 196. A photo with fewer than three boxes upright still takes the old probe, and the sliding scan.
 
+Smaller photos (five decks' photos, 2,000 pixels on the long edge, shrunk to 1,200, 900, 700 and 500 and saved at JPEG quality 85;
+drawn up to the 1,600 pixels of the working picture), kinds found / sure on the five photos (11, 11, 12, 12 and 12 kinds): 8 / 8, 8 / 8,
+11 / 11, 12 / 12 and 11 / 10 at 2,000 pixels; the same within one card at 1,200 and 900 pixels (one fewer sure on the third photo);
+9 / 8, 8 / 8, 11 / 10, 12 / 12 and 11 / 10 at 700; 9 / 9, 8 / 8, 11 / 10, 11 / 10 and 9 / 9 at 500. A photo down to 700 pixels reads
+as well as a large one; the warning about small photos in the hint is about much smaller ones than a phone sends. (The runs took
+50 to 110 seconds instead of 18 because the browser pane was hidden: not a measure of the speed.)
+
 Photos without a card (six wallpaper photos, pure noise, twelve plain coloured rectangles on a white table, a page of text) gave no
 card sure on seven of the nine; a landscape and the noise gave one each (a card that won 50 and 151 of the roughly 450 sliding windows),
 which is what the table of cards to check is for; not looked at further (a stricter rule for the sliding scan would have to be weighed
