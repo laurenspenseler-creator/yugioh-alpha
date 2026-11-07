@@ -277,11 +277,7 @@ const actionHint = computed(() => {
         <div class="mt-2 space-y-0.5 text-sm text-muted">
           <template v-if="tournament.queueSetup">
             <div>
-              {{ t('tournaments.queue.setup.summary', {
-                mode: t(`tournaments.queue.mode.${tournament.queueSetup.mode}.label`),
-                tables: tournament.queueSetup.tables,
-                minutes: tournament.queueSetup.duelMinutes,
-              }) }}
+              {{ queueSummary(t, tournament.queueSetup) }}
             </div>
             <div v-if="!tournament.queue">
               {{ t('tournaments.detail.notStarted') }}

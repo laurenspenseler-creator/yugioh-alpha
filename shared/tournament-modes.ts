@@ -10,6 +10,24 @@ export type QueueMode = 'round_robin' | 'champions_league' | 'swiss'
 
 export const QUEUE_MODES = ['round_robin', 'champions_league', 'swiss'] as const
 
+/**
+ * How the duels are played out. `queue`: tables and a queue, a table that becomes free gets the next duel at once.
+ * `rounds`: Spieltage; everybody plays the day's duels side by side and the next day starts when the last duel of
+ * the day is done. The mode (round robin, Champions League, Swiss) is independent of it.
+ */
+export type QueueFlow = 'queue' | 'rounds'
+
+export const QUEUE_FLOWS = ['queue', 'rounds'] as const
+export const DEFAULT_FLOW: QueueFlow = 'queue'
+
+/** How many games a duel is: one game, or the first to win two out of three. */
+export type BestOf = 1 | 3
+
+export const BEST_OF_CHOICES = [1, 3] as const
+export const DEFAULT_BEST_OF: BestOf = 1
+/** Games a player has to win to take a best-of-3 duel. */
+export const GAMES_TO_WIN_BEST_OF_3 = 2
+
 /** Minutes of a duel when the organizer says nothing else. */
 export const DEFAULT_DUEL_MINUTES = 30
 export const MIN_DUEL_MINUTES = 1
@@ -43,6 +61,8 @@ export interface SetupInput {
   duelMinutes: number
   /** Swiss only: the first two rounds are paired before the start. */
   prelaunch?: boolean
+  /** `rounds`: Spieltage, the tables do not limit anything. Missing = `queue`. */
+  flow?: QueueFlow
 }
 
 /** n · (n − 1) / 2. */
@@ -66,6 +86,17 @@ export function usableTables(tables: number, players: number): number {
 }
 
 /**
+ * The Spieltage of a tournament played in rounds: n − 1 for a round robin (n when the field is odd, one player sits
+ * out each day), R for the others.
+ */
+export function matchdayCount(input: Pick<SetupInput, 'mode' | 'players' | 'rounds'>): number {
+  if (input.mode === 'round_robin') {
+    return input.players < 2 ? 0 : input.players % 2 === 0 ? input.players - 1 : input.players
+  }
+  return input.rounds ?? 0
+}
+
+/**
  * The rules a setup must keep. R has to be even for Champions League and Swiss, so a pause or a player who
  * leaves can always be made up (ADR 0042); Champions League cannot give a player more different opponents
  * than there are others, and Swiss cannot either without a rematch.
@@ -75,7 +106,8 @@ export function validateSetup(input: SetupInput): SetupIssue[] {
   if (!Number.isInteger(input.players) || input.players < MIN_QUEUE_PLAYERS) {
     issues.push({ code: 'too_few_players', params: { min: MIN_QUEUE_PLAYERS } })
   }
-  if (!Number.isInteger(input.tables) || input.tables < 1 || input.tables > MAX_TABLES) {
+  // With Spieltage nobody waits for a table, so the number of tables is not asked.
+  if (input.flow !== 'rounds' && (!Number.isInteger(input.tables) || input.tables < 1 || input.tables > MAX_TABLES)) {
     issues.push({ code: 'tables_invalid', params: { max: MAX_TABLES } })
   }
   if (!Number.isInteger(input.duelMinutes) || input.duelMinutes < MIN_DUEL_MINUTES || input.duelMinutes > MAX_DUEL_MINUTES) {
@@ -106,6 +138,10 @@ export function validateSetup(input: SetupInput): SetupIssue[] {
  * the longest one decides the end; a classic Swiss waits for the last duel of every round.
  */
 export function estimateMinutes(input: SetupInput): number {
+  // Spieltage: every day takes one duel, whatever the number of tables.
+  if (input.flow === 'rounds') {
+    return matchdayCount(input) * input.duelMinutes
+  }
   const usable = usableTables(input.tables, input.players)
   const rounds = duelsPerPlayer(input)
   if (input.mode === 'swiss' && !input.prelaunch) {
@@ -121,7 +157,9 @@ export function estimateMinutes(input: SetupInput): number {
  */
 export function roundsForDuration(input: Omit<SetupInput, 'rounds'>, targetMinutes: number): number {
   const usable = usableTables(input.tables, input.players)
-  const raw = (2 * (targetMinutes - input.duelMinutes) * usable) / (input.players * input.duelMinutes)
+  const raw = input.flow === 'rounds'
+    ? targetMinutes / input.duelMinutes
+    : (2 * (targetMinutes - input.duelMinutes) * usable) / (input.players * input.duelMinutes)
   const even = Math.floor(raw / 2) * 2
   return Math.max(2, Math.min(even, maxEvenRounds(input.players)))
 }

@@ -50,3 +50,4 @@ mark the old as superseded.
 | [0040](0040-on-device-photo-and-speech-input.md) | Photo and speech input run on the device, without an account or key | Accepted |
 | [0041](0041-card-recognition-by-artwork.md) | Cards on a photo are recognized by their artwork | Accepted |
 | [0042](0042-tournament-duel-queue.md) | A tournament with tables and a queue (round robin, Champions League, Swiss) | Accepted |
+| [0043](0043-tournament-spieltage-and-best-of.md) | Spieltage, best of 3 and the players named when a tournament is created | Accepted |

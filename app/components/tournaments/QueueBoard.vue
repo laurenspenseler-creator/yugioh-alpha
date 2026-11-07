@@ -42,15 +42,19 @@ async function call(action: () => Promise<TournamentDetail>, fallbackKey: string
   }
 }
 
-function report(duel: QueueDuelDto, winnerId: string) {
+function report(duel: QueueDuelDto, result: { winnerId: string, gamesA?: number, gamesB?: number }) {
   return call(
     () => $fetch<TournamentDetail>(`/api/tournaments/${props.tournament.id}/duels/${duel.id}/result`, {
       method: 'POST',
-      body: { winnerParticipantId: winnerId },
+      body: { winnerParticipantId: result.winnerId, gamesA: result.gamesA, gamesB: result.gamesB },
     }),
     'tournaments.queue.board.resultFailed',
   )
 }
+
+// Spieltage (ADR 0043): no tables and no queue, the days are the plan.
+const byRound = computed(() => queue.value.flow === 'rounds')
+const bestOf = computed(() => queue.value.bestOf)
 
 // --- Tables and queue --------------------------------------------------------------
 
@@ -156,6 +160,15 @@ function roundLabel(number: number): string {
   return t(isSwiss.value ? 'tournaments.queue.board.round' : 'tournaments.queue.board.matchday', { number })
 }
 
+/** The day being played: with Spieltage only this one is open, the later ones wait behind it. */
+const currentRoundNumber = computed(() => rounds.value.find(round => !round.done)?.number ?? null)
+const scheduleHelp = computed(() => {
+  if (byRound.value) {
+    return t('tournaments.queue.board.scheduleHelpRounds')
+  }
+  return isSwiss.value ? t('tournaments.queue.board.scheduleHelpSwiss') : t('tournaments.queue.board.scheduleHelp')
+})
+
 const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.length >= 2)
 </script>
 
@@ -231,7 +244,7 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
     </UAlert>
 
     <section
-      v-if="running"
+      v-if="running && !byRound"
       class="panel space-y-3 p-4"
     >
       <h2 class="text-base font-semibold text-highlighted">
@@ -250,8 +263,9 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
             :duel="slot.duel"
             :can-edit="canEdit"
             :busy="busy"
+            :best-of="bestOf"
             compact
-            @winner="winnerId => report(slot.duel!, winnerId)"
+            @result="result => report(slot.duel!, result)"
           />
           <div
             v-else
@@ -290,7 +304,7 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
     <section class="panel space-y-3 p-4">
       <div class="flex flex-wrap items-center justify-between gap-2">
         <h2 class="text-base font-semibold text-highlighted">
-          {{ t('tournaments.queue.board.scheduleTitle') }}
+          {{ t(byRound ? 'tournaments.queue.board.matchdaysTitle' : 'tournaments.queue.board.scheduleTitle') }}
         </h2>
         <UButton
           v-if="queue.canRecompute"
@@ -304,7 +318,7 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
         />
       </div>
       <p class="text-xs text-muted">
-        {{ isSwiss ? t('tournaments.queue.board.scheduleHelpSwiss') : t('tournaments.queue.board.scheduleHelp') }}
+        {{ scheduleHelp }}
       </p>
 
       <div
@@ -359,11 +373,12 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
       </div>
 
       <div class="space-y-2">
+        <!-- With Spieltage the key changes when a day becomes the current one, so it opens by itself. -->
         <template
           v-for="round in rounds"
-          :key="round.number"
+          :key="byRound ? `${round.number}-${round.number === currentRoundNumber}` : round.number"
         >
-          <UCollapsible :default-open="!round.done">
+          <UCollapsible :default-open="byRound ? round.number === currentRoundNumber : !round.done">
             <UButton
               color="neutral"
               variant="ghost"
@@ -390,7 +405,9 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
                   :duel="duel"
                   :can-edit="canEdit"
                   :busy="busy"
-                  @winner="winnerId => report(duel, winnerId)"
+                  :best-of="bestOf"
+                  :by-round="byRound"
+                  @result="result => report(duel, result)"
                 />
               </div>
             </template>
@@ -410,10 +427,18 @@ const showDecider = computed(() => canEdit.value && queue.value.firstPlaceTie.le
       />
       <template #content>
         <ul class="mt-2 list-disc space-y-1 pl-6 text-sm text-toned">
-          <li>{{ t('tournaments.queue.help.point1') }}</li>
-          <li>{{ t('tournaments.queue.help.point2') }}</li>
-          <li>{{ t('tournaments.queue.help.point3') }}</li>
-          <li>{{ t('tournaments.queue.help.point4') }}</li>
+          <template v-if="byRound">
+            <li>{{ t('tournaments.queue.help.rounds1') }}</li>
+            <li>{{ t('tournaments.queue.help.point2') }}</li>
+            <li>{{ t('tournaments.queue.help.point3') }}</li>
+            <li>{{ t('tournaments.queue.help.point4') }}</li>
+          </template>
+          <template v-else>
+            <li>{{ t('tournaments.queue.help.point1') }}</li>
+            <li>{{ t('tournaments.queue.help.point2') }}</li>
+            <li>{{ t('tournaments.queue.help.point3') }}</li>
+            <li>{{ t('tournaments.queue.help.point4') }}</li>
+          </template>
           <li>{{ t('tournaments.queue.board.tableHelp') }}</li>
         </ul>
       </template>

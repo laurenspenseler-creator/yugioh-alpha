@@ -56,13 +56,17 @@ import {
   TOURNAMENT_STATUSES,
 } from '../../shared/tournaments'
 import {
+  BEST_OF_CHOICES,
+  DEFAULT_BEST_OF,
   DEFAULT_DUEL_MINUTES,
+  DEFAULT_FLOW,
   MAX_DUEL_MINUTES,
   MAX_TABLES,
   MIN_DUEL_MINUTES,
+  QUEUE_FLOWS,
   QUEUE_MODES,
 } from '../../shared/tournament-modes'
-import type { QueueMode } from '../../shared/tournament-modes'
+import type { BestOf, QueueFlow, QueueMode } from '../../shared/tournament-modes'
 import type { DropOption } from '../../shared/tournament-duels'
 import type { LeaveKind } from '../../shared/tournament-dropout'
 import {
@@ -206,7 +210,9 @@ export interface TournamentInput {
   includeSelf: boolean
   engine: TournamentEngine
   /** The settings of a duel queue; null for a classic tournament. `plannedRounds` is its R. */
-  queue: { mode: QueueMode, prelaunch: boolean, tables: number, duelMinutes: number } | null
+  queue: { mode: QueueMode, prelaunch: boolean, flow: QueueFlow, bestOf: BestOf, tables: number, duelMinutes: number } | null
+  /** Players named when the tournament is created (guests by name, accounts by e-mail), added right after it. */
+  participants: ParticipantInput[]
 }
 
 function normalizeDescription(raw: unknown): string | null {
@@ -298,6 +304,8 @@ export function validateTournamentInput(body: unknown): TournamentInput {
     queue = {
       mode,
       prelaunch: mode === 'swiss' && body.prelaunch === true,
+      flow: body.flow === undefined ? DEFAULT_FLOW : normalizeFlow(body.flow),
+      bestOf: body.bestOf === undefined ? DEFAULT_BEST_OF : normalizeBestOf(body.bestOf),
       tables: body.tables === undefined ? DEFAULT_TABLES : normalizeTables(body.tables),
       duelMinutes: body.duelMinutes === undefined ? DEFAULT_DUEL_MINUTES : normalizeDuelMinutes(body.duelMinutes),
     }
@@ -316,7 +324,37 @@ export function validateTournamentInput(body: unknown): TournamentInput {
     includeSelf: body.includeSelf !== false,
     engine,
     queue,
+    participants: normalizeParticipantLines(body.participants),
   }
+}
+
+/** The players typed in the creation form: one entry per line, an e-mail address for an account, else a guest name. */
+function normalizeParticipantLines(raw: unknown): ParticipantInput[] {
+  if (raw === undefined || raw === null) {
+    return []
+  }
+  if (!Array.isArray(raw) || raw.length > MAX_PARTICIPANTS || raw.some(line => typeof line !== 'string')) {
+    badRequest('invalid_participants', `participants must be a list of at most ${MAX_PARTICIPANTS} names`, { max: MAX_PARTICIPANTS })
+  }
+  return (raw as string[])
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => validateParticipantInput(line.includes('@') ? { email: line } : { name: line }))
+}
+
+function normalizeFlow(raw: unknown): QueueFlow {
+  if (typeof raw !== 'string' || !(QUEUE_FLOWS as readonly string[]).includes(raw)) {
+    badRequest('invalid_flow', 'Unknown way of playing')
+  }
+  return raw as QueueFlow
+}
+
+function normalizeBestOf(raw: unknown): BestOf {
+  const value = typeof raw === 'string' ? Number(raw) : raw
+  if (typeof value !== 'number' || !(BEST_OF_CHOICES as readonly number[]).includes(value)) {
+    badRequest('invalid_best_of', 'A duel is one game or best of three')
+  }
+  return value as BestOf
 }
 
 function normalizeEngine(raw: unknown): TournamentEngine {
@@ -363,6 +401,8 @@ export interface TournamentUpdateInput {
   /** Duel queue only (until the start). */
   queueMode?: QueueMode
   prelaunch?: boolean
+  flow?: QueueFlow
+  bestOf?: BestOf
   tables?: number
   duelMinutes?: number
 }
@@ -407,6 +447,12 @@ export function validateTournamentUpdateInput(body: unknown): TournamentUpdateIn
   }
   if (body.prelaunch !== undefined) {
     patch.prelaunch = body.prelaunch === true
+  }
+  if (body.flow !== undefined) {
+    patch.flow = normalizeFlow(body.flow)
+  }
+  if (body.bestOf !== undefined) {
+    patch.bestOf = normalizeBestOf(body.bestOf)
   }
   if (body.tables !== undefined) {
     patch.tables = normalizeTables(body.tables)
@@ -1124,6 +1170,8 @@ export function createTournament(db: Db, userId: string, input: TournamentInput)
       engine: input.engine,
       queueMode: input.queue?.mode ?? null,
       prelaunch: input.queue?.prelaunch ?? false,
+      flow: input.queue?.flow ?? DEFAULT_FLOW,
+      bestOf: input.queue?.bestOf ?? DEFAULT_BEST_OF,
       tables: input.queue?.tables ?? null,
       duelMinutes: input.queue?.duelMinutes ?? null,
       createdAt: now,
@@ -1142,6 +1190,12 @@ export function createTournament(db: Db, userId: string, input: TournamentInput)
         updatedAt: now,
       }).run()
     }
+
+    // The players named in the form: all or none, so a name that is taken or an address without an account
+    // leaves nothing half-made behind (the error of the first one stops the whole creation).
+    for (const player of input.participants) {
+      addParticipant(txDb, userId, id, player)
+    }
   })
 
   return getTournamentDetail(db, userId, id)
@@ -1159,6 +1213,8 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
     || patch.plannedRounds !== undefined
     || patch.queueMode !== undefined
     || patch.prelaunch !== undefined
+    || patch.flow !== undefined
+    || patch.bestOf !== undefined
     || patch.tables !== undefined
     || patch.duelMinutes !== undefined
 
@@ -1171,6 +1227,7 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
   }
 
   const touchesQueue = patch.queueMode !== undefined || patch.prelaunch !== undefined
+    || patch.flow !== undefined || patch.bestOf !== undefined
     || patch.tables !== undefined || patch.duelMinutes !== undefined
   if (touchesQueue && row.engine !== 'queue') {
     conflict('not_queue_tournament', 'Only a duel-queue tournament has these settings')
@@ -1224,6 +1281,8 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
       : patch.plannedRounds !== undefined ? patch.plannedRounds : row.plannedRounds,
     queueMode,
     prelaunch: queueMode === 'swiss' ? patch.prelaunch ?? row.prelaunch : false,
+    flow: patch.flow ?? row.flow,
+    bestOf: patch.bestOf ?? row.bestOf,
     tables: patch.tables ?? row.tables,
     duelMinutes: patch.duelMinutes ?? row.duelMinutes,
     updatedAt: new Date(),
@@ -1973,8 +2032,9 @@ function requireQueueOrganizer(db: Db, userId: string, id: string): typeof tourn
 export function reportDuelResult(db: Db, userId: string, id: string, duelId: string, body: unknown): TournamentDetail {
   const row = requireQueueOrganizer(db, userId, id)
   const winner = isRecord(body) ? body.winnerParticipantId : undefined
+  const games = isRecord(body) ? { gamesA: body.gamesA, gamesB: body.gamesB } : {}
   db.transaction((tx) => {
-    reportQueueDuel(tx as unknown as Db, row, duelId, winner, new Date())
+    reportQueueDuel(tx as unknown as Db, row, duelId, winner, games, new Date())
   })
   return getTournamentDetail(db, userId, id)
 }

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   duelsPerPlayer,
   estimateMinutes,
+  matchdayCount,
   maxEvenRounds,
   recommendedMode,
   roundRobinDuelCount,
@@ -143,5 +144,29 @@ describe('splitMinutes', () => {
   it('splits a duration into hours and minutes', () => {
     expect(splitMinutes(426)).toEqual({ hours: 7, minutes: 6 })
     expect(splitMinutes(-5)).toEqual({ hours: 0, minutes: 0 })
+  })
+})
+
+describe('Spieltage (the flow "rounds")', () => {
+  it('counts the days: n - 1 for a round robin (n when the field is odd), R for the others', () => {
+    expect(matchdayCount({ mode: 'round_robin', players: 8, rounds: null })).toBe(7)
+    expect(matchdayCount({ mode: 'round_robin', players: 7, rounds: null })).toBe(7)
+    expect(matchdayCount({ mode: 'champions_league', players: 11, rounds: 6 })).toBe(6)
+    expect(matchdayCount({ mode: 'swiss', players: 11, rounds: 4 })).toBe(4)
+  })
+
+  it('takes one duel per day, whatever the number of tables', () => {
+    expect(estimateMinutes(setup({ flow: 'rounds', players: 11, rounds: 6, tables: 1, duelMinutes: 20 }))).toBe(120)
+    expect(estimateMinutes(setup({ flow: 'rounds', mode: 'round_robin', rounds: null, players: 8, tables: 2, duelMinutes: 30 }))).toBe(210)
+  })
+
+  it('does not ask for tables', () => {
+    expect(validateSetup(setup({ flow: 'rounds', tables: 0 })).map(issue => issue.code)).toEqual([])
+    expect(validateSetup(setup({ flow: 'queue', tables: 0 })).map(issue => issue.code)).toEqual(['tables_invalid'])
+  })
+
+  it('turns a wished duration into days', () => {
+    // 3 hours of 30-minute days: 6 days, an even number.
+    expect(roundsForDuration({ mode: 'champions_league', players: 22, tables: 5, duelMinutes: 30, flow: 'rounds' }, 180)).toBe(6)
   })
 })

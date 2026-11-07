@@ -14,6 +14,34 @@ const { t } = useI18n()
 
 const queue = computed(() => props.tournament.queue!)
 const live = computed(() => props.tournament.status === 'running')
+// Spieltage have no tables and no queue: the last column only says who is playing right now.
+const byRound = computed(() => queue.value.flow === 'rounds')
+
+/** The decks each player plays (ADR 0039), by name; shown next to the player so everybody knows what they face. */
+const decksOf = computed(() => new Map(props.tournament.participants.map(participant => [participant.id, participant.decks.map(deck => deck.name).join(', ')])))
+
+// The table can be folded away (it takes a lot of room on a small screen); the choice is kept in this browser.
+const HIDDEN_KEY = 'ygo-queue-table-hidden'
+const hidden = ref(false)
+
+onMounted(() => {
+  try {
+    hidden.value = localStorage.getItem(HIDDEN_KEY) === '1'
+  }
+  catch {
+    // Storage can be blocked: the table is simply shown.
+  }
+})
+
+function toggleHidden() {
+  hidden.value = !hidden.value
+  try {
+    localStorage.setItem(HIDDEN_KEY, hidden.value ? '1' : '0')
+  }
+  catch {
+    // Not remembered, still hidden for now.
+  }
+}
 
 const remaining = computed(() => {
   const minutes = queue.value.remainingMinutes
@@ -34,15 +62,30 @@ const remaining = computed(() => {
       <h2 class="text-base font-semibold text-highlighted">
         {{ t('tournaments.queue.board.tableTitle') }}
       </h2>
-      <p class="text-xs text-muted">
-        {{ t('tournaments.queue.board.progress', { done: queue.duelsDone, total: queue.duelsTotal }) }}
-        <template v-if="remaining">
-          · {{ remaining }}
-        </template>
-      </p>
+      <div class="flex items-center gap-2">
+        <p class="text-xs text-muted">
+          {{ t('tournaments.queue.board.progress', { done: queue.duelsDone, total: queue.duelsTotal }) }}
+          <template v-if="remaining">
+            · {{ remaining }}
+          </template>
+        </p>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          :icon="hidden ? 'i-lucide-eye' : 'i-lucide-eye-off'"
+          :label="hidden ? t('tournaments.queue.board.showTable') : t('tournaments.queue.board.hideTable')"
+          :aria-pressed="hidden"
+          data-testid="queue-table-toggle"
+          @click="toggleHidden"
+        />
+      </div>
     </div>
 
-    <div class="mt-2 max-h-[26vh] overflow-y-auto sm:max-h-[42vh]">
+    <div
+      v-show="!hidden"
+      class="mt-2 max-h-[26vh] overflow-y-auto sm:max-h-[42vh]"
+    >
       <table class="w-full text-sm">
         <thead class="sticky top-0 bg-default text-xs text-muted">
           <tr class="text-left">
@@ -78,6 +121,9 @@ const remaining = computed(() => {
               :title="t('tournaments.queue.board.tableHelp')"
             >
               {{ t('tournaments.queue.board.columns.buchholz') }}
+            </th>
+            <th class="hidden px-2 py-1 font-medium md:table-cell">
+              {{ t('tournaments.queue.board.columns.decks') }}
             </th>
             <th
               v-if="live"
@@ -132,6 +178,13 @@ const remaining = computed(() => {
               {{ row.buchholz }}
             </td>
             <td
+              class="hidden max-w-56 truncate px-2 py-1.5 text-xs font-normal text-toned md:table-cell"
+              :title="decksOf.get(row.participantId) || undefined"
+              data-testid="queue-table-decks"
+            >
+              {{ decksOf.get(row.participantId) || '–' }}
+            </td>
+            <td
               v-if="live"
               class="py-1.5 pl-2 text-right"
             >
@@ -140,10 +193,10 @@ const remaining = computed(() => {
                 size="sm"
                 color="warning"
                 variant="subtle"
-                :label="t('tournaments.queue.board.atTable', { number: row.tableNumber })"
+                :label="byRound ? t('tournaments.queue.board.playing') : t('tournaments.queue.board.atTable', { number: row.tableNumber })"
               />
               <UBadge
-                v-else-if="row.queuePosition !== null"
+                v-else-if="!byRound && row.queuePosition !== null"
                 size="sm"
                 color="neutral"
                 variant="subtle"
@@ -156,7 +209,10 @@ const remaining = computed(() => {
     </div>
 
     <!-- On a phone the card stays pinned, so the explanation moves to the help at the bottom of the page. -->
-    <p class="mt-2 hidden text-xs text-muted sm:block">
+    <p
+      v-show="!hidden"
+      class="mt-2 hidden text-xs text-muted sm:block"
+    >
       {{ t('tournaments.queue.board.tableHelp') }}
     </p>
   </section>

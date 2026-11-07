@@ -2,7 +2,8 @@
 // played starts, so no table stands empty while everybody waits for the last duel of a round. A duel can be played
 // when it is fixed and both of its players are in no running duel. The duel goes first whose players have the most
 // duels still open (so everybody finishes at about the same time and nobody is through after three hours); at a
-// tie the one who has waited longest. The days ("Spieltag") are a display and block nothing.
+// tie the one who has waited longest. The days ("Spieltag") are a display and block nothing, unless the tournament is
+// played in Spieltage (`byRound`).
 
 import { isLive, openDuelsOf } from './tournament-duels'
 import type { Duel, DuelsState } from './tournament-duels'
@@ -33,8 +34,11 @@ function waitingSince(state: DuelsState, playerId: string, startedAt: number): n
  * The queue. `tables` is how many tables there are; `startedAt` the start of the tournament (the time everybody has
  * been waiting since at first). Only duels between two active players are in it: a duel of a player who left is struck
  * or waits for the organizer's decision.
+ *
+ * `byRound` turns the days into a gate (a tournament played in Spieltage): a duel only starts when every duel of an
+ * earlier day is over, so a whole day is played side by side and the next one waits for its last duel.
  */
-export function planQueue(state: DuelsState, tables: number, startedAt: number): QueueOrder {
+export function planQueue(state: DuelsState, tables: number, startedAt: number, byRound = false): QueueOrder {
   const running = state.duels.filter(duel => duel.status === 'running')
   const busy = new Set(running.flatMap(duel => [duel.a, duel.b]))
   const usedTables = new Set(running.map(duel => duel.table).filter((table): table is number => table !== null))
@@ -53,7 +57,10 @@ export function planQueue(state: DuelsState, tables: number, startedAt: number):
 
   // The duels that start now: the best first, but only a duel that still lets the free tables all be filled (no table
   // stands empty because the best duel blocked two others), which is asked of a matching among the free players.
-  const playable = waiting.filter(duel => !busy.has(duel.a) && !busy.has(duel.b))
+  const currentRound = Math.min(...state.duels
+    .filter(duel => (duel.status === 'planned' || duel.status === 'running') && isLive(state, duel))
+    .map(duel => duel.round))
+  const playable = waiting.filter(duel => !busy.has(duel.a) && !busy.has(duel.b) && (!byRound || duel.round === currentRound))
   // No more duels than can be played side by side: free players alone do not make a duel (they may have none left to play).
   const startable = Math.min(usableFreeTables, largestMatching(playable))
   const chosen: Duel[] = []

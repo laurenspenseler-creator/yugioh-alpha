@@ -54,7 +54,8 @@
         "compare": "Duration of the modes with {count} players",
         "save": "Save settings",
         "saveFailed": "The settings could not be saved.",
-        "summary": "{mode} · {tables} tables · {minutes} min per duel"
+        "summary": "{mode} · {tables} tables · {minutes} min per duel",
+        "summaryRounds": "{mode} · Matchdays · {minutes} min per duel"
       },
       "board": {
         "tableTitle": "Standings",
@@ -66,7 +67,8 @@
           "played": "Duels",
           "open": "Open",
           "buchholz": "Buchholz",
-          "now": "Now"
+          "now": "Now",
+          "decks": "Decks"
         },
         "atTable": "Table {number}",
         "inQueue": "Waiting · No. {position}",
@@ -104,7 +106,13 @@
           "rematch": "Rematch",
           "decider": "Deciding duel"
         },
-        "resultFailed": "The result could not be saved."
+        "resultFailed": "The result could not be saved.",
+        "setWinnerScore": "{name} wins {own}:{other}",
+        "showTable": "Show table",
+        "hideTable": "Hide table",
+        "playing": "Playing",
+        "matchdaysTitle": "Matchdays",
+        "scheduleHelpRounds": "All duels of a matchday are played side by side. The next matchday starts as soon as the last duel of the current one is done."
       },
       "rematch": {
         "title": "Rematch needed",
@@ -172,7 +180,35 @@
         "point1": "A duel is a single game. There is no draw and no time limit – only the winner is entered.",
         "point2": "All players end with the same number of duels. The tournament runs until everybody has played theirs.",
         "point3": "As soon as a table is free, the next possible duel starts. Whoever sits at a table shows under “Now”; whoever waits sees their number in the queue.",
-        "point4": "If somebody drops out, the app rearranges the duels so everybody has the same number again."
+        "point4": "If somebody drops out, the app rearranges the duels so everybody has the same number again.",
+        "rounds1": "It is played matchday by matchday: all duels of a day run side by side, the next day starts when the last one is done."
+      },
+      "flow": {
+        "label": "Kind of tournament",
+        "queue": {
+          "label": "With tables and a queue",
+          "description": "The plan is fixed from the start. As soon as a table is free, the next duel starts – nobody waits for a whole round."
+        },
+        "rounds": {
+          "label": "In rounds (matchdays)",
+          "description": "Matchday by matchday: all duels of a day are played side by side, the next day starts when the last duel is done. No tables, no queue."
+        },
+        "classic": {
+          "label": "Classic (rounds with points)",
+          "description": "Round by round with points: whoever is done waits for the others before the next round starts. The older kind of tournament, with scoring and byes."
+        }
+      },
+      "bestOf": {
+        "1": {
+          "label": "A single duel (one game)",
+          "description": "One game decides; only the winner is entered."
+        },
+        "3": {
+          "label": "Best of 3",
+          "short": "Best of 3",
+          "description": "The first to win two games. You enter the result as 2:0 or 2:1; the minutes per duel are for the whole match."
+        },
+        "label": "A duel is"
       }
     },
     "status": {
@@ -259,7 +295,7 @@
     },
     "new": {
       "title": "New tournament",
-      "description": "Once it's created, you invite players by email or add them as guests.",
+      "description": "Enter the players right away; you can invite more later by e-mail or as a guest.",
       "name": "Tournament name",
       "namePlaceholder": "e.g. Friday tournament",
       "nameRequired": "Please enter a name.",
@@ -275,7 +311,15 @@
       "plannedRoundsHint": "Leave empty to calculate it from the number of participants at the start.",
       "includeSelf": "I'm playing too",
       "submit": "Create tournament",
-      "createFailed": "The tournament couldn't be created."
+      "createFailed": "The tournament couldn't be created.",
+      "participants": {
+        "title": "Players",
+        "count": "Players: {count}",
+        "hint": "One name per line – or the e-mail address of an account. At most {max}; you can add more later.",
+        "placeholder": "Anna\nBen\nCara",
+        "selfIn": "You play too and are already on the list.",
+        "selfOut": "You are not playing and only run the tournament."
+      }
     },
     "detail": {
       "pageTitleFallback": "Tournament",

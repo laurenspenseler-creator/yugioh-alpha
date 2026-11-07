@@ -54,7 +54,8 @@
         "compare": "Dauer der Modi bei {count} Spielern",
         "save": "Einstellungen speichern",
         "saveFailed": "Die Einstellungen konnten nicht gespeichert werden.",
-        "summary": "{mode} · {tables} Tische · {minutes} Min. pro Duell"
+        "summary": "{mode} · {tables} Tische · {minutes} Min. pro Duell",
+        "summaryRounds": "{mode} · Spieltage · {minutes} Min. pro Duell"
       },
       "board": {
         "tableTitle": "Tabelle",
@@ -66,7 +67,8 @@
           "played": "Duelle",
           "open": "Offen",
           "buchholz": "Buchholz",
-          "now": "Jetzt"
+          "now": "Jetzt",
+          "decks": "Decks"
         },
         "atTable": "Tisch {number}",
         "inQueue": "Wartet · Nr. {position}",
@@ -104,7 +106,13 @@
           "rematch": "Wiederholung",
           "decider": "Entscheidungsduell"
         },
-        "resultFailed": "Das Ergebnis konnte nicht gespeichert werden."
+        "resultFailed": "Das Ergebnis konnte nicht gespeichert werden.",
+        "setWinnerScore": "{name} gewinnt {own}:{other}",
+        "showTable": "Tabelle einblenden",
+        "hideTable": "Tabelle ausblenden",
+        "playing": "Spielt",
+        "matchdaysTitle": "Spieltage",
+        "scheduleHelpRounds": "Alle Duelle eines Spieltags laufen nebeneinander. Der nächste Spieltag beginnt, sobald das letzte Duell des aktuellen fertig ist."
       },
       "rematch": {
         "title": "Wiederholungsduell nötig",
@@ -172,7 +180,35 @@
         "point1": "Ein Duell ist eine einzelne Partie. Es gibt kein Unentschieden und kein Zeitlimit – eingetragen wird nur, wer gewonnen hat.",
         "point2": "Alle Spieler enden mit gleich vielen Duellen. Das Turnier läuft, bis jeder seine Duelle gespielt hat.",
         "point3": "Sobald ein Tisch frei wird, startet das nächste mögliche Duell. Wer am Tisch sitzt, steht unter „Jetzt“; wer wartet, sieht seine Nummer in der Warteschlange.",
-        "point4": "Fällt jemand aus, rechnet die App die Duelle so um, dass wieder alle gleich viele haben."
+        "point4": "Fällt jemand aus, rechnet die App die Duelle so um, dass wieder alle gleich viele haben.",
+        "rounds1": "Gespielt wird Spieltag für Spieltag: Alle Duelle eines Tages laufen nebeneinander, der nächste Tag beginnt, wenn das letzte fertig ist."
+      },
+      "flow": {
+        "label": "Turnierart",
+        "queue": {
+          "label": "Mit Tischen und Warteschlange",
+          "description": "Der Plan steht von Anfang an. Sobald ein Tisch frei wird, startet das nächste Duell – niemand wartet auf eine ganze Runde."
+        },
+        "rounds": {
+          "label": "Mit Runden (Spieltage)",
+          "description": "Spieltag für Spieltag: Alle Duelle eines Spieltags laufen nebeneinander, der nächste beginnt, wenn das letzte Duell fertig ist. Keine Tische, keine Warteschlange."
+        },
+        "classic": {
+          "label": "Klassisch (Runden mit Punkten)",
+          "description": "Runde für Runde mit Punkten: Wer fertig ist, wartet auf die anderen, bevor die nächste Runde beginnt. Die ältere Turnierart, mit Punktevergabe und Spielfrei."
+        }
+      },
+      "bestOf": {
+        "1": {
+          "label": "Einzelduell (eine Partie)",
+          "description": "Eine Partie entscheidet, eingetragen wird nur, wer gewonnen hat."
+        },
+        "3": {
+          "label": "Best of 3",
+          "short": "Best of 3",
+          "description": "Wer zuerst zwei Partien gewinnt. Du trägst das Ergebnis als 2:0 oder 2:1 ein; die Minuten pro Duell gelten für das ganze Match."
+        },
+        "label": "Ein Duell ist"
       }
     },
     "status": {
@@ -259,7 +295,7 @@
     },
     "new": {
       "title": "Neues Turnier",
-      "description": "Spieler lädst du nach dem Anlegen per E-Mail oder als Gast ein.",
+      "description": "Trag gleich die Teilnehmer ein, weitere lädst du später per E-Mail oder als Gast ein.",
       "name": "Turniername",
       "namePlaceholder": "z. B. Freitagsturnier",
       "nameRequired": "Bitte einen Namen angeben.",
@@ -275,7 +311,15 @@
       "plannedRoundsHint": "Leer lassen: wird beim Start aus der Teilnehmerzahl berechnet.",
       "includeSelf": "Ich spiele selbst mit",
       "submit": "Turnier anlegen",
-      "createFailed": "Das Turnier konnte nicht angelegt werden."
+      "createFailed": "Das Turnier konnte nicht angelegt werden.",
+      "participants": {
+        "title": "Teilnehmer",
+        "count": "Teilnehmer: {count}",
+        "hint": "Ein Name pro Zeile – oder die E-Mail-Adresse eines Kontos. Höchstens {max}; weitere kannst du später hinzufügen.",
+        "placeholder": "Anna\nBen\nCara",
+        "selfIn": "Du spielst selbst mit und stehst schon in der Liste.",
+        "selfOut": "Du spielst nicht mit und leitest das Turnier nur."
+      }
     },
     "detail": {
       "pageTitleFallback": "Turnier",

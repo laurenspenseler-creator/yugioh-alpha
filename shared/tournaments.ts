@@ -4,7 +4,7 @@
 
 import type { ValidationIssue } from './rule-formats'
 import type { DropOption, DuelKind, DuelStatus } from './tournament-duels'
-import type { QueueMode } from './tournament-modes'
+import type { BestOf, QueueFlow, QueueMode } from './tournament-modes'
 import type { StandingsRow } from './tournament-standings'
 
 // Scoring constants live in tournament-standings.ts (the standings path);
@@ -237,6 +237,9 @@ export interface QueueDuelDto {
   participantBId: string
   participantBName: string
   winnerParticipantId: string | null
+  /** Games each player won, entered with the result of a best-of-3 duel; null for a single game or a duel not played. */
+  gamesA: number | null
+  gamesB: number | null
   /** The table of a running or a played duel. */
   tableNumber: number | null
   startedAt: string | null
@@ -275,6 +278,8 @@ export interface QueueDetail {
   /** R; null for a round robin. */
   rounds: number | null
   prelaunch: boolean
+  flow: QueueFlow
+  bestOf: BestOf
   tables: number
   duelMinutes: number
   /** The table, sorted; shown fixed at the top of the page. */
@@ -366,6 +371,8 @@ export interface QueueSetupDto {
   mode: QueueMode
   rounds: number | null
   prelaunch: boolean
+  flow: QueueFlow
+  bestOf: BestOf
   tables: number
   duelMinutes: number
 }
@@ -389,6 +396,8 @@ export const TOURNAMENT_ERROR_CODES = [
   'invalid_engine', 'invalid_mode', 'not_queue_tournament', 'classic_only', 'unknown_duel', 'duel_not_running',
   'invalid_winner', 'player_in_duel', 'drop_option_unavailable', 'nothing_to_decide', 'rematch_not_pending',
   'tournament_not_running', 'no_open_pairings',
+  // Spieltage, best of 3 and the players named when the tournament is created.
+  'invalid_flow', 'invalid_best_of', 'invalid_games', 'invalid_participants',
 ] as const
 export type TournamentErrorCode = typeof TOURNAMENT_ERROR_CODES[number]
 

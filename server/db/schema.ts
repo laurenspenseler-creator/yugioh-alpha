@@ -7,7 +7,7 @@ import type { AppLocale } from '../../shared/locale'
 import type { ShareResourceType, Visibility, WishlistVisibility } from '../../shared/sharing'
 import type { ByeScoring, PairingSystem, ScoringSystem, TournamentDeckSnapshot, TournamentEngine, TournamentStatus } from '../../shared/tournaments'
 import type { DropOption, DuelKind, DuelStatus, Pause } from '../../shared/tournament-duels'
-import type { QueueMode } from '../../shared/tournament-modes'
+import type { BestOf, QueueFlow, QueueMode } from '../../shared/tournament-modes'
 
 // Better Auth core tables (email/password only).
 // Generated to match Better Auth's expected schema for the Drizzle adapter (provider: "sqlite").
@@ -604,6 +604,11 @@ export const tournament = sqliteTable(
     queueMode: text('queue_mode').$type<QueueMode>(),
     // Swiss only: rounds 1 and 2 are paired before the start (the spec's "Vorlauf").
     prelaunch: integer('prelaunch', { mode: 'boolean' }).notNull().default(false),
+    // 'queue' = tables and a queue, 'rounds' = Spieltage (ADR 0043): the next day starts when the last duel of the
+    // day is done and the tables limit nothing.
+    flow: text('flow').notNull().$type<QueueFlow>().default('queue'),
+    // 1 = a duel is one game, 3 = best of three (the first to win two games).
+    bestOf: integer('best_of').notNull().$type<BestOf>().default(1),
     tables: integer('tables'),
     duelMinutes: integer('duel_minutes'),
     // Swiss: who sat out which round (an odd field); the pairing rule reads it.
@@ -785,6 +790,9 @@ export const tournamentDuel = sqliteTable(
     winnerParticipantId: text('winner_participant_id')
       .references(() => tournamentParticipant.id, { onDelete: 'set null' }),
     tableNumber: integer('table_number'),
+    // The games each player won in a best-of-3 duel; NULL for a single game and for a duel not played.
+    gamesA: integer('games_a'),
+    gamesB: integer('games_b'),
     // The order the duels were fixed in: the last tiebreak of the queue.
     position: integer('position').notNull(),
     startedAt: integer('started_at', { mode: 'timestamp_ms' }),

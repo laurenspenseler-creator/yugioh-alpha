@@ -3,16 +3,23 @@ import {
   BYE_SCORINGS,
   DEFAULT_BYE_SCORING,
   DEFAULT_SCORING,
+  MAX_PARTICIPANTS,
   MAX_PLANNED_ROUNDS,
   PAIRING_SYSTEMS,
+  PARTICIPANT_NAME_MAX_LENGTH,
   SCORING_SYSTEMS,
   TOURNAMENT_DESCRIPTION_MAX_LENGTH,
-  TOURNAMENT_ENGINES,
   TOURNAMENT_NAME_MAX_LENGTH,
 } from '~~/shared/tournaments'
-import type { ByeScoring, PairingSystem, ScoringSystem, TournamentDetail, TournamentEngine } from '~~/shared/tournaments'
-import { QUEUE_MODES } from '~~/shared/tournament-modes'
-import type { QueueMode } from '~~/shared/tournament-modes'
+import type { ByeScoring, PairingSystem, ScoringSystem, TournamentDetail } from '~~/shared/tournaments'
+import {
+  BEST_OF_CHOICES,
+  DEFAULT_BEST_OF,
+  DEFAULT_FLOW,
+  QUEUE_FLOWS,
+  QUEUE_MODES,
+} from '~~/shared/tournament-modes'
+import type { BestOf, QueueFlow, QueueMode } from '~~/shared/tournament-modes'
 
 usePageTitle('tournaments.new.title')
 
@@ -42,31 +49,51 @@ const formatItems = computed(() => [
   ...sortFormats(formatsData.value?.items ?? []).map(format => ({ label: formatName(format), value: format.id })),
 ])
 
+/**
+ * How the tournament is played. The first two are duel tournaments (ADR 0042, 0043) and offer the same choices: the
+ * mode (round robin, Champions League, Swiss), a head start for the Swiss system, best of 1 or 3. `classic` is the
+ * older rounds of matches with points (ADR 0008, 0031), which keeps its own settings.
+ */
+type Kind = QueueFlow | 'classic'
+const KINDS: readonly Kind[] = [...QUEUE_FLOWS, 'classic']
+
+const kindItems = computed(() => KINDS.map(kind => ({ label: t(`tournaments.queue.flow.${kind}.label`), value: kind })))
+const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
+const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`tournaments.queue.bestOf.${choice}.label`), value: choice })))
+
 const pairingSystemItems = computed(() =>
   PAIRING_SYSTEMS.map(system => ({ label: t(`tournaments.pairingSystem.${system}.label`), value: system })))
-
 const scoringItems = computed(() =>
   SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
 const byeScoringItems = computed(() =>
   BYE_SCORINGS.map(byeScoring => ({ label: t(`tournaments.byeScoring.${byeScoring}.label`), value: byeScoring })))
 
-const engineItems = computed(() => TOURNAMENT_ENGINES.map(engine => ({ label: t(`tournaments.queue.engine.${engine}.label`), value: engine })))
-const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
-
+// Tables, duels per player and minutes are set on the tournament page, where the registered players are known.
 const form = reactive({
   name: '',
   description: '',
   formatId: NO_FORMAT,
-  // The duel queue (ADR 0042) is the default: a fixed schedule, tables, no waiting for rounds. Its mode, number of
-  // duels, tables and minutes are set on the tournament page, where the registered players are known.
-  engine: 'queue' as TournamentEngine,
+  kind: DEFAULT_FLOW as Kind,
   mode: 'round_robin' as QueueMode,
+  prelaunch: false,
+  bestOf: DEFAULT_BEST_OF as BestOf,
   pairingSystem: 'swiss' as PairingSystem,
   scoring: DEFAULT_SCORING as ScoringSystem,
   byeScoring: DEFAULT_BYE_SCORING as ByeScoring,
+  // UInput type="number" hands over a number once something is typed, '' while it is empty: read it through String().
   plannedRounds: '',
   includeSelf: true,
+  participantsText: '',
 })
+
+const isClassic = computed(() => form.kind === 'classic')
+const plannedRoundsHint = computed(() => t(form.pairingSystem === 'round_robin'
+  ? 'tournaments.new.plannedRoundsRoundRobinHint'
+  : 'tournaments.new.plannedRoundsHint'))
+
+// One player per line: a name, or the e-mail address of an account.
+const participantLines = computed(() => form.participantsText.split('\n').map(line => line.trim()).filter(line => line.length > 0))
+const participantCount = computed(() => participantLines.value.length + (form.includeSelf ? 1 : 0))
 
 const isSubmitting = ref(false)
 // The name check belongs to its UFormField (aria-describedby/aria-invalid);
@@ -80,10 +107,6 @@ watch(() => form.name, (name) => {
     nameError.value = ''
   }
 })
-
-const plannedRoundsHint = computed(() => t(form.pairingSystem === 'round_robin'
-  ? 'tournaments.new.plannedRoundsRoundRobinHint'
-  : 'tournaments.new.plannedRoundsHint'))
 
 async function submit() {
   if (isSubmitting.value) {
@@ -104,16 +127,23 @@ async function submit() {
         name: form.name,
         description: form.description || null,
         formatId: form.formatId === NO_FORMAT ? null : form.formatId,
-        engine: form.engine,
-        ...(form.engine === 'queue'
-          ? { mode: form.mode }
-          : {
+        ...(isClassic.value
+          ? {
+              engine: 'classic',
               pairingSystem: form.pairingSystem,
               scoring: form.scoring,
               byeScoring: form.byeScoring,
-              plannedRounds: form.plannedRounds.trim() === '' ? null : Number(form.plannedRounds),
+              plannedRounds: String(form.plannedRounds).trim() === '' ? null : Number(form.plannedRounds),
+            }
+          : {
+              engine: 'queue',
+              mode: form.mode,
+              flow: form.kind,
+              prelaunch: form.mode === 'swiss' && form.prelaunch,
+              bestOf: form.bestOf,
             }),
         includeSelf: form.includeSelf,
+        participants: participantLines.value,
       },
     })
     await navigateTo(`/tournaments/${created.id}`)
@@ -128,7 +158,7 @@ async function submit() {
 </script>
 
 <template>
-  <div class="max-w-2xl space-y-6">
+  <div class="max-w-5xl space-y-6">
     <div class="space-y-2">
       <LayoutBackLink
         to="/tournaments"
@@ -141,149 +171,194 @@ async function submit() {
     </div>
 
     <form
-      class="space-y-4 panel p-4"
+      class="grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
       @submit.prevent="submit"
     >
-      <UFormField
-        :label="t('tournaments.new.name')"
-        :error="nameError || undefined"
-      >
-        <UInput
-          v-model="form.name"
-          class="w-full"
-          :placeholder="t('tournaments.new.namePlaceholder')"
-          :maxlength="TOURNAMENT_NAME_MAX_LENGTH"
-          :aria-label="t('tournaments.new.name')"
-        />
-      </UFormField>
-
-      <UFormField :label="t('tournaments.new.descriptionLabel')">
-        <UTextarea
-          v-model="form.description"
-          :rows="3"
-          :maxlength="TOURNAMENT_DESCRIPTION_MAX_LENGTH"
-          :aria-label="t('tournaments.new.descriptionAriaLabel')"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UFormField :label="t('tournaments.new.format')">
-        <USelect
-          v-model="form.formatId"
-          :items="formatItems"
-          :aria-label="t('tournaments.new.format')"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UFormField :label="t('tournaments.queue.engine.label')">
-        <USelect
-          v-model="form.engine"
-          :items="engineItems"
-          :aria-label="t('tournaments.queue.engine.label')"
-          class="w-full"
-        />
-        <p class="mt-1 text-xs text-muted">
-          {{ t(`tournaments.queue.engine.${form.engine}.description`) }}
-        </p>
-      </UFormField>
-
-      <UFormField
-        v-if="form.engine === 'queue'"
-        :label="t('tournaments.queue.mode.label')"
-      >
-        <USelect
-          v-model="form.mode"
-          :items="modeItems"
-          :aria-label="t('tournaments.queue.mode.label')"
-          class="w-full"
-        />
-        <p class="mt-1 text-xs text-muted">
-          {{ t(`tournaments.queue.mode.${form.mode}.description`) }}
-        </p>
-      </UFormField>
-
-      <template v-else>
-        <UFormField :label="t('tournaments.new.pairingSystem')">
-          <USelect
-            v-model="form.pairingSystem"
-            :items="pairingSystemItems"
-            :aria-label="t('tournaments.new.pairingSystem')"
-            class="w-full"
-          />
-          <p class="mt-1 text-xs text-muted">
-            {{ t(`tournaments.pairingSystem.${form.pairingSystem}.description`) }}
-          </p>
-        </UFormField>
-
-        <UFormField :label="t('tournaments.new.scoring')">
-          <USelect
-            v-model="form.scoring"
-            :items="scoringItems"
-            :aria-label="t('tournaments.new.scoring')"
-            class="w-full"
-          />
-          <p class="mt-1 text-xs text-muted">
-            {{ t(`tournaments.scoring.${form.scoring}.description`) }}
-          </p>
-        </UFormField>
-
-        <UFormField :label="t('tournaments.new.byeScoring')">
-          <USelect
-            v-model="form.byeScoring"
-            :items="byeScoringItems"
-            :aria-label="t('tournaments.new.byeScoring')"
-            class="w-full"
-          />
-          <p class="mt-1 text-xs text-muted">
-            {{ t(`tournaments.byeScoring.${form.byeScoring}.description`) }}
-          </p>
-        </UFormField>
-
-        <UFormField :label="t('tournaments.new.plannedRounds')">
+      <div class="space-y-4 panel p-4">
+        <UFormField
+          :label="t('tournaments.new.name')"
+          :error="nameError || undefined"
+        >
           <UInput
-            v-model="form.plannedRounds"
-            type="number"
-            min="1"
-            :max="MAX_PLANNED_ROUNDS"
-            :placeholder="t('tournaments.new.plannedRoundsPlaceholder')"
-            :aria-label="t('tournaments.new.plannedRounds')"
-            :disabled="form.pairingSystem === 'round_robin'"
-            class="w-full sm:w-48"
+            v-model="form.name"
+            class="w-full"
+            :placeholder="t('tournaments.new.namePlaceholder')"
+            :maxlength="TOURNAMENT_NAME_MAX_LENGTH"
+            :aria-label="t('tournaments.new.name')"
+          />
+        </UFormField>
+
+        <UFormField :label="t('tournaments.new.descriptionLabel')">
+          <UTextarea
+            v-model="form.description"
+            :rows="3"
+            :maxlength="TOURNAMENT_DESCRIPTION_MAX_LENGTH"
+            :aria-label="t('tournaments.new.descriptionAriaLabel')"
+            class="w-full"
+          />
+        </UFormField>
+
+        <UFormField :label="t('tournaments.new.format')">
+          <USelect
+            v-model="form.formatId"
+            :items="formatItems"
+            :aria-label="t('tournaments.new.format')"
+            class="w-full"
+          />
+        </UFormField>
+
+        <UFormField :label="t('tournaments.queue.flow.label')">
+          <USelect
+            v-model="form.kind"
+            :items="kindItems"
+            :aria-label="t('tournaments.queue.flow.label')"
+            class="w-full"
           />
           <p class="mt-1 text-xs text-muted">
-            {{ plannedRoundsHint }}
+            {{ t(`tournaments.queue.flow.${form.kind}.description`) }}
           </p>
         </UFormField>
-      </template>
 
-      <UCheckbox
-        v-model="form.includeSelf"
-        :label="t('tournaments.new.includeSelf')"
-      />
+        <template v-if="!isClassic">
+          <UFormField :label="t('tournaments.queue.mode.label')">
+            <USelect
+              v-model="form.mode"
+              :items="modeItems"
+              :aria-label="t('tournaments.queue.mode.label')"
+              class="w-full"
+            />
+            <p class="mt-1 text-xs text-muted">
+              {{ t(`tournaments.queue.mode.${form.mode}.description`) }}
+            </p>
+          </UFormField>
 
-      <p
-        v-if="errorMessage"
-        role="alert"
-        class="text-sm text-error"
-      >
-        {{ errorMessage }}
-      </p>
+          <UCheckbox
+            v-if="form.mode === 'swiss'"
+            v-model="form.prelaunch"
+            :label="t('tournaments.queue.setup.prelaunch')"
+            :description="t('tournaments.queue.setup.prelaunchHint')"
+          />
 
-      <div class="flex justify-end gap-2">
-        <UButton
-          type="button"
-          color="neutral"
-          variant="ghost"
-          :label="t('common.cancel')"
-          to="/tournaments"
+          <UFormField :label="t('tournaments.queue.bestOf.label')">
+            <USelect
+              v-model="form.bestOf"
+              :items="bestOfItems"
+              :aria-label="t('tournaments.queue.bestOf.label')"
+              class="w-full"
+            />
+            <p class="mt-1 text-xs text-muted">
+              {{ t(`tournaments.queue.bestOf.${form.bestOf}.description`) }}
+            </p>
+          </UFormField>
+        </template>
+
+        <template v-else>
+          <UFormField :label="t('tournaments.new.pairingSystem')">
+            <USelect
+              v-model="form.pairingSystem"
+              :items="pairingSystemItems"
+              :aria-label="t('tournaments.new.pairingSystem')"
+              class="w-full"
+            />
+            <p class="mt-1 text-xs text-muted">
+              {{ t(`tournaments.pairingSystem.${form.pairingSystem}.description`) }}
+            </p>
+          </UFormField>
+
+          <UFormField :label="t('tournaments.new.scoring')">
+            <USelect
+              v-model="form.scoring"
+              :items="scoringItems"
+              :aria-label="t('tournaments.new.scoring')"
+              class="w-full"
+            />
+            <p class="mt-1 text-xs text-muted">
+              {{ t(`tournaments.scoring.${form.scoring}.description`) }}
+            </p>
+          </UFormField>
+
+          <UFormField :label="t('tournaments.new.byeScoring')">
+            <USelect
+              v-model="form.byeScoring"
+              :items="byeScoringItems"
+              :aria-label="t('tournaments.new.byeScoring')"
+              class="w-full"
+            />
+            <p class="mt-1 text-xs text-muted">
+              {{ t(`tournaments.byeScoring.${form.byeScoring}.description`) }}
+            </p>
+          </UFormField>
+
+          <UFormField :label="t('tournaments.new.plannedRounds')">
+            <UInput
+              v-model="form.plannedRounds"
+              type="number"
+              min="1"
+              :max="MAX_PLANNED_ROUNDS"
+              :placeholder="t('tournaments.new.plannedRoundsPlaceholder')"
+              :aria-label="t('tournaments.new.plannedRounds')"
+              :disabled="form.pairingSystem === 'round_robin'"
+              class="w-full sm:w-48"
+            />
+            <p class="mt-1 text-xs text-muted">
+              {{ plannedRoundsHint }}
+            </p>
+          </UFormField>
+        </template>
+
+        <UCheckbox
+          v-model="form.includeSelf"
+          :label="t('tournaments.new.includeSelf')"
         />
-        <UButton
-          type="submit"
-          icon="i-lucide-plus"
-          :label="t('tournaments.new.submit')"
-          :loading="isSubmitting"
-        />
+
+        <p
+          v-if="errorMessage"
+          role="alert"
+          class="text-sm text-error"
+        >
+          {{ errorMessage }}
+        </p>
+
+        <div class="flex justify-end gap-2">
+          <UButton
+            type="button"
+            color="neutral"
+            variant="ghost"
+            :label="t('common.cancel')"
+            to="/tournaments"
+          />
+          <UButton
+            type="submit"
+            icon="i-lucide-plus"
+            :label="t('tournaments.new.submit')"
+            :loading="isSubmitting"
+          />
+        </div>
+      </div>
+
+      <div class="space-y-3 panel p-4">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 class="text-base font-semibold text-highlighted">
+            {{ t('tournaments.new.participants.title') }}
+          </h2>
+          <span
+            class="font-numeric text-xs text-muted"
+            data-testid="new-participant-count"
+          >{{ t('tournaments.new.participants.count', { count: participantCount }) }}</span>
+        </div>
+        <UFormField :description="t('tournaments.new.participants.hint', { max: MAX_PARTICIPANTS })">
+          <UTextarea
+            v-model="form.participantsText"
+            :rows="10"
+            :placeholder="t('tournaments.new.participants.placeholder')"
+            :aria-label="t('tournaments.new.participants.title')"
+            :maxlength="MAX_PARTICIPANTS * (PARTICIPANT_NAME_MAX_LENGTH + 1)"
+            class="w-full"
+          />
+        </UFormField>
+        <p class="text-xs text-muted">
+          {{ form.includeSelf ? t('tournaments.new.participants.selfIn') : t('tournaments.new.participants.selfOut') }}
+        </p>
       </div>
     </form>
   </div>

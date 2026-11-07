@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import {
+  BEST_OF_CHOICES,
   MAX_DUEL_MINUTES,
   MAX_TABLES,
   MIN_DUEL_MINUTES,
+  QUEUE_FLOWS,
   QUEUE_MODES,
   defaultRounds,
   duelsPerPlayer,
@@ -14,11 +16,12 @@ import {
   totalDuels,
   validateSetup,
 } from '~~/shared/tournament-modes'
-import type { QueueMode, SetupInput } from '~~/shared/tournament-modes'
+import type { BestOf, QueueFlow, QueueMode, SetupInput } from '~~/shared/tournament-modes'
 import type { TournamentDetail } from '~~/shared/tournaments'
 
-// The settings of a duel-queue tournament (ADR 0042): mode, duels per player, tables, minutes per duel. The
-// organizer sees what they cost in time for the players registered so far, and what is wrong with them.
+// The settings of a duel-queue tournament (ADR 0042, 0043): how it is played (tables and queue, or Spieltage), mode,
+// duels per player, best of 1 or 3, tables, minutes per duel. The organizer sees what they cost in time for the players
+// registered so far, and what is wrong with them.
 
 const props = defineProps<{
   tournament: TournamentDetail
@@ -35,8 +38,16 @@ const setup = computed(() => props.tournament.queueSetup!)
 const editable = computed(() => props.tournament.role === 'organizer' && props.tournament.status === 'registration')
 const players = computed(() => props.tournament.participants.length)
 
+/**
+ * The number fields are typed as text, but UInput type="number" hands over a number once something is typed (and ''
+ * while it is empty), so everything that reads them goes through `String(...)` first.
+ */
+type FieldValue = string | number
+
 const form = reactive({
   mode: setup.value.mode as QueueMode,
+  flow: setup.value.flow as QueueFlow,
+  bestOf: setup.value.bestOf as BestOf,
   rounds: setup.value.rounds === null ? '' : String(setup.value.rounds),
   prelaunch: setup.value.prelaunch,
   tables: String(setup.value.tables),
@@ -47,6 +58,8 @@ const form = reactive({
 // A saved change (or a reload) from outside takes over the form.
 watch(setup, (next) => {
   form.mode = next.mode
+  form.flow = next.flow
+  form.bestOf = next.bestOf
   form.rounds = next.rounds === null ? '' : String(next.rounds)
   form.prelaunch = next.prelaunch
   form.tables = String(next.tables)
@@ -54,10 +67,13 @@ watch(setup, (next) => {
 })
 
 const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
+const flowItems = computed(() => QUEUE_FLOWS.map(flow => ({ label: t(`tournaments.queue.flow.${flow}.label`), value: flow })))
+const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`tournaments.queue.bestOf.${choice}.label`), value: choice })))
 const recommended = computed(() => players.value >= 2 ? recommendedMode(players.value) : null)
+const byRound = computed(() => form.flow === 'rounds')
 
-function parsedInteger(raw: string): number | null {
-  const trimmed = raw.trim()
+function parsedInteger(raw: FieldValue): number | null {
+  const trimmed = String(raw).trim()
   return trimmed === '' || !Number.isInteger(Number(trimmed)) ? null : Number(trimmed)
 }
 
@@ -76,6 +92,7 @@ const input = computed<SetupInput>(() => ({
   tables: parsedInteger(form.tables) ?? 0,
   duelMinutes: parsedInteger(form.duelMinutes) ?? 0,
   prelaunch: form.mode === 'swiss' && form.prelaunch,
+  flow: form.flow,
 }))
 
 const issues = computed(() => validateSetup(input.value))
@@ -120,7 +137,7 @@ const perPlayerText = computed(() => {
 const suggestion = ref<number | null>(null)
 
 function suggestRounds() {
-  const hours = Number(form.wishedHours.replace(',', '.'))
+  const hours = Number(String(form.wishedHours).replace(',', '.'))
   if (!Number.isFinite(hours) || hours <= 0 || players.value < 2 || form.mode === 'round_robin') {
     return
   }
@@ -142,8 +159,11 @@ async function save() {
       method: 'PATCH',
       body: {
         queueMode: form.mode,
+        flow: form.flow,
+        bestOf: form.bestOf,
         plannedRounds: form.mode === 'round_robin' ? null : parsedInteger(form.rounds),
         prelaunch: form.mode === 'swiss' && form.prelaunch,
+        // What is not a whole number goes to the server as typed, which answers with the matching message.
         tables: parsedInteger(form.tables) ?? form.tables,
         duelMinutes: parsedInteger(form.duelMinutes) ?? form.duelMinutes,
       },
@@ -177,11 +197,7 @@ async function save() {
       v-if="!editable"
       class="text-sm text-toned"
     >
-      {{ t('tournaments.queue.setup.summary', {
-        mode: t(`tournaments.queue.mode.${setup.mode}.label`),
-        tables: setup.tables,
-        minutes: setup.duelMinutes,
-      }) }}
+      {{ queueSummary(t, setup) }}
     </p>
 
     <div
@@ -191,6 +207,18 @@ async function save() {
       <p class="text-xs text-muted">
         {{ t('tournaments.queue.setup.editHint') }}
       </p>
+
+      <UFormField :label="t('tournaments.queue.flow.label')">
+        <USelect
+          v-model="form.flow"
+          :items="flowItems"
+          :aria-label="t('tournaments.queue.flow.label')"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ t(`tournaments.queue.flow.${form.flow}.description`) }}
+        </p>
+      </UFormField>
 
       <UFormField :label="t('tournaments.queue.mode.label')">
         <USelect
@@ -211,7 +239,22 @@ async function save() {
         :description="t('tournaments.queue.setup.prelaunchHint')"
       />
 
-      <div class="grid gap-4 sm:grid-cols-3">
+      <UFormField :label="t('tournaments.queue.bestOf.label')">
+        <USelect
+          v-model="form.bestOf"
+          :items="bestOfItems"
+          :aria-label="t('tournaments.queue.bestOf.label')"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ t(`tournaments.queue.bestOf.${form.bestOf}.description`) }}
+        </p>
+      </UFormField>
+
+      <div
+        class="grid gap-4"
+        :class="byRound ? 'sm:grid-cols-2' : 'sm:grid-cols-3'"
+      >
         <UFormField :label="t('tournaments.queue.setup.rounds')">
           <UInput
             v-model="form.rounds"
@@ -225,7 +268,10 @@ async function save() {
             class="w-full"
           />
         </UFormField>
-        <UFormField :label="t('tournaments.queue.setup.tables')">
+        <UFormField
+          v-if="!byRound"
+          :label="t('tournaments.queue.setup.tables')"
+        >
           <UInput
             v-model="form.tables"
             type="number"

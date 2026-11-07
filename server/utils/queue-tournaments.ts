@@ -18,7 +18,9 @@ import type { LeaveKind } from '../../shared/tournament-dropout'
 import { startingSchedule, swissRoundDue } from '../../shared/tournament-flow'
 import type { FlowSetup, NewDuel } from '../../shared/tournament-flow'
 import {
+  DEFAULT_BEST_OF,
   DEFAULT_DUEL_MINUTES,
+  GAMES_TO_WIN_BEST_OF_3,
   defaultRounds,
   usableTables,
   validateSetup,
@@ -49,9 +51,16 @@ export function queueSetupOf(row: TournamentRow): QueueSetupDto {
     mode,
     rounds: mode === 'round_robin' ? null : row.plannedRounds,
     prelaunch: mode === 'swiss' && row.prelaunch,
+    flow: row.flow ?? 'queue',
+    bestOf: row.bestOf ?? DEFAULT_BEST_OF,
     tables: row.tables ?? 1,
     duelMinutes: row.duelMinutes ?? DEFAULT_DUEL_MINUTES,
   }
+}
+
+/** The tables the planner works with: in Spieltage nobody waits for a table, so half the players always have one. */
+function tablesOf(row: TournamentRow, players: number): number {
+  return row.flow === 'rounds' ? Math.max(1, players) : row.tables ?? 1
 }
 
 function flowSetupOf(row: TournamentRow): FlowSetup {
@@ -172,7 +181,8 @@ export function advanceQueue(db: Db, tournamentId: string, now: Date): void {
   if (row.status !== 'running') {
     return
   }
-  const order = planQueue(loadState(db, row), row.tables ?? 1, (row.startedAt ?? now).getTime())
+  const state = loadState(db, row)
+  const order = planQueue(state, tablesOf(row, state.players.length), (row.startedAt ?? now).getTime(), row.flow === 'rounds')
   for (const entry of order.start) {
     db.update(tournamentDuel).set({ status: 'running', tableNumber: entry.table, startedAt: now }).where(eq(tournamentDuel.id, entry.duelId)).run()
   }
@@ -195,6 +205,7 @@ export function startQueueTournament(db: Db, row: TournamentRow, participants: P
     tables: setup.tables,
     duelMinutes: setup.duelMinutes,
     prelaunch: setup.prelaunch,
+    flow: setup.flow,
   })
   if (issues.length > 0) {
     const issue = issues[0]!
@@ -219,8 +230,30 @@ export function startQueueTournament(db: Db, row: TournamentRow, participants: P
 
 // --- Results ------------------------------------------------------------------------
 
-/** The winner of a duel (best of one). A running duel ends here; a finished one can be corrected. */
-export function reportQueueDuel(db: Db, row: TournamentRow, duelId: string, winnerId: unknown, now: Date): void {
+export interface DuelGames { gamesA?: unknown, gamesB?: unknown }
+
+/**
+ * The games each player won. A single game has none to record; a best-of-3 duel needs the score as it ended: the
+ * winner two games, the other none or one.
+ */
+function gamesOfResult(bestOf: number, duel: DuelRow, winnerId: string, given: DuelGames): { gamesA: number | null, gamesB: number | null } {
+  if (bestOf !== 3) {
+    return { gamesA: null, gamesB: null }
+  }
+  const { gamesA, gamesB } = given
+  const valid = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= GAMES_TO_WIN_BEST_OF_3
+  if (!valid(gamesA) || !valid(gamesB)) {
+    badRequest('invalid_games', 'A best-of-3 result needs the games of both players')
+  }
+  const [won, lost] = winnerId === duel.participantAId ? [gamesA, gamesB] : [gamesB, gamesA]
+  if (won !== GAMES_TO_WIN_BEST_OF_3 || lost >= GAMES_TO_WIN_BEST_OF_3) {
+    badRequest('invalid_games', 'The winner of a best-of-3 duel has two games, the other fewer')
+  }
+  return { gamesA, gamesB }
+}
+
+/** The winner of a duel (and, for a best-of-3 tournament, its score). A running duel ends here; a finished one can be corrected. */
+export function reportQueueDuel(db: Db, row: TournamentRow, duelId: string, winnerId: unknown, games: DuelGames, now: Date): void {
   if (row.status !== 'running') {
     conflict('tournament_not_running', 'The tournament is not running')
   }
@@ -231,13 +264,14 @@ export function reportQueueDuel(db: Db, row: TournamentRow, duelId: string, winn
   if (typeof winnerId !== 'string' || (winnerId !== duel.participantAId && winnerId !== duel.participantBId)) {
     badRequest('invalid_winner', 'The winner must be one of the two players')
   }
+  const score = gamesOfResult(row.bestOf ?? DEFAULT_BEST_OF, duel, winnerId, games)
   if (duel.status === 'running') {
-    db.update(tournamentDuel).set({ status: 'done', winnerParticipantId: winnerId, endedAt: now }).where(eq(tournamentDuel.id, duelId)).run()
+    db.update(tournamentDuel).set({ status: 'done', winnerParticipantId: winnerId, endedAt: now, ...score }).where(eq(tournamentDuel.id, duelId)).run()
     advanceQueue(db, row.id, now)
   }
   else if (duel.status === 'done') {
     // A correction only changes the table; the pairings stay as they are (the Swiss ones until they are drawn again).
-    db.update(tournamentDuel).set({ winnerParticipantId: winnerId }).where(eq(tournamentDuel.id, duelId)).run()
+    db.update(tournamentDuel).set({ winnerParticipantId: winnerId, ...score }).where(eq(tournamentDuel.id, duelId)).run()
     db.update(tournament).set({ updatedAt: now }).where(eq(tournament.id, row.id)).run()
   }
   else {
@@ -379,7 +413,8 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
   const duelRows = loadDuelRows(db, row.id)
   const state = stateOf(row, participants, duelRows)
   const nameOf = new Map(participants.map(participant => [participant.id, participant.name]))
-  const order = planQueue(state, setup.tables, (row.startedAt ?? row.createdAt).getTime())
+  const byRound = setup.flow === 'rounds'
+  const order = planQueue(state, tablesOf(row, participants.length), (row.startedAt ?? row.createdAt).getTime(), byRound)
   const positions = queuePositions(state, order)
   const waitingIndex = new Map(order.waiting.map((duel, index) => [duel.id, index + 1]))
 
@@ -415,6 +450,8 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     participantBId: duelRow.participantBId,
     participantBName: nameOf.get(duelRow.participantBId) ?? '',
     winnerParticipantId: duelRow.winnerParticipantId,
+    gamesA: duelRow.gamesA,
+    gamesB: duelRow.gamesB,
     tableNumber: duelRow.tableNumber,
     startedAt: duelRow.startedAt ? duelRow.startedAt.toISOString() : null,
     endedAt: duelRow.endedAt ? duelRow.endedAt.toISOString() : null,
@@ -434,8 +471,10 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
 
   const openDuels = state.duels.filter(duel => (duel.status === 'planned' || duel.status === 'running') && isLive(state, duel)).length
   const activeCount = state.players.filter(player => player.status === 'active').length
+  // Spieltage: every day still to be played takes one duel; with a queue the open duels are shared by the tables.
+  const openDays = new Set(state.duels.filter(duel => (duel.status === 'planned' || duel.status === 'running') && isLive(state, duel)).map(duel => duel.round)).size
   const remainingMinutes = running_ && openDuels > 0
-    ? Math.ceil(openDuels / usableTables(setup.tables, Math.max(2, activeCount))) * setup.duelMinutes
+    ? (byRound ? openDays : Math.ceil(openDuels / usableTables(setup.tables, Math.max(2, activeCount)))) * setup.duelMinutes
     : null
 
   const dropChoices: Record<string, { A: boolean, B: boolean }> = {}
@@ -449,6 +488,8 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     mode: setup.mode,
     rounds: setup.rounds,
     prelaunch: setup.prelaunch,
+    flow: setup.flow,
+    bestOf: setup.bestOf,
     tables: setup.tables,
     duelMinutes: setup.duelMinutes,
     table,

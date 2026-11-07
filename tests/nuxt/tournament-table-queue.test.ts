@@ -179,6 +179,35 @@ describe('planQueue', () => {
     expect(order.waiting.map(d => d.id)).toEqual([duels[1]!.id])
     expect(order.start).toHaveLength(1)
   })
+
+  it('starts only the duels of the current day when the days are a gate (Spieltage)', () => {
+    const duels = [duel('p1', 'p2', { round: 1 }), duel('p3', 'p4', { round: 1 }), duel('p1', 'p3', { round: 2 }), duel('p2', 'p4', { round: 2 })]
+    const order = planQueue(state(4, duels), 4, 0, true)
+
+    expect(order.start.map(entry => entry.duelId).sort()).toEqual([duels[0]!.id, duels[1]!.id].sort())
+  })
+
+  it('does not start the next day while a duel of the day is open, a queue without the gate does', () => {
+    const duels = [
+      duel('p1', 'p2', { round: 1, status: 'done', winner: 'p1', endedAt: 1000 }),
+      duel('p3', 'p4', { round: 1, status: 'running', table: 1, startedAt: 500 }),
+      duel('p1', 'p5', { round: 2 }),
+    ]
+
+    expect(planQueue(state(6, duels), 6, 0, true).start).toEqual([])
+    expect(planQueue(state(6, duels), 6, 0, false).start).toHaveLength(1)
+  })
+
+  it('opens the next day by itself once the last duel of the day is done', () => {
+    const duels = [
+      duel('p1', 'p2', { round: 1, status: 'done', winner: 'p1', endedAt: 1000 }),
+      duel('p3', 'p4', { round: 1, status: 'done', winner: 'p3', endedAt: 1100 }),
+      duel('p1', 'p3', { round: 2 }),
+      duel('p2', 'p4', { round: 2 }),
+    ]
+
+    expect(planQueue(state(4, duels), 4, 0, true).start).toHaveLength(2)
+  })
 })
 
 describe('queuePositions', () => {

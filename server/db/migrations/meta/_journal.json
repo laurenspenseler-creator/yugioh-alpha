@@ -155,6 +155,13 @@
       "when": 1793468290463,
       "tag": "0021_tournament_duel_queue",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1794089547757,
+      "tag": "0022_tournament_flow_best_of",
+      "breakpoints": true
     }
   ]
 }

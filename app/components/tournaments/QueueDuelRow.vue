@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { GAMES_TO_WIN_BEST_OF_3 } from '~~/shared/tournament-modes'
 import type { QueueDuelDto } from '~~/shared/tournaments'
 
-// One duel of a duel-queue tournament: who plays whom, where, and (for the organizer) the two buttons that enter
-// the winner. A finished duel can be corrected; a struck one is shown crossed out.
+// One duel of a duel-queue tournament: who plays whom, where, and (for the organizer) the buttons that enter the
+// result: the winner, in a best-of-3 tournament with the score (2:0 or 2:1). A finished duel can be corrected; a
+// struck one is shown crossed out.
 
 const props = defineProps<{
   duel: QueueDuelDto
@@ -10,10 +12,14 @@ const props = defineProps<{
   busy?: boolean
   /** Show the table / queue number in front (the list of running duels does not need the status badge). */
   compact?: boolean
+  /** 3 = the result is entered as a score; anything else is a single game. */
+  bestOf?: number
+  /** Spieltage have no tables and no queue, so no table number or place in the queue is shown. */
+  byRound?: boolean
 }>()
 
 const emit = defineEmits<{
-  winner: [participantId: string]
+  result: [payload: { winnerId: string, gamesA?: number, gamesB?: number }]
 }>()
 
 const { t } = useI18n()
@@ -27,7 +33,16 @@ const winnerName = computed(() => {
   }
   return props.duel.winnerParticipantId === props.duel.participantBId ? props.duel.participantBName : ''
 })
+const score = computed(() => props.duel.gamesA !== null && props.duel.gamesB !== null ? `${props.duel.gamesA}:${props.duel.gamesB}` : '')
 const entering = computed(() => props.canEdit && (props.duel.status === 'running' || (props.duel.status === 'done' && correcting.value)))
+
+/** The ways a best-of-3 duel can end, for each player: they win 2:0 or 2:1. */
+const scoreChoices = computed(() => [
+  { key: 'a-0', winnerId: props.duel.participantAId, name: props.duel.participantAName, own: GAMES_TO_WIN_BEST_OF_3, other: 0, asA: true },
+  { key: 'a-1', winnerId: props.duel.participantAId, name: props.duel.participantAName, own: GAMES_TO_WIN_BEST_OF_3, other: 1, asA: true },
+  { key: 'b-0', winnerId: props.duel.participantBId, name: props.duel.participantBName, own: GAMES_TO_WIN_BEST_OF_3, other: 0, asA: false },
+  { key: 'b-1', winnerId: props.duel.participantBId, name: props.duel.participantBName, own: GAMES_TO_WIN_BEST_OF_3, other: 1, asA: false },
+])
 
 const STATUS_COLORS = {
   planned: 'neutral',
@@ -36,9 +51,18 @@ const STATUS_COLORS = {
   void: 'neutral',
 } as const
 
-function choose(participantId: string) {
+function choose(winnerId: string) {
   correcting.value = false
-  emit('winner', participantId)
+  emit('result', { winnerId })
+}
+
+function chooseScore(choice: { winnerId: string, own: number, other: number, asA: boolean }) {
+  correcting.value = false
+  emit('result', {
+    winnerId: choice.winnerId,
+    gamesA: choice.asA ? choice.own : choice.other,
+    gamesB: choice.asA ? choice.other : choice.own,
+  })
 }
 </script>
 
@@ -54,14 +78,14 @@ function choose(participantId: string) {
         :class="isVoid ? 'line-through' : ''"
       >
         <UBadge
-          v-if="duel.tableNumber !== null && duel.status === 'running'"
+          v-if="!byRound && duel.tableNumber !== null && duel.status === 'running'"
           size="sm"
           color="warning"
           variant="subtle"
           :label="t('tournaments.queue.board.tableDuel', { number: duel.tableNumber })"
         />
         <UBadge
-          v-else-if="duel.queuePosition !== null"
+          v-else-if="!byRound && duel.queuePosition !== null"
           size="sm"
           color="neutral"
           variant="subtle"
@@ -89,12 +113,31 @@ function choose(participantId: string) {
         v-if="duel.status === 'done' && winnerName"
         class="mt-0.5 text-xs text-muted"
       >
-        {{ t('tournaments.queue.board.wonBy', { name: winnerName }) }}
+        {{ t('tournaments.queue.board.wonBy', { name: winnerName }) }}<template v-if="score">
+          · <span class="font-numeric">{{ score }}</span>
+        </template>
       </p>
     </div>
 
+    <!-- Four score buttons are too wide for one line in a card: two columns, under the names. -->
     <div
-      v-if="entering"
+      v-if="entering && bestOf === 3"
+      class="grid w-full grid-cols-2 gap-2"
+    >
+      <UButton
+        v-for="choice in scoreChoices"
+        :key="choice.key"
+        size="sm"
+        color="primary"
+        variant="outline"
+        class="tap-target"
+        :disabled="busy"
+        :label="t('tournaments.queue.board.setWinnerScore', { name: choice.name, own: choice.own, other: choice.other })"
+        @click="chooseScore(choice)"
+      />
+    </div>
+    <div
+      v-else-if="entering"
       class="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-wrap"
     >
       <UButton
