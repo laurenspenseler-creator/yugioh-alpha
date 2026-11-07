@@ -58,6 +58,15 @@ describe('a duel row', () => {
     expect(component.text()).toContain('1:2')
   })
 
+  it('can enter a duel that has not begun in Spieltage, and only there', async () => {
+    const planned = { ...DUEL, status: 'planned' as const, tableNumber: null, round: 3 }
+    const byRound = await mountSuspended(QueueDuelRow, { props: { duel: planned, canEdit: true, bestOf: 1, byRound: true } })
+    const withQueue = await mountSuspended(QueueDuelRow, { props: { duel: planned, canEdit: true, bestOf: 1 } })
+
+    expect(byRound.findAll('button').map(button => button.text())).toEqual(['Anna hat gewonnen', 'Ben hat gewonnen'])
+    expect(withQueue.findAll('button')).toHaveLength(0)
+  })
+
   it('names no table and no place in the queue with Spieltage', async () => {
     const waiting = { ...DUEL, status: 'planned' as const, tableNumber: null, queuePosition: 3 }
     const withQueue = await mountSuspended(QueueDuelRow, { props: { duel: waiting, canEdit: false } })
@@ -76,6 +85,7 @@ function row(patch: Partial<QueueTableRowDto>): QueueTableRowDto {
     name: 'Anna',
     place: 1,
     wins: 1,
+    points: 3,
     played: 1,
     open: 2,
     buchholz: 0,
@@ -125,6 +135,13 @@ describe('the standings table of a duel tournament', () => {
 
     const decks = component.findAll('[data-testid="queue-table-decks"]').map(cell => cell.text())
     expect(decks).toEqual(['Dunkler Magier, Chaos', '–'])
+  })
+
+  it('shows the points next to the wins', async () => {
+    const component = await mountSuspended(QueueTable, { props: { tournament: tournament('rounds') } })
+
+    expect(component.find('thead').text()).toContain('Punkte')
+    expect(component.findAll('[data-testid="queue-table-points"]').map(cell => cell.text())).toEqual(['3', '3'])
   })
 
   it('can be hidden and shown again, and remembers it', async () => {

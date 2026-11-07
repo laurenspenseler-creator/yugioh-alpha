@@ -254,6 +254,8 @@ export interface QueueTableRowDto {
   /** Equal for a tie; null for a player who left (listed grey, last). */
   place: number | null
   wins: number
+  /** Points by the scoring of the tournament (3 for a win, with a score of a best-of-3 duel more or less). */
+  points: number
   played: number
   /** Duels still to play. */
   open: number
@@ -373,6 +375,8 @@ export interface QueueSetupDto {
   prelaunch: boolean
   flow: QueueFlow
   bestOf: BestOf
+  /** How a duel is worth points: the table is sorted by them. */
+  scoring: ScoringSystem
   tables: number
   duelMinutes: number
 }

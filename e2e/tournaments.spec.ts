@@ -31,6 +31,20 @@ function participantRow(page: import('@playwright/test').Page, name: string) {
   return page.locator('table').first().getByRole('row').filter({ hasText: name })
 }
 
+/**
+ * The classic tournament (rounds of matches with points) is not made in the form any more (ADR 0043): the form makes
+ * duel tournaments played in Spieltage. Tournaments of the classic kind still exist and run as before, so these tests
+ * make them through the API and open the page.
+ */
+async function createClassicTournament(page: import('@playwright/test').Page, data: Record<string, unknown>) {
+  const response = await page.request.post('/api/tournaments', { data: { engine: 'classic', ...data } })
+  expect(response.ok()).toBe(true)
+  const created = await response.json() as { id: string }
+  await page.goto(`/tournaments/${created.id}`)
+  await waitForHydration(page)
+  return created.id
+}
+
 test.describe('tournaments', () => {
   test('runs a Swiss tournament from creation to finish', async ({ page }) => {
     const organizer = await registerAndLogin(page)
@@ -61,17 +75,9 @@ test.describe('tournaments', () => {
     await page.getByRole('link', { name: 'Neues Turnier' }).first().click()
     await expect(page).toHaveURL('/tournaments/new')
 
-    await page.getByLabel('Turniername').fill('Freitagsturnier')
-    await page.getByLabel('Turnierart').click()
-    await page.getByRole('option', { name: 'Klassisch' }).click()
-    await page.getByLabel('Format').click()
-    await page.getByRole('option', { name: 'Ohne Banliste' }).click()
-    await page.getByLabel('Paarungssystem').click()
-    await page.getByRole('option', { name: 'Schweizer System' }).click()
     // "Geplante Runden" stays empty — resolved from the participant count at
-    // start. "Ich spiele selbst mit" stays checked (default).
-
-    await page.getByRole('button', { name: 'Turnier anlegen' }).click()
+    // start. The organizer plays along (default).
+    await createClassicTournament(page, { name: 'Freitagsturnier', formatId: 'unlimited', pairingSystem: 'swiss' })
 
     await expect(page).toHaveURL(/\/tournaments\/[0-9a-f-]{36}$/)
     await expect(page.getByRole('heading', { name: 'Freitagsturnier' })).toBeVisible()
@@ -224,26 +230,7 @@ test.describe('tournaments', () => {
 
     // Organizer creates the tournament and adds B by e-mail.
     const organizer = await registerAndLogin(page)
-    await page.goto('/tournaments/new')
-    await waitForHydration(page)
-    await page.getByLabel('Turnierart').click()
-    await page.getByRole('option', { name: 'Klassisch' }).click()
-    // The planned-rounds field is wide enough for its placeholder, on desktop
-    // and on a phone (#96).
-    const plannedRoundsFits = () => page.getByLabel('Geplante Runden').evaluate((input: HTMLInputElement) => {
-      const style = getComputedStyle(input)
-      const context = document.createElement('canvas').getContext('2d')!
-      context.font = style.font
-      const inner = input.clientWidth - Number.parseFloat(style.paddingLeft) - Number.parseFloat(style.paddingRight)
-      return context.measureText(input.placeholder).width <= inner - 20 // room for the number spinner
-    })
-    expect(await plannedRoundsFits()).toBe(true)
-    const viewport = page.viewportSize()!
-    await page.setViewportSize({ width: 390, height: 844 })
-    expect(await plannedRoundsFits()).toBe(true)
-    await page.setViewportSize(viewport)
-    await page.getByLabel('Turniername').fill('Einladungsturnier')
-    await page.getByRole('button', { name: 'Turnier anlegen' }).click()
+    await createClassicTournament(page, { name: 'Einladungsturnier' })
     await expect(page).toHaveURL(/\/tournaments\/[0-9a-f-]{36}$/)
     const tournamentUrl = page.url()
 
@@ -293,12 +280,7 @@ test.describe('tournaments', () => {
   test('confirms before removing a participant and before finishing a tournament, and lets a cancelled confirm keep the previous state', async ({ page }) => {
     await registerAndLogin(page)
 
-    await page.goto('/tournaments/new')
-    await waitForHydration(page)
-    await page.getByLabel('Turniername').fill('Bestätigungsturnier')
-    await page.getByLabel('Turnierart').click()
-    await page.getByRole('option', { name: 'Klassisch' }).click()
-    await page.getByRole('button', { name: 'Turnier anlegen' }).click()
+    await createClassicTournament(page, { name: 'Bestätigungsturnier' })
     await expect(page).toHaveURL(/\/tournaments\/[0-9a-f-]{36}$/)
 
     await page.getByRole('button', { name: 'Als Gast' }).click()
@@ -412,19 +394,10 @@ test.describe('tournaments', () => {
   test('runs a round robin as a league: 2:1 results, a league table, a withdrawn player and the crosstable', async ({ page }) => {
     const organizer = await registerAndLogin(page)
 
-    await page.goto('/tournaments/new')
-    await waitForHydration(page)
-    await page.getByLabel('Turniername').fill('Ligaturnier')
-    await page.getByLabel('Turnierart').click()
-    await page.getByRole('option', { name: 'Klassisch' }).click()
-    await page.getByLabel('Paarungssystem').click()
-    await page.getByRole('option', { name: 'Jeder gegen jeden' }).click()
-    // New tournaments score by games and give a bye nothing (ADR 0031).
-    await expect(page.getByLabel('Punktevergabe')).toContainText('Nach Spielen')
-    await expect(page.getByLabel('Spielfrei (bei ungerader Spielerzahl)')).toContainText('Keine Punkte')
-    await page.getByRole('button', { name: 'Turnier anlegen' }).click()
+    await createClassicTournament(page, { name: 'Ligaturnier', pairingSystem: 'round_robin' })
     await expect(page).toHaveURL(/\/tournaments\/[0-9a-f-]{36}$/)
 
+    // New tournaments score by games and give a bye nothing (ADR 0031).
     await expect(page.getByText('Wertung: Nach Spielen (3 · 2 · 1 · 0)')).toBeVisible()
     await expect(page.getByText('Spielfrei: Keine Punkte')).toBeVisible()
     // The organizer may still change the scoring while registering.

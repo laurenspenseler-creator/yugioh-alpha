@@ -102,6 +102,50 @@ describe('computeTable', () => {
   })
 })
 
+describe('points in the table', () => {
+  const twoDuels = (games: Array<[number, number]>): DuelsState => ({
+    players: players(3),
+    duels: [
+      done('p1', 'p2', 'p1', { gamesA: games[0]![0], gamesB: games[0]![1] }),
+      done('p3', 'p1', 'p3', { gamesA: games[1]![0], gamesB: games[1]![1] }),
+    ],
+  })
+
+  it('counts 3 for a win without losing a game, 2 for a win that lost one, 1 for a loss with a game won', () => {
+    const table = computeTable(twoDuels([[2, 1], [2, 0]]), 'games')
+
+    const points = Object.fromEntries(table.map(row => [row.playerId, row.points]))
+    // p1: won 2:1 (2) and lost 0:2 (0); p2: lost 1:2 (1); p3: won 2:0 (3).
+    expect(points).toEqual({ p1: 2, p2: 1, p3: 3 })
+    expect(table.map(row => row.playerId)).toEqual(['p3', 'p1', 'p2'])
+  })
+
+  it('counts 3 and 0 with the classic scoring and for a single game', () => {
+    const classic = computeTable(twoDuels([[2, 1], [2, 0]]), 'match')
+    expect(Object.fromEntries(classic.map(row => [row.playerId, row.points]))).toEqual({ p1: 3, p2: 0, p3: 3 })
+
+    const single: DuelsState = { players: players(2), duels: [done('p1', 'p2', 'p2')] }
+    expect(computeTable(single, 'games').map(row => [row.playerId, row.points])).toEqual([['p2', 3], ['p1', 0]])
+  })
+
+  it('puts points before wins: a win and two games won in lost duels beat two narrow wins', () => {
+    // p1: one 2:0 win (3) and two 1:2 losses (1 each) = 5 points; p2: two 2:1 wins = 4 points.
+    const state: DuelsState = {
+      players: players(6),
+      duels: [
+        done('p1', 'p3', 'p1', { gamesA: 2, gamesB: 0 }),
+        done('p1', 'p4', 'p4', { gamesA: 1, gamesB: 2 }),
+        done('p1', 'p5', 'p5', { gamesA: 1, gamesB: 2 }),
+        done('p2', 'p3', 'p2', { gamesA: 2, gamesB: 1 }),
+        done('p2', 'p6', 'p2', { gamesA: 2, gamesB: 1 }),
+      ],
+    }
+
+    const table = computeTable(state, 'games')
+    expect(table.slice(0, 2).map(row => [row.playerId, row.points, row.wins])).toEqual([['p1', 5, 1], ['p2', 4, 2]])
+  })
+})
+
 describe('planQueue', () => {
   const state = (n: number, duels: Duel[], extra: Partial<DuelsState> = {}): DuelsState => ({ players: players(n), duels, ...extra })
 

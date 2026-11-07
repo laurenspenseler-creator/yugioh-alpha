@@ -9,7 +9,6 @@ import DeckFormModal from '~/components/decks/DeckFormModal.vue'
 import CollectionFormModal from '~/components/collections/CollectionFormModal.vue'
 import NewTournamentPage from '~/pages/tournaments/new.vue'
 import type { OwnProfile } from '~~/shared/sharing'
-import { MAX_PLANNED_ROUNDS } from '~~/shared/tournaments'
 import { setTestLocale } from './fixtures/locale'
 
 // #60: UFormField declares `error` as Boolean|String, and Vue's boolean
@@ -122,16 +121,6 @@ describe('new tournament form', () => {
     await nextTick()
 
     expect(input.getAttribute('aria-invalid')).not.toBe('true')
-  })
-
-  it('caps planned rounds at the server limit (#65)', async () => {
-    const component = await mountSuspended(NewTournamentPage)
-    // The duel types have no field for planned rounds; this one is the classic type's.
-    ;(component.vm as unknown as { form: { kind: string } }).form.kind = 'classic'
-    await nextTick()
-
-    const plannedRounds = component.find<HTMLInputElement>('input[type="number"]').element
-    expect(plannedRounds.max).toBe(String(MAX_PLANNED_ROUNDS))
   })
 })
 

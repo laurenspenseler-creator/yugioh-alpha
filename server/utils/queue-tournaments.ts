@@ -34,6 +34,7 @@ import type {
   QueuePendingRematchDto,
   QueueSetupDto,
   QueueTableRowDto,
+  ScoringSystem,
   TournamentErrorCode,
   TournamentRole,
 } from '../../shared/tournaments'
@@ -53,6 +54,7 @@ export function queueSetupOf(row: TournamentRow): QueueSetupDto {
     prelaunch: mode === 'swiss' && row.prelaunch,
     flow: row.flow ?? 'queue',
     bestOf: row.bestOf ?? DEFAULT_BEST_OF,
+    scoring: row.scoring,
     tables: row.tables ?? 1,
     duelMinutes: row.duelMinutes ?? DEFAULT_DUEL_MINUTES,
   }
@@ -86,6 +88,8 @@ function toDuel(row: DuelRow): Duel {
     kind: row.kind,
     status: row.status,
     winner: row.winnerParticipantId,
+    gamesA: row.gamesA,
+    gamesB: row.gamesB,
     table: row.tableNumber,
     startedAt: row.startedAt ? row.startedAt.getTime() : null,
     endedAt: row.endedAt ? row.endedAt.getTime() : null,
@@ -265,8 +269,11 @@ export function reportQueueDuel(db: Db, row: TournamentRow, duelId: string, winn
     badRequest('invalid_winner', 'The winner must be one of the two players')
   }
   const score = gamesOfResult(row.bestOf ?? DEFAULT_BEST_OF, duel, winnerId, games)
-  if (duel.status === 'running') {
-    db.update(tournamentDuel).set({ status: 'done', winnerParticipantId: winnerId, endedAt: now, ...score }).where(eq(tournamentDuel.id, duelId)).run()
+  // Played in Spieltage nothing forces an order: a duel of a later day can be entered before its day has begun, as
+  // long as both players are still in the tournament.
+  const early = duel.status === 'planned' && row.flow === 'rounds' && isLive(loadState(db, row), toDuel(duel))
+  if (duel.status === 'running' || early) {
+    db.update(tournamentDuel).set({ status: 'done', winnerParticipantId: winnerId, startedAt: duel.startedAt ?? now, endedAt: now, ...score }).where(eq(tournamentDuel.id, duelId)).run()
     advanceQueue(db, row.id, now)
   }
   else if (duel.status === 'done') {
@@ -384,11 +391,11 @@ export function applyQueueRecompute(db: Db, row: TournamentRow, now: Date): void
 }
 
 /** The players level on first place once every duel is played (the tie the table could not break). */
-function firstPlaceTieOf(state: DuelsState): string[] {
+function firstPlaceTieOf(state: DuelsState, scoring: ScoringSystem): string[] {
   if (state.duels.some(duel => (duel.status === 'planned' || duel.status === 'running') && isLive(state, duel))) {
     return []
   }
-  const first = computeTable(state).filter(tableRow => tableRow.place === 1)
+  const first = computeTable(state, scoring).filter(tableRow => tableRow.place === 1)
   return first.length > 1 ? first.map(tableRow => tableRow.playerId) : []
 }
 
@@ -396,7 +403,7 @@ function firstPlaceTieOf(state: DuelsState): string[] {
 export function scheduleQueueDecider(db: Db, row: TournamentRow, now: Date): void {
   requireRunning(row)
   const state = loadState(db, row)
-  const tied = firstPlaceTieOf(state)
+  const tied = firstPlaceTieOf(state, row.scoring)
   if (tied.length < 2) {
     conflict('rematch_not_pending', 'There is no tie for first place')
   }
@@ -426,11 +433,12 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     }
   }
 
-  const table: QueueTableRowDto[] = computeTable(state).map(tableRow => ({
+  const table: QueueTableRowDto[] = computeTable(state, row.scoring).map(tableRow => ({
     participantId: tableRow.playerId,
     name: nameOf.get(tableRow.playerId) ?? '',
     place: tableRow.place,
     wins: tableRow.wins,
+    points: tableRow.points,
     played: tableRow.played,
     open: tableRow.left ? 0 : openDuelsOf(state, tableRow.playerId).filter(duel => isLive(state, duel)).length,
     buchholz: tableRow.buchholz,
@@ -498,7 +506,7 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     undecided: state.players.filter(player => player.status === 'dropped' && player.dropOption === null).map(player => player.id),
     dropOptions: dropChoices,
     remainingMinutes,
-    firstPlaceTie: running_ ? firstPlaceTieOf(state) : [],
+    firstPlaceTie: running_ ? firstPlaceTieOf(state, row.scoring) : [],
     canRecompute: organizer && running_ && row.queueMode === 'swiss' && recomputeSwiss(state).length > 0,
     duelsDone: state.duels.filter(duel => duel.status === 'done').length,
     duelsTotal: state.duels.filter(duel => duel.status !== 'void').length,

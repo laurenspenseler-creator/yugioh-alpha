@@ -41,7 +41,7 @@
         "roundsAuto": "Automatisch",
         "roundsRoundRobin": "Bei „Jeder gegen jeden“ ergibt sich die Zahl aus der Spielerzahl: jeder gegen jeden einmal.",
         "prelaunch": "Vorlauf: Runde 1 und 2 vorab auslosen",
-        "prelaunchHint": "Die ersten beiden Runden stehen schon beim Start fest, jede weitere wird gepaart, sobald die vorletzte fertig ist. So bleiben die Tische besetzt.",
+        "prelaunchHint": "Die ersten beiden Runden stehen schon beim Start fest, jede weitere wird gepaart, sobald die vorletzte fertig ist.",
         "tables": "Tische",
         "duelMinutes": "Minuten pro Duell",
         "wishedHours": "Gewünschte Gesamtdauer (Stunden)",
@@ -59,7 +59,7 @@
       },
       "board": {
         "tableTitle": "Tabelle",
-        "tableHelp": "Sortiert nach Siegen. Bei gleich vielen Siegen entscheidet Buchholz (die Summe der Siege aller Gegner), danach das direkte Duell. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
+        "tableHelp": "Sortiert nach Punkten, bei gleichen Punkten nach Siegen. Dann entscheidet Buchholz (die Summe der Siege aller Gegner), danach das direkte Duell. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
         "columns": {
           "place": "Platz",
           "player": "Spieler",
@@ -68,7 +68,9 @@
           "open": "Offen",
           "buchholz": "Buchholz",
           "now": "Jetzt",
-          "decks": "Decks"
+          "decks": "Decks",
+          "points": "Punkte",
+          "pointsHelp": "Punkte nach der gewählten Punktevergabe"
         },
         "atTable": "Tisch {number}",
         "inQueue": "Wartet · Nr. {position}",
@@ -209,7 +211,8 @@
           "description": "Wer zuerst zwei Partien gewinnt. Du trägst das Ergebnis als 2:0 oder 2:1 ein; die Minuten pro Duell gelten für das ganze Match."
         },
         "label": "Ein Duell ist"
-      }
+      },
+      "scoringSingleHint": "Bei Einzelduellen gibt ein Sieg immer 3 Punkte; der Unterschied zählt erst bei Best of 3."
     },
     "status": {
       "registration": "Anmeldung",

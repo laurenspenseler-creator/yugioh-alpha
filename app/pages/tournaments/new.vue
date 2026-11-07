@@ -1,25 +1,18 @@
 <script setup lang="ts">
 import {
-  BYE_SCORINGS,
-  DEFAULT_BYE_SCORING,
-  DEFAULT_SCORING,
   MAX_PARTICIPANTS,
-  MAX_PLANNED_ROUNDS,
-  PAIRING_SYSTEMS,
   PARTICIPANT_NAME_MAX_LENGTH,
   SCORING_SYSTEMS,
   TOURNAMENT_DESCRIPTION_MAX_LENGTH,
   TOURNAMENT_NAME_MAX_LENGTH,
 } from '~~/shared/tournaments'
-import type { ByeScoring, PairingSystem, ScoringSystem, TournamentDetail } from '~~/shared/tournaments'
+import type { ScoringSystem, TournamentDetail } from '~~/shared/tournaments'
 import {
   BEST_OF_CHOICES,
   DEFAULT_BEST_OF,
-  DEFAULT_FLOW,
-  QUEUE_FLOWS,
   QUEUE_MODES,
 } from '~~/shared/tournament-modes'
-import type { BestOf, QueueFlow, QueueMode } from '~~/shared/tournament-modes'
+import type { BestOf, QueueMode } from '~~/shared/tournament-modes'
 
 usePageTitle('tournaments.new.title')
 
@@ -49,47 +42,25 @@ const formatItems = computed(() => [
   ...sortFormats(formatsData.value?.items ?? []).map(format => ({ label: formatName(format), value: format.id })),
 ])
 
-/**
- * How the tournament is played. The first two are duel tournaments (ADR 0042, 0043) and offer the same choices: the
- * mode (round robin, Champions League, Swiss), a head start for the Swiss system, best of 1 or 3. `classic` is the
- * older rounds of matches with points (ADR 0008, 0031), which keeps its own settings.
- */
-type Kind = QueueFlow | 'classic'
-const KINDS: readonly Kind[] = [...QUEUE_FLOWS, 'classic']
-
-const kindItems = computed(() => KINDS.map(kind => ({ label: t(`tournaments.queue.flow.${kind}.label`), value: kind })))
 const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
 const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`tournaments.queue.bestOf.${choice}.label`), value: choice })))
+const scoringItems = computed(() => SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
 
-const pairingSystemItems = computed(() =>
-  PAIRING_SYSTEMS.map(system => ({ label: t(`tournaments.pairingSystem.${system}.label`), value: system })))
-const scoringItems = computed(() =>
-  SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
-const byeScoringItems = computed(() =>
-  BYE_SCORINGS.map(byeScoring => ({ label: t(`tournaments.byeScoring.${byeScoring}.label`), value: byeScoring })))
-
-// Tables, duels per player and minutes are set on the tournament page, where the registered players are known.
+// Every new tournament is played in Spieltage (ADR 0043): a plan by days, no tables, no queue. Everybody gets the
+// same choices: the mode (round robin, Champions League, Swiss), a head start for the Swiss system, best of 1 or 3
+// and how a duel is worth points. Duels per player and minutes are set on the tournament page, where the
+// registered players are known.
 const form = reactive({
   name: '',
   description: '',
   formatId: NO_FORMAT,
-  kind: DEFAULT_FLOW as Kind,
   mode: 'round_robin' as QueueMode,
   prelaunch: false,
   bestOf: DEFAULT_BEST_OF as BestOf,
-  pairingSystem: 'swiss' as PairingSystem,
-  scoring: DEFAULT_SCORING as ScoringSystem,
-  byeScoring: DEFAULT_BYE_SCORING as ByeScoring,
-  // UInput type="number" hands over a number once something is typed, '' while it is empty: read it through String().
-  plannedRounds: '',
+  scoring: 'games' as ScoringSystem,
   includeSelf: true,
   participantsText: '',
 })
-
-const isClassic = computed(() => form.kind === 'classic')
-const plannedRoundsHint = computed(() => t(form.pairingSystem === 'round_robin'
-  ? 'tournaments.new.plannedRoundsRoundRobinHint'
-  : 'tournaments.new.plannedRoundsHint'))
 
 // One player per line: a name, or the e-mail address of an account.
 const participantLines = computed(() => form.participantsText.split('\n').map(line => line.trim()).filter(line => line.length > 0))
@@ -127,21 +98,12 @@ async function submit() {
         name: form.name,
         description: form.description || null,
         formatId: form.formatId === NO_FORMAT ? null : form.formatId,
-        ...(isClassic.value
-          ? {
-              engine: 'classic',
-              pairingSystem: form.pairingSystem,
-              scoring: form.scoring,
-              byeScoring: form.byeScoring,
-              plannedRounds: String(form.plannedRounds).trim() === '' ? null : Number(form.plannedRounds),
-            }
-          : {
-              engine: 'queue',
-              mode: form.mode,
-              flow: form.kind,
-              prelaunch: form.mode === 'swiss' && form.prelaunch,
-              bestOf: form.bestOf,
-            }),
+        engine: 'queue',
+        mode: form.mode,
+        flow: 'rounds',
+        prelaunch: form.mode === 'swiss' && form.prelaunch,
+        bestOf: form.bestOf,
+        scoring: form.scoring,
         includeSelf: form.includeSelf,
         participants: participantLines.value,
       },
@@ -207,104 +169,49 @@ async function submit() {
           />
         </UFormField>
 
-        <UFormField :label="t('tournaments.queue.flow.label')">
+        <UFormField :label="t('tournaments.queue.mode.label')">
           <USelect
-            v-model="form.kind"
-            :items="kindItems"
-            :aria-label="t('tournaments.queue.flow.label')"
+            v-model="form.mode"
+            :items="modeItems"
+            :aria-label="t('tournaments.queue.mode.label')"
             class="w-full"
           />
           <p class="mt-1 text-xs text-muted">
-            {{ t(`tournaments.queue.flow.${form.kind}.description`) }}
+            {{ t(`tournaments.queue.mode.${form.mode}.description`) }}
           </p>
         </UFormField>
 
-        <template v-if="!isClassic">
-          <UFormField :label="t('tournaments.queue.mode.label')">
-            <USelect
-              v-model="form.mode"
-              :items="modeItems"
-              :aria-label="t('tournaments.queue.mode.label')"
-              class="w-full"
-            />
-            <p class="mt-1 text-xs text-muted">
-              {{ t(`tournaments.queue.mode.${form.mode}.description`) }}
-            </p>
-          </UFormField>
+        <UCheckbox
+          v-if="form.mode === 'swiss'"
+          v-model="form.prelaunch"
+          :label="t('tournaments.queue.setup.prelaunch')"
+          :description="t('tournaments.queue.setup.prelaunchHint')"
+        />
 
-          <UCheckbox
-            v-if="form.mode === 'swiss'"
-            v-model="form.prelaunch"
-            :label="t('tournaments.queue.setup.prelaunch')"
-            :description="t('tournaments.queue.setup.prelaunchHint')"
+        <UFormField :label="t('tournaments.queue.bestOf.label')">
+          <USelect
+            v-model="form.bestOf"
+            :items="bestOfItems"
+            :aria-label="t('tournaments.queue.bestOf.label')"
+            class="w-full"
           />
+          <p class="mt-1 text-xs text-muted">
+            {{ t(`tournaments.queue.bestOf.${form.bestOf}.description`) }}
+          </p>
+        </UFormField>
 
-          <UFormField :label="t('tournaments.queue.bestOf.label')">
-            <USelect
-              v-model="form.bestOf"
-              :items="bestOfItems"
-              :aria-label="t('tournaments.queue.bestOf.label')"
-              class="w-full"
-            />
-            <p class="mt-1 text-xs text-muted">
-              {{ t(`tournaments.queue.bestOf.${form.bestOf}.description`) }}
-            </p>
-          </UFormField>
-        </template>
-
-        <template v-else>
-          <UFormField :label="t('tournaments.new.pairingSystem')">
-            <USelect
-              v-model="form.pairingSystem"
-              :items="pairingSystemItems"
-              :aria-label="t('tournaments.new.pairingSystem')"
-              class="w-full"
-            />
-            <p class="mt-1 text-xs text-muted">
-              {{ t(`tournaments.pairingSystem.${form.pairingSystem}.description`) }}
-            </p>
-          </UFormField>
-
-          <UFormField :label="t('tournaments.new.scoring')">
-            <USelect
-              v-model="form.scoring"
-              :items="scoringItems"
-              :aria-label="t('tournaments.new.scoring')"
-              class="w-full"
-            />
-            <p class="mt-1 text-xs text-muted">
-              {{ t(`tournaments.scoring.${form.scoring}.description`) }}
-            </p>
-          </UFormField>
-
-          <UFormField :label="t('tournaments.new.byeScoring')">
-            <USelect
-              v-model="form.byeScoring"
-              :items="byeScoringItems"
-              :aria-label="t('tournaments.new.byeScoring')"
-              class="w-full"
-            />
-            <p class="mt-1 text-xs text-muted">
-              {{ t(`tournaments.byeScoring.${form.byeScoring}.description`) }}
-            </p>
-          </UFormField>
-
-          <UFormField :label="t('tournaments.new.plannedRounds')">
-            <UInput
-              v-model="form.plannedRounds"
-              type="number"
-              min="1"
-              :max="MAX_PLANNED_ROUNDS"
-              :placeholder="t('tournaments.new.plannedRoundsPlaceholder')"
-              :aria-label="t('tournaments.new.plannedRounds')"
-              :disabled="form.pairingSystem === 'round_robin'"
-              class="w-full sm:w-48"
-            />
-            <p class="mt-1 text-xs text-muted">
-              {{ plannedRoundsHint }}
-            </p>
-          </UFormField>
-        </template>
+        <UFormField :label="t('tournaments.new.scoring')">
+          <USelect
+            v-model="form.scoring"
+            :items="scoringItems"
+            :aria-label="t('tournaments.new.scoring')"
+            class="w-full"
+          />
+          <p class="mt-1 text-xs text-muted">
+            {{ t(`tournaments.scoring.${form.scoring}.description`) }}
+            {{ form.bestOf === 1 ? t('tournaments.queue.scoringSingleHint') : '' }}
+          </p>
+        </UFormField>
 
         <UCheckbox
           v-model="form.includeSelf"

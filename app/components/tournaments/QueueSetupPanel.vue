@@ -17,10 +17,11 @@ import {
   validateSetup,
 } from '~~/shared/tournament-modes'
 import type { BestOf, QueueFlow, QueueMode, SetupInput } from '~~/shared/tournament-modes'
-import type { TournamentDetail } from '~~/shared/tournaments'
+import { SCORING_SYSTEMS } from '~~/shared/tournaments'
+import type { ScoringSystem, TournamentDetail } from '~~/shared/tournaments'
 
-// The settings of a duel-queue tournament (ADR 0042, 0043): how it is played (tables and queue, or Spieltage), mode,
-// duels per player, best of 1 or 3, tables, minutes per duel. The organizer sees what they cost in time for the players
+// The settings of a duel tournament (ADR 0042, 0043): mode, duels per player, best of 1 or 3, how a duel is worth points,
+// minutes per duel; a tournament made before Spieltage also has its way of playing (tables and queue) and its tables. The organizer sees what they cost in time for the players
 // registered so far, and what is wrong with them.
 
 const props = defineProps<{
@@ -48,6 +49,7 @@ const form = reactive({
   mode: setup.value.mode as QueueMode,
   flow: setup.value.flow as QueueFlow,
   bestOf: setup.value.bestOf as BestOf,
+  scoring: setup.value.scoring as ScoringSystem,
   rounds: setup.value.rounds === null ? '' : String(setup.value.rounds),
   prelaunch: setup.value.prelaunch,
   tables: String(setup.value.tables),
@@ -60,6 +62,7 @@ watch(setup, (next) => {
   form.mode = next.mode
   form.flow = next.flow
   form.bestOf = next.bestOf
+  form.scoring = next.scoring
   form.rounds = next.rounds === null ? '' : String(next.rounds)
   form.prelaunch = next.prelaunch
   form.tables = String(next.tables)
@@ -69,6 +72,9 @@ watch(setup, (next) => {
 const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
 const flowItems = computed(() => QUEUE_FLOWS.map(flow => ({ label: t(`tournaments.queue.flow.${flow}.label`), value: flow })))
 const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`tournaments.queue.bestOf.${choice}.label`), value: choice })))
+const scoringItems = computed(() => SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
+// New tournaments are only played in Spieltage; the choice is left to the ones that still have tables and a queue.
+const showFlow = computed(() => setup.value.flow === 'queue')
 const recommended = computed(() => players.value >= 2 ? recommendedMode(players.value) : null)
 const byRound = computed(() => form.flow === 'rounds')
 
@@ -161,6 +167,7 @@ async function save() {
         queueMode: form.mode,
         flow: form.flow,
         bestOf: form.bestOf,
+        scoring: form.scoring,
         plannedRounds: form.mode === 'round_robin' ? null : parsedInteger(form.rounds),
         prelaunch: form.mode === 'swiss' && form.prelaunch,
         // What is not a whole number goes to the server as typed, which answers with the matching message.
@@ -208,7 +215,10 @@ async function save() {
         {{ t('tournaments.queue.setup.editHint') }}
       </p>
 
-      <UFormField :label="t('tournaments.queue.flow.label')">
+      <UFormField
+        v-if="showFlow"
+        :label="t('tournaments.queue.flow.label')"
+      >
         <USelect
           v-model="form.flow"
           :items="flowItems"
@@ -248,6 +258,19 @@ async function save() {
         />
         <p class="mt-1 text-xs text-muted">
           {{ t(`tournaments.queue.bestOf.${form.bestOf}.description`) }}
+        </p>
+      </UFormField>
+
+      <UFormField :label="t('tournaments.new.scoring')">
+        <USelect
+          v-model="form.scoring"
+          :items="scoringItems"
+          :aria-label="t('tournaments.new.scoring')"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ t(`tournaments.scoring.${form.scoring}.description`) }}
+          {{ form.bestOf === 1 ? t('tournaments.queue.scoringSingleHint') : '' }}
         </p>
       </UFormField>
 

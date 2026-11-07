@@ -41,7 +41,7 @@
         "roundsAuto": "Automatic",
         "roundsRoundRobin": "In a round robin the number follows from the number of players: everybody plays everybody once.",
         "prelaunch": "Head start: draw rounds 1 and 2 in advance",
-        "prelaunchHint": "The first two rounds are fixed at the start, every later round is paired as soon as the one before the last is done. That keeps the tables busy.",
+        "prelaunchHint": "The first two rounds are fixed at the start, every further one is paired as soon as the one before the last is done.",
         "tables": "Tables",
         "duelMinutes": "Minutes per duel",
         "wishedHours": "Wanted total duration (hours)",
@@ -59,7 +59,7 @@
       },
       "board": {
         "tableTitle": "Standings",
-        "tableHelp": "Sorted by wins. With equal wins the Buchholz sum (the wins of all opponents) decides, then the direct duel. Whoever left is grey and last, without a place.",
+        "tableHelp": "Sorted by points, then by wins. Then Buchholz decides (the sum of the wins of all opponents), then the direct duel. Whoever left is grey and at the end without a place.",
         "columns": {
           "place": "Place",
           "player": "Player",
@@ -68,7 +68,9 @@
           "open": "Open",
           "buchholz": "Buchholz",
           "now": "Now",
-          "decks": "Decks"
+          "decks": "Decks",
+          "points": "Points",
+          "pointsHelp": "Points by the chosen scoring"
         },
         "atTable": "Table {number}",
         "inQueue": "Waiting · No. {position}",
@@ -209,7 +211,8 @@
           "description": "The first to win two games. You enter the result as 2:0 or 2:1; the minutes per duel are for the whole match."
         },
         "label": "A duel is"
-      }
+      },
+      "scoringSingleHint": "With single duels a win is always 3 points; the difference only counts with best of 3."
     },
     "status": {
       "registration": "Registration",

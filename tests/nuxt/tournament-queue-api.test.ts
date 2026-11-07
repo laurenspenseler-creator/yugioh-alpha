@@ -84,7 +84,7 @@ describe('creating a duel-queue tournament', () => {
     const detail = newQueueTournament(db, { mode: 'champions_league', plannedRounds: 4, tables: 3, duelMinutes: 25 }, 0)
 
     expect(detail.engine).toBe('queue')
-    expect(detail.queueSetup).toEqual({ mode: 'champions_league', rounds: 4, prelaunch: false, flow: 'queue', bestOf: 1, tables: 3, duelMinutes: 25 })
+    expect(detail.queueSetup).toEqual({ mode: 'champions_league', rounds: 4, prelaunch: false, flow: 'queue', bestOf: 1, scoring: 'games', tables: 3, duelMinutes: 25 })
     expect(detail.queue).toBeNull()
   })
 
@@ -419,6 +419,28 @@ describe('a tournament played in Spieltage', () => {
     expect(running(started.queue!)).toHaveLength(3)
   })
 
+  it('lets the organizer enter a duel of a later day before it has begun: no order is forced', () => {
+    const created = newQueueTournament(db, { mode: 'round_robin', flow: 'rounds' }, 4)
+    const started = startTournament(db, ORGANIZER, created.id)
+    const later = started.queue!.duels.find(duel => duel.round === 2)!
+    expect(later.status).toBe('planned')
+
+    const detail = reportDuelResult(db, ORGANIZER, created.id, later.id, { winnerParticipantId: later.participantAId })
+
+    expect(detail.queue!.duels.find(duel => duel.id === later.id)).toMatchObject({ status: 'done', winnerParticipantId: later.participantAId })
+    // The first day is still the one that is played.
+    expect(running(detail.queue!).every(duel => duel.round === 1)).toBe(true)
+    expect(detail.queue!.table.find(row => row.participantId === later.participantAId)!.wins).toBe(1)
+  })
+
+  it('does not take a duel that has not begun when the tournament has tables and a queue', () => {
+    const created = newQueueTournament(db, { mode: 'round_robin', tables: 1 }, 4)
+    const started = startTournament(db, ORGANIZER, created.id)
+    const waiting = started.queue!.duels.find(duel => duel.status === 'planned')!
+
+    expect(codeOf(() => reportDuelResult(db, ORGANIZER, created.id, waiting.id, { winnerParticipantId: waiting.participantAId }))).toBe('duel_not_running')
+  })
+
   it('can be chosen until the start and not after', () => {
     const created = newQueueTournament(db, { mode: 'round_robin' }, 4)
     expect(updateTournament(db, ORGANIZER, created.id, { flow: 'rounds' }).queueSetup).toMatchObject({ flow: 'rounds' })
@@ -508,5 +530,44 @@ describe('players named when the tournament is created', () => {
   it('refuses a list that is not a list of names', () => {
     expect(codeOf(() => validateTournamentInput({ name: 'x', participants: 'Anna' }))).toBe('invalid_participants')
     expect(codeOf(() => validateTournamentInput({ name: 'x', participants: [1, 2] }))).toBe('invalid_participants')
+  })
+})
+
+describe('the points of the table', () => {
+  let db: TestDb
+  beforeEach(() => {
+    db = createTestDb()
+    seedUsers(db)
+  })
+
+  /** Two players, one duel, entered with the winner and the score. */
+  function playOne(body: Record<string, unknown>, result: Record<string, unknown>) {
+    const created = newQueueTournament(db, { mode: 'round_robin', flow: 'rounds', ...body }, 2)
+    const duel = running(startTournament(db, ORGANIZER, created.id).queue!)[0]!
+    const detail = reportDuelResult(db, ORGANIZER, created.id, duel.id, { winnerParticipantId: duel.participantAId, ...result })
+    const pointsOf = (id: string) => detail.queue!.table.find(row => row.participantId === id)!.points
+    return [pointsOf(duel.participantAId), pointsOf(duel.participantBId)]
+  }
+
+  it('scores by games: 3 for 2:0, 2 for 2:1 and 1 for a duel lost with a game won', () => {
+    expect(playOne({ bestOf: 3, scoring: 'games' }, { gamesA: 2, gamesB: 0 })).toEqual([3, 0])
+    expect(playOne({ bestOf: 3, scoring: 'games' }, { gamesA: 2, gamesB: 1 })).toEqual([2, 1])
+  })
+
+  it('scores 3 and 0 with the classic scoring, whatever the score', () => {
+    expect(playOne({ bestOf: 3, scoring: 'match' }, { gamesA: 2, gamesB: 1 })).toEqual([3, 0])
+  })
+
+  it('scores a single game 3 and 0 either way', () => {
+    expect(playOne({ scoring: 'games' }, {})).toEqual([3, 0])
+    expect(playOne({ scoring: 'match' }, {})).toEqual([3, 0])
+  })
+
+  it('keeps the scoring in the settings and changes it until the start', () => {
+    const created = newQueueTournament(db, { mode: 'round_robin', scoring: 'match' }, 4)
+    expect(created.queueSetup).toMatchObject({ scoring: 'match' })
+    expect(updateTournament(db, ORGANIZER, created.id, { scoring: 'games' }).queueSetup).toMatchObject({ scoring: 'games' })
+    startTournament(db, ORGANIZER, created.id)
+    expect(codeOf(() => updateTournament(db, ORGANIZER, created.id, { scoring: 'match' }))).toBe('tournament_started')
   })
 })

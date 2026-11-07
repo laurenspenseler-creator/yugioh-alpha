@@ -32,6 +32,9 @@ export interface Duel {
   status: DuelStatus
   /** Only for a done duel. */
   winner: string | null
+  /** Games won by a (first) and b (second) player of a best-of-3 duel; missing or null for a single game. */
+  gamesA?: number | null
+  gamesB?: number | null
   /** The table of a running or a done duel. */
   table: number | null
   /** Milliseconds since the epoch. */

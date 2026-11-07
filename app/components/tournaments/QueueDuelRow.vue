@@ -34,7 +34,8 @@ const winnerName = computed(() => {
   return props.duel.winnerParticipantId === props.duel.participantBId ? props.duel.participantBName : ''
 })
 const score = computed(() => props.duel.gamesA !== null && props.duel.gamesB !== null ? `${props.duel.gamesA}:${props.duel.gamesB}` : '')
-const entering = computed(() => props.canEdit && (props.duel.status === 'running' || (props.duel.status === 'done' && correcting.value)))
+// Spieltage force no order: a duel that has not begun can be entered too.
+const entering = computed(() => props.canEdit && (props.duel.status === 'running' || (props.byRound && props.duel.status === 'planned') || (props.duel.status === 'done' && correcting.value)))
 
 /** The ways a best-of-3 duel can end, for each player: they win 2:0 or 2:1. */
 const scoreChoices = computed(() => [

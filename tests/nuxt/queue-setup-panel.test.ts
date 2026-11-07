@@ -11,7 +11,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-const SETUP: QueueSetupDto = { mode: 'swiss', rounds: null, prelaunch: true, flow: 'queue', bestOf: 1, tables: 4, duelMinutes: 30 }
+const SETUP: QueueSetupDto = { mode: 'swiss', rounds: null, prelaunch: true, flow: 'queue', bestOf: 1, scoring: 'games', tables: 4, duelMinutes: 30 }
 
 /** Only what the panel reads: the organizer of a tournament that has not started, with eleven players. */
 function tournament(setup: Partial<QueueSetupDto> = {}): TournamentDetail {
@@ -47,7 +47,7 @@ describe('the settings of a duel tournament', () => {
     const call = fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments/t-1')!
     expect(call[1]).toMatchObject({
       method: 'PATCH',
-      body: { queueMode: 'swiss', flow: 'queue', bestOf: 1, plannedRounds: null, prelaunch: true, tables: 3, duelMinutes: 20 },
+      body: { queueMode: 'swiss', flow: 'queue', bestOf: 1, scoring: 'games', plannedRounds: null, prelaunch: true, tables: 3, duelMinutes: 20 },
     })
     expect(component.emitted('updated')).toHaveLength(1)
   })
@@ -74,20 +74,38 @@ describe('the settings of a duel tournament', () => {
     expect(component.text()).toContain('Vorschlag:')
   })
 
-  it('lets the organizer choose Spieltage or a queue and best of 1 or 3, and hides the tables with Spieltage', async () => {
+  it('lets the organizer choose best of 1 or 3 and the scoring, and has no tables and no way of playing to choose with Spieltage', async () => {
     const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ ...tournament() }))
     vi.stubGlobal('$fetch', fetchSpy)
-    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ flow: 'rounds', bestOf: 3 }) } })
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ flow: 'rounds', bestOf: 3, scoring: 'match' }) } })
 
     expect(component.find('input[aria-label="Tische"]').exists()).toBe(false)
-    expect(component.text()).toContain('Mit Runden (Spieltage)')
+    expect(component.find('[aria-label="Turnierart"]').exists()).toBe(false)
+    expect(component.find('[aria-label="Punktevergabe"]').exists()).toBe(true)
+    expect(component.find('[aria-label="Ein Duell ist"]').exists()).toBe(true)
     expect(component.text()).toContain('Best of 3')
+    expect(component.text()).toContain('Klassisch (3 · 0)')
 
     await findButton(component, 'Einstellungen speichern').trigger('click')
     await flushPromises()
 
     const call = fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments/t-1')!
-    expect(call[1]).toMatchObject({ body: { flow: 'rounds', bestOf: 3 } })
+    expect(call[1]).toMatchObject({ body: { flow: 'rounds', bestOf: 3, scoring: 'match' } })
+  })
+
+  it('still offers the way of playing and the tables to a tournament made with a queue', async () => {
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament() } })
+
+    expect(component.find('[aria-label="Turnierart"]').exists()).toBe(true)
+    expect(component.find('input[aria-label="Tische"]').exists()).toBe(true)
+  })
+
+  it('points out that the scoring only tells single games apart from best of 3', async () => {
+    const single = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 1 }) } })
+    const best = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 3 }) } })
+
+    expect(single.text()).toContain('Bei Einzelduellen gibt ein Sieg immer 3 Punkte')
+    expect(best.text()).not.toContain('Bei Einzelduellen gibt ein Sieg immer 3 Punkte')
   })
 
   it('estimates Spieltage by the days, not by the tables', async () => {
