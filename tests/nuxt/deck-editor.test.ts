@@ -3,7 +3,7 @@ import { DOMWrapper as BodyWrapper, enableAutoUnmount, flushPromises } from '@vu
 import type { DOMWrapper } from '@vue/test-utils'
 import type { Ref } from 'vue'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
-import { DecksDeckFormModal, UApp, UDropdownMenu, USelect } from '#components'
+import { DecksDeckFormModal, DecksDeckToInventoryButton, UApp, UDropdownMenu, USelect } from '#components'
 import DeckEditorPage from '~/pages/decks/[id].vue'
 import { optionLabels, selectWithOption } from './fixtures/select-wrapper'
 import type { DeckValidation } from '~~/shared/rule-formats'
@@ -1408,12 +1408,18 @@ describe('deck editor header and row layout', () => {
       (candidate.props('items') as Array<Array<{ label: string }>>).flat().some(item => item.label === 'Umbenennen'))
     expect(menu).toBeTruthy()
     const items = (menu!.props('items') as Array<Array<{ label: string, onSelect: () => void }>>).flat()
-    expect(items.map(item => item.label)).toEqual(['Umbenennen', 'Löschen'])
+    expect(items.map(item => item.label)).toEqual(['Umbenennen', 'Deck zum Inventar hinzufügen', 'Löschen'])
 
     expect(component.findComponent(DecksDeckFormModal).props('open')).toBe(false)
     items[0]!.onSelect()
     await component.vm.$nextTick()
     expect(component.findComponent(DecksDeckFormModal).props('open')).toBe(true)
+
+    // The same dialog as the toolbar button opens from the menu (tester feedback, round 7).
+    expect(component.findComponent(DecksDeckToInventoryButton).props('open')).toBe(false)
+    items[1]!.onSelect()
+    await component.vm.$nextTick()
+    expect(component.findComponent(DecksDeckToInventoryButton).props('open')).toBe(true)
   })
 
   it('lets a long deck name wrap instead of truncating it', async () => {

@@ -30,6 +30,29 @@
     "errors": {
       "updateFailed": "Die Wunschliste konnte nicht aktualisiert werden.",
       "removeFailed": "Der Eintrag konnte nicht entfernt werden."
+    },
+    "import": {
+      "button": "Karten aus Liste hinzufügen",
+      "title": "Karten per Liste zur Wunschliste hinzufügen",
+      "description": "Eine Karte pro Zeile: Name, auch mit Anzahl („2x Dark Magician“), Set-Code oder Passcode. Auch Decklisten gehen.",
+      "label": "Kartenliste für die Wunschliste",
+      "placeholder": "3x Dark Magician\nPot of Greed\nSDY-006",
+      "lines": "Zeilen: {count} von höchstens {max}",
+      "check": "Prüfen",
+      "back": "Liste ändern",
+      "empty": "Bitte mindestens eine Karte eintragen.",
+      "tooManyLines": "Höchstens {max} Zeilen auf einmal.",
+      "checkFailed": "Die Liste konnte nicht geprüft werden.",
+      "row": {
+        "pick": "Karte wählen",
+        "pickFor": "Karte für „{line}“ wählen",
+        "noMatch": "kein Treffer",
+        "onList": "schon auf der Wunschliste"
+      },
+      "summary": "Neu auf der Wunschliste: {add} · schon drauf: {there} · nicht übernommen: {skipped}",
+      "submit": "Zur Wunschliste hinzufügen",
+      "done": "Karten zur Wunschliste hinzugefügt: {count}",
+      "failed": "Einige Karten konnten nicht hinzugefügt werden."
     }
   }
 }

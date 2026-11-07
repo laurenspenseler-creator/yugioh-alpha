@@ -907,8 +907,16 @@ async function deleteDeck() {
 
 // Secondary actions live in the "…" menu at every width (#25), so the header
 // toolbar stays one short row and the title keeps its full width (#40).
+// The deck's cards into the inventory: a button in the toolbar and the same dialog from the "..." menu.
+const isToInventoryOpen = ref(false)
+const deckIsEmpty = computed(() => !deck.value
+  || deck.value.sections.main.length + deck.value.sections.extra.length + deck.value.sections.side.length === 0)
+
 const deckMenuItems = computed(() => [
-  [{ label: t('decks.menu.rename'), icon: 'i-lucide-pencil', onSelect: () => { isFormOpen.value = true } }],
+  [
+    { label: t('decks.menu.rename'), icon: 'i-lucide-pencil', onSelect: () => { isFormOpen.value = true } },
+    { label: t('decks.menu.toInventory'), icon: 'i-lucide-package-plus', disabled: deckIsEmpty.value, onSelect: () => { isToInventoryOpen.value = true } },
+  ],
   [{ label: t('common.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: deleteDeck }],
 ])
 
@@ -982,6 +990,7 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
               :cover-card-id="deck.cover?.catalogCardId ?? null"
             />
             <DecksDeckToInventoryButton
+              v-model:open="isToInventoryOpen"
               :rows="[...deck.sections.main, ...deck.sections.extra, ...deck.sections.side]"
               @added="refreshDeck"
             />

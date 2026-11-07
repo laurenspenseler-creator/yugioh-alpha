@@ -88,6 +88,6 @@ describe('adding a deck to the inventory', () => {
     await component.find('button').trigger('click')
     await flushPromises()
 
-    expect(document.body.textContent).toContain('Alle Karten des Decks sind schon in der Kartenliste.')
+    expect(document.body.textContent).toContain('Alle Karten des Decks sind schon im Inventar.')
   })
 })

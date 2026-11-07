@@ -30,7 +30,8 @@ const toast = useToast()
 const NO_COLLECTION = 'none'
 const BULK_CHUNK = 200
 
-const open = ref(false)
+// The dialog can also be opened from the "..." menu of the deck page, so its state belongs to the parent when it wants it.
+const open = defineModel<boolean>('open', { default: false })
 const mode = ref<'missing' | 'all'>('missing')
 const collectionId = ref(NO_COLLECTION)
 const collections = ref<Array<{ label: string, value: string }>>([])

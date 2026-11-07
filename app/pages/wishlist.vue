@@ -72,6 +72,9 @@ async function onRemoved(id: string) {
   }
 }
 
+// Cards added from a list of card lines.
+const isImportOpen = ref(false)
+
 // The card overlay (#114), opened from a row.
 const overlayCard = ref<{ id: number, preview: CardDetailPreview } | null>(null)
 const isOverlayOpen = ref(false)
@@ -118,13 +121,22 @@ function nextPage() {
       </template>
     </LayoutPageHeader>
 
-    <UInput
-      v-model="searchInput"
-      icon="i-lucide-search"
-      :placeholder="t('wishlist.search.placeholder')"
-      :aria-label="t('wishlist.search.label')"
-      class="w-full max-w-xl"
-    />
+    <div class="flex flex-wrap items-center gap-2">
+      <UInput
+        v-model="searchInput"
+        icon="i-lucide-search"
+        :placeholder="t('wishlist.search.placeholder')"
+        :aria-label="t('wishlist.search.label')"
+        class="w-full max-w-xl flex-1"
+      />
+      <UButton
+        icon="i-lucide-list-plus"
+        color="neutral"
+        variant="outline"
+        :label="t('wishlist.import.button')"
+        @click="isImportOpen = true"
+      />
+    </div>
 
     <div
       v-if="pending"
@@ -149,6 +161,13 @@ function nextPage() {
           :label="t('wishlist.empty.cta')"
           to="/catalog"
         />
+        <UButton
+          icon="i-lucide-list-plus"
+          color="neutral"
+          variant="outline"
+          :label="t('wishlist.import.button')"
+          @click="isImportOpen = true"
+        />
       </template>
     </LayoutEmptyState>
 
@@ -165,6 +184,11 @@ function nextPage() {
         @open="openCardOverlay(item)"
       />
     </ul>
+
+    <WishlistImportModal
+      v-model:open="isImportOpen"
+      @added="refresh"
+    />
 
     <CardDetailModal
       v-model:open="isOverlayOpen"

@@ -17,7 +17,8 @@
       "rename": "Umbenennen",
       "duplicate": "Duplizieren",
       "share": "Teilen",
-      "fillCollection": "Sammlung befüllen …"
+      "fillCollection": "Sammlung befüllen …",
+      "toInventory": "Deck zum Inventar hinzufügen"
     },
     "confirm": {
       "delete": {
@@ -232,14 +233,14 @@
       "searchCatalogFor": "Katalog nach Karte für {line} durchsuchen"
     },
     "toInventory": {
-      "button": "Zur Kartenliste",
-      "hint": "Die Karten dieses Decks in die Kartenliste übernehmen",
-      "title": "Deck in die Kartenliste übernehmen",
+      "button": "Zum Inventar hinzufügen",
+      "hint": "Die Karten dieses Decks ins Inventar übernehmen",
+      "title": "Deck zum Inventar hinzufügen",
       "description": "Nützlich, wenn du die Karten besitzt, sie aber noch nicht eingetragen hast – oder ein Deck aus einer Liste importiert hast.",
       "missing": {
         "label": "Nur fehlende Exemplare",
         "copies": "{count} Exemplar fehlt | {count} Exemplare fehlen",
-        "none": "Alle Karten des Decks sind schon in der Kartenliste."
+        "none": "Alle Karten des Decks sind schon im Inventar."
       },
       "all": {
         "label": "Alle Exemplare des Decks",

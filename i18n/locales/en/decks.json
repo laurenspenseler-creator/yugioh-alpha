@@ -17,7 +17,8 @@
       "rename": "Rename",
       "duplicate": "Duplicate",
       "share": "Share",
-      "fillCollection": "Fill collection …"
+      "fillCollection": "Fill collection …",
+      "toInventory": "Add deck to inventory"
     },
     "confirm": {
       "delete": {
@@ -232,7 +233,7 @@
       "searchCatalogFor": "Search the catalog for {line}"
     },
     "toInventory": {
-      "button": "To inventory",
+      "button": "Add to inventory",
       "hint": "Add the cards of this deck to the inventory",
       "title": "Add the deck to the inventory",
       "description": "Useful when you own the cards but have not entered them yet, or imported a deck from a list.",
