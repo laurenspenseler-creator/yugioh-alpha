@@ -62,7 +62,14 @@ const form = reactive({
   participantsText: '',
 })
 
-// One player per line: a name, or the e-mail address of an account.
+// A single game has no score, so there is nothing for the scoring "by games" to tell apart: a win is 3 points, a loss 0
+// (what the classic scoring says). The choice is shown as that and cannot be changed until the duel is best of 3.
+const singleGame = computed(() => form.bestOf === 1)
+const effectiveScoring = computed<ScoringSystem>(() => singleGame.value ? 'match' : form.scoring)
+
+// One player per line: a name, or the e-mail address of an account; the decks of a player follow in brackets, so a line
+// has room for more than the name.
+const DECKS_ROOM_PER_LINE = 200
 const participantLines = computed(() => form.participantsText.split('\n').map(line => line.trim()).filter(line => line.length > 0))
 const participantCount = computed(() => participantLines.value.length + (form.includeSelf ? 1 : 0))
 
@@ -103,7 +110,7 @@ async function submit() {
         flow: 'rounds',
         prelaunch: form.mode === 'swiss' && form.prelaunch,
         bestOf: form.bestOf,
-        scoring: form.scoring,
+        scoring: effectiveScoring.value,
         includeSelf: form.includeSelf,
         participants: participantLines.value,
       },
@@ -202,14 +209,15 @@ async function submit() {
 
         <UFormField :label="t('tournaments.new.scoring')">
           <USelect
-            v-model="form.scoring"
+            :model-value="effectiveScoring"
             :items="scoringItems"
+            :disabled="singleGame"
             :aria-label="t('tournaments.new.scoring')"
             class="w-full"
+            @update:model-value="form.scoring = $event"
           />
           <p class="mt-1 text-xs text-muted">
-            {{ t(`tournaments.scoring.${form.scoring}.description`) }}
-            {{ form.bestOf === 1 ? t('tournaments.queue.scoringSingleHint') : '' }}
+            {{ singleGame ? t('tournaments.queue.scoringSingleHint') : t(`tournaments.scoring.${form.scoring}.description`) }}
           </p>
         </UFormField>
 
@@ -259,7 +267,7 @@ async function submit() {
             :rows="10"
             :placeholder="t('tournaments.new.participants.placeholder')"
             :aria-label="t('tournaments.new.participants.title')"
-            :maxlength="MAX_PARTICIPANTS * (PARTICIPANT_NAME_MAX_LENGTH + 1)"
+            :maxlength="MAX_PARTICIPANTS * (PARTICIPANT_NAME_MAX_LENGTH + 1 + DECKS_ROOM_PER_LINE)"
             class="w-full"
           />
         </UFormField>

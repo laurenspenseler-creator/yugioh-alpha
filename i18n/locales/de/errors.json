@@ -100,6 +100,7 @@
       "invalid_best_of": "Ein Duell ist eine einzelne Partie oder Best of 3.",
       "invalid_games": "Bei Best of 3 gewinnt der Sieger zwei Partien, der andere keine oder eine.",
       "invalid_participants": "Die Teilnehmerliste ist ungültig (höchstens {max} Namen).",
+      "schedule_not_over": "Es sind noch Duelle offen. Trage erst alle Ergebnisse ein.",
       "section_not_allowed": "Diese Karte kann nicht in diesen Deckbereich.",
       "conversation_not_found": "Unterhaltung nicht gefunden.",
       "action_not_found": "Vorschlag nicht gefunden.",

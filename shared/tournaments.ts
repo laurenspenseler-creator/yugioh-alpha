@@ -259,7 +259,9 @@ export interface QueueTableRowDto {
   played: number
   /** Duels still to play. */
   open: number
-  buchholz: number
+  /** The games won and lost in all duels (a single game counts as 1:0); their difference breaks a tie on points. */
+  gamesWon: number
+  gamesLost: number
   left: boolean
   tied: boolean
   /** The table the player is playing at right now. */
@@ -300,6 +302,8 @@ export interface QueueDetail {
   firstPlaceTie: string[]
   /** The Swiss pairings that have not started could be drawn again (organizer only). */
   canRecompute: boolean
+  /** Every duel is played and the organizer could add one more Spieltag (organizer only, while the tournament runs). */
+  canExtend: boolean
   duelsDone: number
   duelsTotal: number
 }
@@ -402,6 +406,8 @@ export const TOURNAMENT_ERROR_CODES = [
   'tournament_not_running', 'no_open_pairings',
   // Spieltage, best of 3 and the players named when the tournament is created.
   'invalid_flow', 'invalid_best_of', 'invalid_games', 'invalid_participants',
+  // Extending a tournament by one more Spieltag (ADR 0044).
+  'schedule_not_over',
 ] as const
 export type TournamentErrorCode = typeof TOURNAMENT_ERROR_CODES[number]
 

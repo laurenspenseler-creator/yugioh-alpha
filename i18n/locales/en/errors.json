@@ -94,6 +94,7 @@
       "drop_option_unavailable": "This choice does not add up at the current standing.",
       "nothing_to_decide": "There is nothing to decide here.",
       "rematch_not_pending": "This rematch is not due.",
+      "schedule_not_over": "There are still duels to play. Enter all results first.",
       "tournament_not_running": "The tournament is not running.",
       "no_open_pairings": "There are no open pairings that could be recalculated.",
       "invalid_flow": "Unknown kind of tournament.",

@@ -29,6 +29,23 @@ export function isCardKind(value: string): value is CardKind {
 }
 
 /**
+ * What kind of Spell or Trap a card is (Quick-Play, Continuous, Counter, ...) is kept in `race`, next to the races of the
+ * monsters. These are the `race` values that belong to Spells and to Traps, so the filters can offer them where they
+ * mean something (a Spell has no attribute, no level and no monster race).
+ */
+export const SPELL_RACES = ['Normal', 'Quick-Play', 'Continuous', 'Equip', 'Field', 'Ritual'] as const
+export const TRAP_RACES = ['Normal', 'Continuous', 'Counter'] as const
+
+/** Every `race` value that is the subtype of a Spell or a Trap. */
+export const SPELL_TRAP_RACES: readonly string[] = [...new Set<string>([...SPELL_RACES, ...TRAP_RACES])]
+
+/** The subtypes of the Spells and/or Traps among `kinds`, each once, in the order of the game's own list. */
+export function spellTrapRaces(kinds: readonly CardKind[]): string[] {
+  const wanted = [...(kinds.includes('spell') ? SPELL_RACES : []), ...(kinds.includes('trap') ? TRAP_RACES : [])]
+  return [...new Set<string>(wanted)]
+}
+
+/**
  * The kinds of one card, computed in code with the same rules as the SQL
  * filter (`server/utils/card-kind-sql.ts`); `[]` for a Skill Card or a card
  * without a type.

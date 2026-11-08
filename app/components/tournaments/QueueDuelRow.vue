@@ -120,10 +120,12 @@ function chooseScore(choice: { winnerId: string, own: number, other: number, asA
       </p>
     </div>
 
-    <!-- Four score buttons are too wide for one line in a card: two columns, under the names. -->
+    <!-- Four score buttons are too wide for one line in a card: two columns under the names, filled column by column, so
+         the player named first has both of his buttons on the left and the other one on the right. -->
     <div
       v-if="entering && bestOf === 3"
-      class="grid w-full grid-cols-2 gap-2"
+      class="grid w-full grid-flow-col grid-cols-2 grid-rows-2 gap-2"
+      data-testid="queue-duel-scores"
     >
       <UButton
         v-for="choice in scoreChoices"

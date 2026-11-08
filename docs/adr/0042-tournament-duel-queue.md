@@ -65,6 +65,9 @@ duel against each other. For the pairing only, a pause counts as half a win.
 
 ### Tiebreaks and the table
 
+(Replaced by the ladder of [ADR 0044](0044-tournament-ranking-extension-and-table-view.md): points, direct comparison,
+difference of the games, games won.)
+
 Wins, then the Buchholz sum (the wins of all opponents), then, for exactly two players, their duel (a
 rematch counts both ways, 1:1 goes on). What is left shares a place, and for first place the organizer can
 schedule one deciding duel (kind `decider`, which settles the tie whatever the earlier duels were). Players

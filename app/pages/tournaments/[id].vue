@@ -90,6 +90,21 @@ async function onFinishClick() {
   await finishTournament()
 }
 
+// A duel tournament that is played to the end can go on: one more Spieltag, drawn from the table as it stands.
+async function onExtendClick() {
+  const confirmed = await confirm({
+    title: t('tournaments.queue.extend.title'),
+    description: t('tournaments.queue.extend.description'),
+  })
+  if (!confirmed) {
+    return
+  }
+  await run(
+    () => $fetch<TournamentDetail>(`/api/tournaments/${tournamentId.value}/extend`, { method: 'POST' }),
+    'tournaments.queue.extend.failed',
+  )
+}
+
 // --- Duel queue: a player leaves, or the organizer decides later -------------------
 
 const leaveOpen = ref(false)
@@ -322,6 +337,17 @@ const actionHint = computed(() => {
                 />
               </template>
               <template v-else-if="tournament.status === 'running' && isQueue">
+                <!-- Everything played and still want more: one more Spieltag. -->
+                <UButton
+                  v-if="tournament.queue?.canExtend"
+                  :label="t('tournaments.queue.extend.label')"
+                  icon="i-lucide-calendar-plus"
+                  color="neutral"
+                  variant="outline"
+                  :disabled="busy"
+                  data-testid="tournament-extend"
+                  @click="onExtendClick"
+                />
                 <!-- A duel queue has no rounds to close: the tournament is saved and ended in one step. -->
                 <UButton
                   :label="t('tournaments.queue.finish.save')"

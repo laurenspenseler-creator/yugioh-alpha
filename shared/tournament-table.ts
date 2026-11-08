@@ -1,9 +1,12 @@
-// The table of a queue tournament (ADR 0042, 0043), worked out from the duels every time it is shown. Sorted by
-// points (how a duel is worth points is the tournament's scoring), then wins; because everybody ends with the same
-// number of duels there is no win rate. Ties are broken by the Buchholz sum (the wins of all one's opponents, which
-// evens out the luck of the draw) and then, for exactly two players who played each other, by that duel (with a
-// rematch both count, 1:1 goes on). What is left is a tie: both get the same place, and for first place the app asks
-// for a deciding duel.
+// The table of a queue tournament (ADR 0042, 0043, 0044), worked out from the duels every time it is shown. The order is
+// the one the testers asked for, and each step only decides between players the one before left level:
+//
+//   1. Points (how a duel is worth points is the tournament's scoring; with the classic one they are the match points)
+//   2. The direct comparison: who won the duel(s) against the players level on points
+//   3. The difference between the games won and lost (a single game counts as 1:0)
+//   4. The games won in all
+//
+// What is left is a tie: both get the same place, and for first place the app asks for a deciding duel.
 
 import { opponentIn } from './tournament-duels'
 import type { Duel, DuelsState } from './tournament-duels'
@@ -25,6 +28,16 @@ export function duelPoints(duel: Duel, playerId: string, scoring: PointScoring):
   return won ? (other === 0 ? 3 : 2) : (own >= 1 ? 1 : 0)
 }
 
+/** The games a player won and lost in one done duel; a single game, entered without a score, is 1:0 for the winner. */
+export function duelGames(duel: Duel, playerId: string): { won: number, lost: number } {
+  const own = duel.a === playerId ? duel.gamesA : duel.gamesB
+  const other = duel.a === playerId ? duel.gamesB : duel.gamesA
+  if (own === undefined || own === null || other === undefined || other === null) {
+    return duel.winner === playerId ? { won: 1, lost: 0 } : { won: 0, lost: 1 }
+  }
+  return { won: own, lost: other }
+}
+
 export interface TableRow {
   playerId: string
   /** 1-based place, equal for a tie; `null` for a player who left (grey, no place). */
@@ -34,7 +47,9 @@ export interface TableRow {
   points: number
   /** Duels played: the table can show unequal numbers during the tournament (pauses, make-up duels to come). */
   played: number
-  buchholz: number
+  /** The games won and lost in all duels (a single game counts as 1:0). */
+  gamesWon: number
+  gamesLost: number
   /** Left the tournament: listed grey, without a place. */
   left: boolean
   /** The player is level with another one after every tiebreak (the place is shared). */
@@ -43,26 +58,19 @@ export interface TableRow {
 
 type Counted = Omit<TableRow, 'place' | 'tied'>
 
-/** How the two players stand against each other: their wins in the done duels between them. */
-function headToHead(duels: readonly Duel[], x: string, y: string): { x: number, y: number } {
-  const result = { x: 0, y: 0 }
-  const decider = { x: 0, y: 0 }
+/**
+ * How each player of `group` did in the done duels against the others of the group: the wins of a deciding duel first
+ * (it settles a tie whatever the duels before said), then the wins of the other duels.
+ */
+function directWins(duels: readonly Duel[], group: readonly string[]): Map<string, [number, number]> {
+  const inGroup = new Set(group)
+  const result = new Map<string, [number, number]>(group.map(id => [id, [0, 0]]))
   for (const duel of duels) {
-    if (duel.status !== 'done' || !duel.winner) {
-      continue
-    }
-    if ((duel.a === x && duel.b === y) || (duel.a === y && duel.b === x)) {
-      const score = duel.kind === 'decider' ? decider : result
-      if (duel.winner === x) {
-        score.x += 1
-      }
-      else if (duel.winner === y) {
-        score.y += 1
-      }
+    if (duel.winner && inGroup.has(duel.a) && inGroup.has(duel.b)) {
+      result.get(duel.winner)![duel.kind === 'decider' ? 0 : 1] += 1
     }
   }
-  // The deciding duel settles the tie whatever the earlier duels said.
-  return decider.x !== decider.y ? decider : result
+  return result
 }
 
 /**
@@ -71,44 +79,64 @@ function headToHead(duels: readonly Duel[], x: string, y: string): { x: number, 
  */
 export function computeTable(state: DuelsState, scoring: PointScoring = 'games'): TableRow[] {
   const counted = state.duels.filter(duel => duel.status === 'done' && duel.winner)
-  const wins = new Map<string, number>()
-  for (const duel of counted) {
-    wins.set(duel.winner!, (wins.get(duel.winner!) ?? 0) + 1)
+  const recordOf = (playerId: string, duels: readonly Duel[]): Counted => {
+    const own = duels.filter(duel => opponentIn(duel, playerId) !== null)
+    let gamesWon = 0
+    let gamesLost = 0
+    for (const duel of own) {
+      const games = duelGames(duel, playerId)
+      gamesWon += games.won
+      gamesLost += games.lost
+    }
+    return {
+      playerId,
+      wins: own.filter(duel => duel.winner === playerId).length,
+      points: own.reduce((sum, duel) => sum + duelPoints(duel, playerId, scoring), 0),
+      played: own.length,
+      gamesWon,
+      gamesLost,
+      left: false,
+    }
   }
-  const pointsOf = (playerId: string, duels: readonly Duel[]) =>
-    duels.filter(duel => opponentIn(duel, playerId) !== null).reduce((sum, duel) => sum + duelPoints(duel, playerId, scoring), 0)
   const shown = state.players.filter(player => player.status !== 'disqualified')
   const seedOf = new Map(state.players.map(player => [player.id, player.seed]))
 
-  const rowOf = (playerId: string): Counted => {
-    const own = counted.filter(duel => opponentIn(duel, playerId) !== null)
-    const buchholz = own.reduce((sum, duel) => sum + (wins.get(opponentIn(duel, playerId)!) ?? 0), 0)
-    return { playerId, wins: wins.get(playerId) ?? 0, points: pointsOf(playerId, counted), played: own.length, buchholz, left: false }
-  }
+  const playing = shown.filter(player => player.status === 'active').map(player => recordOf(player.id, counted))
+  playing.sort((x, y) => y.points - x.points || seedOf.get(x.playerId)! - seedOf.get(y.playerId)!)
 
-  const playing = shown.filter(player => player.status === 'active').map(player => rowOf(player.id))
-  playing.sort((x, y) => y.points - x.points || y.wins - x.wins || y.buchholz - x.buchholz || seedOf.get(x.playerId)! - seedOf.get(y.playerId)!)
-
-  // Groups level on points, wins and Buchholz: two players are told apart by their duel, more than two stay level.
   const rows: TableRow[] = []
   let start = 0
   while (start < playing.length) {
+    // Everybody level on points: the direct comparison, then the difference of the games, then the games won.
     let end = start + 1
-    while (end < playing.length && playing[end]!.points === playing[start]!.points && playing[end]!.wins === playing[start]!.wins && playing[end]!.buchholz === playing[start]!.buchholz) {
+    while (end < playing.length && playing[end]!.points === playing[start]!.points) {
       end += 1
     }
     const group = playing.slice(start, end)
-    if (group.length === 2) {
-      const result = headToHead(counted, group[0]!.playerId, group[1]!.playerId)
-      if (result.x !== result.y) {
-        const ordered = result.y > result.x ? [group[1]!, group[0]!] : group
-        rows.push({ ...ordered[0]!, place: start + 1, tied: false }, { ...ordered[1]!, place: start + 2, tied: false })
-        start = end
-        continue
-      }
+    const direct = directWins(counted, group.map(row => row.playerId))
+    const compareDirect = (x: Counted, y: Counted) => {
+      const [xd, xr] = direct.get(x.playerId)!
+      const [yd, yr] = direct.get(y.playerId)!
+      return (yd - xd) || (yr - xr)
     }
-    for (const row of group) {
-      rows.push({ ...row, place: start + 1, tied: group.length > 1 })
+    group.sort((x, y) => compareDirect(x, y)
+      || (y.gamesWon - y.gamesLost) - (x.gamesWon - x.gamesLost)
+      || y.gamesWon - x.gamesWon
+      || seedOf.get(x.playerId)! - seedOf.get(y.playerId)!)
+
+    let from = 0
+    while (from < group.length) {
+      let to = from + 1
+      while (to < group.length
+        && compareDirect(group[from]!, group[to]!) === 0
+        && group[to]!.gamesWon - group[to]!.gamesLost === group[from]!.gamesWon - group[from]!.gamesLost
+        && group[to]!.gamesWon === group[from]!.gamesWon) {
+        to += 1
+      }
+      for (const row of group.slice(from, to)) {
+        rows.push({ ...row, place: start + from + 1, tied: to - from > 1 })
+      }
+      from = to
     }
     start = end
   }
@@ -118,8 +146,8 @@ export function computeTable(state: DuelsState, scoring: PointScoring = 'games')
     .filter(player => player.status === 'dropped')
     .sort((x, y) => x.seed - y.seed)
     .map((player): TableRow => {
-      const own = state.duels.filter(duel => (duel.status === 'done' || duel.status === 'void') && duel.winner !== null && opponentIn(duel, player.id) !== null)
-      return { playerId: player.id, place: null, wins: own.filter(duel => duel.winner === player.id).length, points: pointsOf(player.id, own), played: own.length, buchholz: 0, left: true, tied: false }
+      const own = state.duels.filter(duel => (duel.status === 'done' || duel.status === 'void') && duel.winner !== null)
+      return { ...recordOf(player.id, own), place: null, left: true, tied: false }
     })
   return [...rows, ...leftRows]
 }

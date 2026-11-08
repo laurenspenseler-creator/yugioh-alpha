@@ -20,27 +20,60 @@ const byRound = computed(() => queue.value.flow === 'rounds')
 /** The decks each player plays (ADR 0039), by name; shown next to the player so everybody knows what they face. */
 const decksOf = computed(() => new Map(props.tournament.participants.map(participant => [participant.id, participant.decks.map(deck => deck.name).join(', ')])))
 
-// The table can be folded away (it takes a lot of room on a small screen); the choice is kept in this browser.
+// The table can be folded away (it takes a lot of room on a small screen) and it can be pinned, i.e. follow the
+// reader down the page, or be released and scroll away with the rest. Both choices are kept in this browser.
 const HIDDEN_KEY = 'ygo-queue-table-hidden'
+const PINNED_KEY = 'ygo-queue-table-pinned'
 const hidden = ref(false)
+const pinned = ref(true)
+
+// A pinned table scrolls inside itself and so can hide rows (tester feedback: "Ben is not shown"): it says so.
+const body = ref<HTMLElement | null>(null)
+const overflowing = ref(false)
+
+function measure() {
+  overflowing.value = pinned.value && !hidden.value && body.value !== null && body.value.scrollHeight > body.value.clientHeight + 1
+}
 
 onMounted(() => {
   try {
     hidden.value = localStorage.getItem(HIDDEN_KEY) === '1'
+    pinned.value = localStorage.getItem(PINNED_KEY) !== '0'
   }
   catch {
-    // Storage can be blocked: the table is simply shown.
+    // Storage can be blocked: the table is simply shown, and pinned.
   }
+  measure()
+  window.addEventListener('resize', measure)
 })
+
+onBeforeUnmount(() => window.removeEventListener('resize', measure))
+
+watch([() => queue.value.table.length, pinned, hidden], () => nextTick(measure), { flush: 'post' })
+
+function remember(key: string, value: boolean) {
+  try {
+    localStorage.setItem(key, value ? '1' : '0')
+  }
+  catch {
+    // Not remembered, still set for now.
+  }
+}
 
 function toggleHidden() {
   hidden.value = !hidden.value
-  try {
-    localStorage.setItem(HIDDEN_KEY, hidden.value ? '1' : '0')
-  }
-  catch {
-    // Not remembered, still hidden for now.
-  }
+  remember(HIDDEN_KEY, hidden.value)
+}
+
+function togglePinned() {
+  pinned.value = !pinned.value
+  remember(PINNED_KEY, pinned.value)
+}
+
+/** The difference of the games, with its sign, as the table shows it. */
+function difference(won: number, lost: number): string {
+  const value = won - lost
+  return value > 0 ? `+${value}` : String(value)
 }
 
 const remaining = computed(() => {
@@ -55,20 +88,32 @@ const remaining = computed(() => {
 
 <template>
   <section
-    class="panel sticky top-14 z-20 p-3 sm:p-4 lg:top-0"
+    class="panel p-3 sm:p-4"
+    :class="pinned ? 'sticky top-14 z-20 lg:top-0' : ''"
     data-testid="queue-table"
   >
     <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
       <h2 class="text-base font-semibold text-highlighted">
         {{ t('tournaments.queue.board.tableTitle') }}
       </h2>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
         <p class="text-xs text-muted">
           {{ t('tournaments.queue.board.progress', { done: queue.duelsDone, total: queue.duelsTotal }) }}
           <template v-if="remaining">
             · {{ remaining }}
           </template>
         </p>
+        <UButton
+          size="xs"
+          color="neutral"
+          variant="ghost"
+          :icon="pinned ? 'i-lucide-pin-off' : 'i-lucide-pin'"
+          :label="pinned ? t('tournaments.queue.board.unpinTable') : t('tournaments.queue.board.pinTable')"
+          :title="pinned ? t('tournaments.queue.board.unpinTableHelp') : t('tournaments.queue.board.pinTableHelp')"
+          :aria-pressed="pinned"
+          data-testid="queue-table-pin"
+          @click="togglePinned"
+        />
         <UButton
           size="xs"
           color="neutral"
@@ -82,12 +127,20 @@ const remaining = computed(() => {
       </div>
     </div>
 
+    <!-- Pinned, the table stays on screen and so it may not take more than a part of it: it scrolls inside. Released, it
+         is part of the page and shows every player at once. -->
     <div
       v-show="!hidden"
-      class="mt-2 max-h-[26vh] overflow-y-auto sm:max-h-[42vh]"
+      ref="body"
+      class="mt-2"
+      :class="pinned ? 'max-h-[26vh] overflow-y-auto sm:max-h-[42vh]' : ''"
+      data-testid="queue-table-body"
     >
       <table class="w-full text-sm">
-        <thead class="sticky top-0 bg-default text-xs text-muted">
+        <thead
+          class="bg-default text-xs text-muted"
+          :class="pinned ? 'sticky top-0' : ''"
+        >
           <tr class="text-left">
             <th
               class="w-9 py-1 pr-1 font-medium"
@@ -124,9 +177,15 @@ const remaining = computed(() => {
             </th>
             <th
               class="hidden w-16 px-1 py-1 text-right font-medium sm:table-cell"
-              :title="t('tournaments.queue.board.tableHelp')"
+              :title="t('tournaments.queue.board.columns.gamesHelp')"
             >
-              {{ t('tournaments.queue.board.columns.buchholz') }}
+              {{ t('tournaments.queue.board.columns.games') }}
+            </th>
+            <th
+              class="hidden w-12 px-1 py-1 text-right font-medium sm:table-cell"
+              :title="t('tournaments.queue.board.columns.diffHelp')"
+            >
+              {{ t('tournaments.queue.board.columns.diff') }}
             </th>
             <th class="hidden px-2 py-1 font-medium md:table-cell">
               {{ t('tournaments.queue.board.columns.decks') }}
@@ -187,7 +246,10 @@ const remaining = computed(() => {
               {{ row.left ? '–' : row.open }}
             </td>
             <td class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell">
-              {{ row.buchholz }}
+              {{ row.gamesWon }}:{{ row.gamesLost }}
+            </td>
+            <td class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell">
+              {{ difference(row.gamesWon, row.gamesLost) }}
             </td>
             <td
               class="hidden max-w-56 truncate px-2 py-1.5 text-xs font-normal text-toned md:table-cell"
@@ -219,6 +281,14 @@ const remaining = computed(() => {
         </tbody>
       </table>
     </div>
+
+    <p
+      v-if="overflowing"
+      class="mt-2 text-xs text-warning"
+      data-testid="queue-table-scrolls"
+    >
+      {{ t('tournaments.queue.board.tableScrolls') }}
+    </p>
 
     <!-- On a phone the card stays pinned, so the explanation moves to the help at the bottom of the page. -->
     <p

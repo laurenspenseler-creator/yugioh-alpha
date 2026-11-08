@@ -82,15 +82,49 @@ describe('the new tournament form', () => {
     expect(component.text()).not.toContain('Warteschlange')
   })
 
-  it('scores by games unless told otherwise, and says that a single game gives 3 or 0', async () => {
+  it('does not mix single duels with the scoring by games: it shows the classic scoring there, disabled, and sends that', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ id: 't-9' }))
+    vi.stubGlobal('$fetch', fetchSpy)
     const component = await mountSuspended(NewTournamentPage)
+    const scoring = () => component.find('button[aria-label="Punktevergabe"]')
 
-    expect(formOf(component).scoring).toBe('games')
-    expect(component.text()).toContain('Bei Einzelduellen gibt ein Sieg immer 3 Punkte')
+    // Single duels are the default: nothing to tell apart by games, so 3 and 0.
+    expect(formOf(component).bestOf).toBe(1)
+    expect(scoring().attributes('disabled')).toBeDefined()
+    expect(scoring().text()).toContain('Klassisch (3 · 0)')
+    expect(component.text()).toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte, eine Niederlage 0')
 
+    formOf(component).name = 'Freitag'
+    await component.find('form').trigger('submit')
+    await flushPromises()
+    expect(fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments')![1]).toMatchObject({ body: { bestOf: 1, scoring: 'match' } })
+
+    // Best of 3: the scoring by games is the default again and can be chosen.
     formOf(component).bestOf = 3
     await nextTick()
-    expect(component.text()).not.toContain('Bei Einzelduellen gibt ein Sieg immer 3 Punkte')
+    expect(formOf(component).scoring).toBe('games')
+    expect(scoring().attributes('disabled')).toBeUndefined()
+    expect(scoring().text()).toContain('Nach Spielen')
+    expect(component.text()).not.toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte')
+  })
+
+  it('sends the decks written in brackets behind a name as part of the line, and counts one player per line', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ id: 't-9' }))
+    vi.stubGlobal('$fetch', fetchSpy)
+    const component = await mountSuspended(NewTournamentPage)
+    const form = formOf(component)
+
+    form.name = 'Decks'
+    form.participantsText = 'ANna (blue eyes, Grabwächter)\nFabi ( antiker antrieb, Cyber drache)\nDarius ( Dark magician / Blue eyes )'
+    await nextTick()
+    expect(component.find('[data-testid="new-participant-count"]').text()).toBe('Teilnehmer: 4')
+    expect(component.text()).toContain('Decks stehen in Klammern hinter dem Namen')
+
+    await component.find('form').trigger('submit')
+    await flushPromises()
+    expect(fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments')![1]).toMatchObject({
+      body: { participants: ['ANna (blue eyes, Grabwächter)', 'Fabi ( antiker antrieb, Cyber drache)', 'Darius ( Dark magician / Blue eyes )'] },
+    })
   })
 
   it('counts the players typed in, with the organizer when they play', async () => {

@@ -4,6 +4,8 @@ import { defineComponent, h } from 'vue'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import TournamentDetailPage from '~/pages/tournaments/[id].vue'
 import type {
+  QueueDetail,
+  QueueSetupDto,
   TournamentDeckSnapshot,
   TournamentDetail,
   TournamentMatchDto,
@@ -33,6 +35,10 @@ mockNuxtImport('useFetch', () => {
 mockNuxtImport('useRoute', () => {
   return () => ({ path: '/tournaments/t-1', params: { id: 't-1' }, query: {} })
 })
+
+// The question the page asks before it does something that cannot be taken back; answered yes unless a test says no.
+const confirmSpy = vi.hoisted(() => vi.fn(async (_options: unknown) => true))
+mockNuxtImport('useConfirm', () => () => ({ confirm: confirmSpy }))
 
 function participant(overrides: Partial<TournamentParticipantDto> = {}): TournamentParticipantDto {
   return {
@@ -160,6 +166,7 @@ function tournamentDetail(overrides: Partial<TournamentDetail> = {}): Tournament
 
 afterEach(async () => {
   vi.unstubAllGlobals()
+  confirmSpy.mockClear()
   state.getCallCount = 0
   await setTestLocale('de')
 })
@@ -525,6 +532,87 @@ describe('tournament detail page — participant role', () => {
     expect(text).not.toContain('Melde dein Deck an, bevor das Turnier startet.')
     expect(component.findAll('button').filter(button => button.text() === 'Deck hinzufügen')).toHaveLength(0)
     expect(component.findAll('button').filter(button => button.text() === 'Decks ändern')).toHaveLength(1)
+  })
+})
+
+describe('tournament detail page — a duel tournament that is played out', () => {
+  const setup: QueueSetupDto = { mode: 'round_robin', rounds: null, prelaunch: false, flow: 'rounds', bestOf: 1, scoring: 'match', tables: 1, duelMinutes: 30 }
+
+  function duelTournament(queue: Partial<QueueDetail>, overrides: Partial<TournamentDetail> = {}): TournamentDetail {
+    return tournamentDetail({
+      status: 'running',
+      engine: 'queue',
+      queueSetup: setup,
+      canFinish: true,
+      queue: {
+        mode: 'round_robin',
+        rounds: null,
+        prelaunch: false,
+        flow: 'rounds',
+        bestOf: 1,
+        tables: 1,
+        duelMinutes: 30,
+        table: [],
+        duels: [],
+        pendingRematches: [],
+        undecided: [],
+        dropOptions: {},
+        remainingMinutes: null,
+        firstPlaceTie: [],
+        canRecompute: false,
+        canExtend: true,
+        duelsDone: 16,
+        duelsTotal: 16,
+        ...queue,
+      },
+      ...overrides,
+    })
+  }
+
+  it('offers one more Spieltag next to "Turnier speichern & beenden", asks first and then adds it', async () => {
+    const extended = duelTournament({ canExtend: false, duelsTotal: 20 })
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => extended)
+    vi.stubGlobal('$fetch', fetchSpy)
+    state.tournament = duelTournament({})
+    const component = await mountSuspended(TournamentDetailPage)
+
+    const buttons = component.findAll('button').map(button => button.text())
+    expect(buttons).toContain('Turnier speichern & beenden')
+    expect(buttons).toContain('Weiteren Spieltag spielen')
+    expect(buttons.indexOf('Weiteren Spieltag spielen')).toBeLessThan(buttons.indexOf('Turnier speichern & beenden'))
+
+    await component.find('[data-testid="tournament-extend"]').trigger('click')
+    await flushPromises()
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1)
+    expect(fetchSpy).toHaveBeenCalledWith('/api/tournaments/t-1/extend', { method: 'POST' })
+    // The page takes over what the server answered: no more button while the new day is played.
+    expect(component.find('[data-testid="tournament-extend"]').exists()).toBe(false)
+    expect(component.text()).toContain('16 von 20 Duellen gespielt')
+  })
+
+  it('does not add a day when the question is answered with no', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => duelTournament({}))
+    vi.stubGlobal('$fetch', fetchSpy)
+    confirmSpy.mockResolvedValueOnce(false)
+    state.tournament = duelTournament({})
+    const component = await mountSuspended(TournamentDetailPage)
+
+    await component.find('[data-testid="tournament-extend"]').trigger('click')
+    await flushPromises()
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it('has no such button while duels are open, for a player, or once the tournament is over', async () => {
+    state.tournament = duelTournament({ canExtend: false, duelsDone: 3 })
+    expect((await mountSuspended(TournamentDetailPage)).find('[data-testid="tournament-extend"]').exists()).toBe(false)
+
+    state.tournament = duelTournament({ canExtend: false }, { role: 'participant' })
+    expect((await mountSuspended(TournamentDetailPage)).find('[data-testid="tournament-extend"]').exists()).toBe(false)
+
+    state.tournament = duelTournament({ canExtend: false }, { status: 'finished' })
+    expect((await mountSuspended(TournamentDetailPage)).find('[data-testid="tournament-extend"]').exists()).toBe(false)
   })
 })
 

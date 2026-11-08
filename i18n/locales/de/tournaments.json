@@ -59,18 +59,21 @@
       },
       "board": {
         "tableTitle": "Tabelle",
-        "tableHelp": "Sortiert nach Punkten, bei gleichen Punkten nach Siegen. Dann entscheidet Buchholz (die Summe der Siege aller Gegner), danach das direkte Duell. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
+        "tableHelp": "Sortiert nach Punkten. Bei gleichen Punkten entscheidet zuerst der direkte Vergleich (wer das Duell gegen den Punktgleichen gewonnen hat), dann die Differenz aus gewonnenen und verlorenen Partien, dann die Zahl der gewonnenen Partien. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
         "columns": {
           "place": "Platz",
           "player": "Spieler",
           "wins": "Siege",
           "played": "Duelle",
           "open": "Offen",
-          "buchholz": "Buchholz",
           "now": "Jetzt",
           "decks": "Decks",
           "points": "Punkte",
-          "pointsHelp": "Punkte nach der gewählten Punktevergabe"
+          "pointsHelp": "Punkte nach der gewählten Punktevergabe",
+          "games": "Partien",
+          "gamesHelp": "Gewonnene : verlorene Partien (eine einzelne Partie zählt als 1:0)",
+          "diff": "Diff.",
+          "diffHelp": "Gewonnene minus verlorene Partien. Bei gleichen Punkten und gleichem direktem Vergleich entscheidet die bessere Differenz, danach die Zahl der gewonnenen Partien."
         },
         "atTable": "Tisch {number}",
         "inQueue": "Wartet · Nr. {position}",
@@ -114,7 +117,12 @@
         "hideTable": "Tabelle ausblenden",
         "playing": "Spielt",
         "matchdaysTitle": "Spieltage",
-        "scheduleHelpRounds": "Alle Duelle eines Spieltags laufen nebeneinander. Der nächste Spieltag beginnt, sobald das letzte Duell des aktuellen fertig ist."
+        "scheduleHelpRounds": "Alle Duelle eines Spieltags laufen nebeneinander. Der nächste Spieltag beginnt, sobald das letzte Duell des aktuellen fertig ist.",
+        "pinTable": "Tabelle anheften",
+        "unpinTable": "Tabelle lösen",
+        "pinTableHelp": "Die Tabelle bleibt oben stehen, wenn du scrollst.",
+        "unpinTableHelp": "Die Tabelle scrollt mit der Seite mit und zeigt alle Spieler auf einmal.",
+        "tableScrolls": "Die Tabelle scrollt: weitere Spieler stehen weiter oben oder unten. Mit „Tabelle lösen“ siehst du alle auf einmal."
       },
       "rematch": {
         "title": "Wiederholungsduell nötig",
@@ -212,7 +220,13 @@
         },
         "label": "Ein Duell ist"
       },
-      "scoringSingleHint": "Bei Einzelduellen gibt ein Sieg immer 3 Punkte; der Unterschied zählt erst bei Best of 3."
+      "scoringSingleHint": "Bei Einzelduellen gibt ein Sieg 3 Punkte, eine Niederlage 0. Die Wertung nach Spielen (3 · 2 · 1 · 0) gibt es nur bei Best of 3.",
+      "extend": {
+        "label": "Weiteren Spieltag spielen",
+        "title": "Einen weiteren Spieltag spielen?",
+        "description": "Es wird ein neuer Spieltag ausgelost: Wer gleich viele Punkte hat, spielt gegeneinander, und niemand trifft jemanden, gegen den er schon gespielt hat – außer es geht nicht anders (nach „Jeder gegen jeden“ ist der neue Spieltag ein Rückspiel). Das Turnier läuft weiter, bis du es speicherst und beendest.",
+        "failed": "Der Spieltag konnte nicht angesetzt werden."
+      }
     },
     "status": {
       "registration": "Anmeldung",
@@ -318,8 +332,8 @@
       "participants": {
         "title": "Teilnehmer",
         "count": "Teilnehmer: {count}",
-        "hint": "Ein Name pro Zeile – oder die E-Mail-Adresse eines Kontos. Höchstens {max}; weitere kannst du später hinzufügen.",
-        "placeholder": "Anna\nBen\nCara",
+        "hint": "Ein Name pro Zeile – oder die E-Mail-Adresse eines Kontos. Decks stehen in Klammern hinter dem Namen, Komma oder / trennen sie. Höchstens {max}; weitere kannst du später hinzufügen.",
+        "placeholder": "Anna (Blue-Eyes, Grabwächter)\nBen (Dunkler Magier / Chaos)\nCara",
         "selfIn": "Du spielst selbst mit und stehst schon in der Liste.",
         "selfOut": "Du spielst nicht mit und leitest das Turnier nur."
       }

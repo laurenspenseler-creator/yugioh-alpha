@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted. Extends [ADR 0042](0042-tournament-duel-queue.md); the classic tournament stays as it was.
+Accepted. Extends [ADR 0042](0042-tournament-duel-queue.md); the classic tournament stays as it was. The order of the
+table below (points, wins, Buchholz, direct duel) was replaced by the ladder of [ADR 0044](0044-tournament-ranking-extension-and-table-view.md).
 
 ## Context
 

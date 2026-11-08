@@ -12,10 +12,10 @@ import type { useDb } from '../db'
 import { tournament, tournamentDuel, tournamentParticipant } from '../db/schema'
 import { badRequest, conflict, fail } from './tournament-errors'
 import type { DropOption, Duel, DuelPlayer, DuelsState } from '../../shared/tournament-duels'
-import { isLive, openDuelsOf } from '../../shared/tournament-duels'
+import { isLive, openDuelsOf, pairedRounds } from '../../shared/tournament-duels'
 import { decideLeave, dropOptions, leaveTournament, poolDuels, recomputeSwiss } from '../../shared/tournament-dropout'
 import type { LeaveKind } from '../../shared/tournament-dropout'
-import { startingSchedule, swissRoundDue } from '../../shared/tournament-flow'
+import { pairSwissRound, startingSchedule, swissRoundDue } from '../../shared/tournament-flow'
 import type { FlowSetup, NewDuel } from '../../shared/tournament-flow'
 import {
   DEFAULT_BEST_OF,
@@ -390,6 +390,39 @@ export function applyQueueRecompute(db: Db, row: TournamentRow, now: Date): void
   advanceQueue(db, row.id, now)
 }
 
+// --- Extending ----------------------------------------------------------------------
+
+/**
+ * One more Spieltag once everything is played ("Turnier verlängern", ADR 0044), whatever the mode. The day is paired like a
+ * Swiss round from the table as it stands: players level on points meet, and nobody plays someone they already played
+ * unless there is no other way (after a full round robin that is the rule: the new day is a return leg). A Swiss
+ * tournament has one round more afterwards.
+ */
+export function extendQueueTournament(db: Db, row: TournamentRow, now: Date): void {
+  requireRunning(row)
+  const state = loadState(db, row)
+  if (state.duels.some(duel => (duel.status === 'planned' || duel.status === 'running') && isLive(state, duel))) {
+    conflict('schedule_not_over', 'There are duels left to play')
+  }
+  if (state.players.filter(player => player.status === 'active').length < 2) {
+    conflict('not_enough_participants', 'Not enough players for another day', { min: 2 })
+  }
+
+  const round = pairedRounds(state) + 1
+  const paired = pairSwissRound(state, round, { allowRematch: true })
+  if (paired.duels.length === 0) {
+    conflict('not_enough_participants', 'Not enough players for another day', { min: 2 })
+  }
+  insertDuels(db, row.id, [...paired.duels, ...(paired.makeup ? [paired.makeup] : [])], now)
+  db.update(tournament).set({
+    ...(paired.pause ? { queuePauses: [...(row.queuePauses ?? []), paired.pause] } : {}),
+    // The Swiss rounds are counted: the new one is the last, so the pairing does not draw another by itself.
+    ...(row.queueMode === 'swiss' ? { plannedRounds: round } : {}),
+    updatedAt: now,
+  }).where(eq(tournament.id, row.id)).run()
+  advanceQueue(db, row.id, now)
+}
+
 /** The players level on first place once every duel is played (the tie the table could not break). */
 function firstPlaceTieOf(state: DuelsState, scoring: ScoringSystem): string[] {
   if (state.duels.some(duel => (duel.status === 'planned' || duel.status === 'running') && isLive(state, duel))) {
@@ -441,7 +474,8 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     points: tableRow.points,
     played: tableRow.played,
     open: tableRow.left ? 0 : openDuelsOf(state, tableRow.playerId).filter(duel => isLive(state, duel)).length,
-    buchholz: tableRow.buchholz,
+    gamesWon: tableRow.gamesWon,
+    gamesLost: tableRow.gamesLost,
     left: tableRow.left,
     tied: tableRow.tied,
     tableNumber: running.get(tableRow.playerId) ?? null,
@@ -508,6 +542,7 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     remainingMinutes,
     firstPlaceTie: running_ ? firstPlaceTieOf(state, row.scoring) : [],
     canRecompute: organizer && running_ && row.queueMode === 'swiss' && recomputeSwiss(state).length > 0,
+    canExtend: organizer && running_ && openDuels === 0,
     duelsDone: state.duels.filter(duel => duel.status === 'done').length,
     duelsTotal: state.duels.filter(duel => duel.status !== 'void').length,
   }

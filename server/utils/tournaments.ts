@@ -9,7 +9,7 @@
 // decks/collections/formats.
 
 import { randomUUID } from 'node:crypto'
-import { and, asc, eq, inArray, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm'
 import type { useDb } from '../db'
 import { badRequest, conflict, fail, forbidden, notFound } from './tournament-errors'
 import {
@@ -74,6 +74,7 @@ import {
   buildQueueDetail,
   confirmQueueRematch,
   decideQueueLeave,
+  extendQueueTournament,
   leaveQueuePlayer,
   previewQueueRecompute,
   queueSetupOf,
@@ -212,8 +213,11 @@ export interface TournamentInput {
   /** The settings of a duel queue; null for a classic tournament. `plannedRounds` is its R. */
   queue: { mode: QueueMode, prelaunch: boolean, flow: QueueFlow, bestOf: BestOf, tables: number, duelMinutes: number } | null
   /** Players named when the tournament is created (guests by name, accounts by e-mail), added right after it. */
-  participants: ParticipantInput[]
+  participants: ParticipantLine[]
 }
+
+/** A player named in the creation form, with the decks written in brackets behind the name (they are added as names). */
+export interface ParticipantLine extends ParticipantInput { decks: string[] }
 
 function normalizeDescription(raw: unknown): string | null {
   if (raw === undefined || raw === null) {
@@ -328,8 +332,30 @@ export function validateTournamentInput(body: unknown): TournamentInput {
   }
 }
 
+/**
+ * One line of the creation form: the name (or the e-mail address of an account), then in brackets the decks the player
+ * brings, "Anna (Blue-Eyes, Grabwächter / Chaos)". A comma and a slash tell the decks apart the same way; a bracket that
+ * is not closed still counts; a deck written twice is one deck.
+ */
+export function parseParticipantLine(line: string): { who: string, decks: string[] } {
+  const open = line.indexOf('(')
+  if (open < 0) {
+    return { who: line.trim(), decks: [] }
+  }
+  const rest = line.slice(open + 1)
+  const close = rest.indexOf(')')
+  const decks: string[] = []
+  for (const part of (close < 0 ? rest : rest.slice(0, close)).split(/[,/]/)) {
+    const name = part.trim()
+    if (name.length > 0 && !decks.some(known => known.toLowerCase() === name.toLowerCase())) {
+      decks.push(name)
+    }
+  }
+  return { who: line.slice(0, open).trim(), decks }
+}
+
 /** The players typed in the creation form: one entry per line, an e-mail address for an account, else a guest name. */
-function normalizeParticipantLines(raw: unknown): ParticipantInput[] {
+function normalizeParticipantLines(raw: unknown): ParticipantLine[] {
   if (raw === undefined || raw === null) {
     return []
   }
@@ -339,7 +365,16 @@ function normalizeParticipantLines(raw: unknown): ParticipantInput[] {
   return (raw as string[])
     .map(line => line.trim())
     .filter(line => line.length > 0)
-    .map(line => validateParticipantInput(line.includes('@') ? { email: line } : { name: line }))
+    .map((line) => {
+      const { who, decks } = parseParticipantLine(line)
+      if (decks.length > MAX_DECKS_PER_PARTICIPANT) {
+        badRequest('deck_limit', 'A player plays the most decks allowed', { max: MAX_DECKS_PER_PARTICIPANT })
+      }
+      return {
+        ...validateParticipantInput(who.includes('@') ? { email: who } : { name: who }),
+        decks: decks.map(name => validateDeckEntryInput({ name }).name!),
+      }
+    })
 }
 
 function normalizeFlow(raw: unknown): QueueFlow {
@@ -1195,6 +1230,18 @@ export function createTournament(db: Db, userId: string, input: TournamentInput)
     // leaves nothing half-made behind (the error of the first one stops the whole creation).
     for (const player of input.participants) {
       addParticipant(txDb, userId, id, player)
+      if (player.decks.length > 0) {
+        // The one just added is the one with the highest seed.
+        const added = txDb
+          .select({ id: tournamentParticipant.id })
+          .from(tournamentParticipant)
+          .where(eq(tournamentParticipant.tournamentId, id))
+          .orderBy(desc(tournamentParticipant.seed))
+          .get()!
+        for (const name of player.decks) {
+          addParticipantDeck(txDb, userId, id, added.id, { deckId: null, name })
+        }
+      }
     }
   })
 
@@ -2112,6 +2159,15 @@ export function recomputePairings(db: Db, userId: string, id: string, apply: boo
     })
   }
   return { changes, detail: getTournamentDetail(db, userId, id) }
+}
+
+/** One more Spieltag when every duel is played (the tournament is not over until the organizer ends it). */
+export function extendTournament(db: Db, userId: string, id: string): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  db.transaction((tx) => {
+    extendQueueTournament(tx as unknown as Db, row, new Date())
+  })
+  return getTournamentDetail(db, userId, id)
 }
 
 /** One duel that decides first place when the table ends level there. */

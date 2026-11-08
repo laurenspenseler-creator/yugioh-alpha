@@ -36,7 +36,11 @@
       "attribute": "Attribut",
       "race": "Monsterart",
       "level": "Stufe/Rang",
-      "kind": "Kartenart"
+      "kind": "Kartenart",
+      "raceSpell": "Zauberart",
+      "raceTrap": "Fallenart",
+      "raceSpellTrap": "Zauber-/Fallenart",
+      "raceAny": "Art"
     },
     "value": {
       "type": {

@@ -47,7 +47,8 @@ describe('the settings of a duel tournament', () => {
     const call = fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments/t-1')!
     expect(call[1]).toMatchObject({
       method: 'PATCH',
-      body: { queueMode: 'swiss', flow: 'queue', bestOf: 1, scoring: 'games', plannedRounds: null, prelaunch: true, tables: 3, duelMinutes: 20 },
+      // A single game has no score to be told apart by: it is saved as the classic scoring.
+      body: { queueMode: 'swiss', flow: 'queue', bestOf: 1, scoring: 'match', plannedRounds: null, prelaunch: true, tables: 3, duelMinutes: 20 },
     })
     expect(component.emitted('updated')).toHaveLength(1)
   })
@@ -100,12 +101,35 @@ describe('the settings of a duel tournament', () => {
     expect(component.find('input[aria-label="Tische"]').exists()).toBe(true)
   })
 
-  it('points out that the scoring only tells single games apart from best of 3', async () => {
-    const single = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 1 }) } })
-    const best = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 3 }) } })
+  it('does not offer the scoring by games for single duels: it is the classic one and cannot be changed there', async () => {
+    const single = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 1, scoring: 'games' }) } })
+    const best = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 3, scoring: 'games' }) } })
 
-    expect(single.text()).toContain('Bei Einzelduellen gibt ein Sieg immer 3 Punkte')
-    expect(best.text()).not.toContain('Bei Einzelduellen gibt ein Sieg immer 3 Punkte')
+    expect(single.text()).toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte, eine Niederlage 0')
+    expect(single.find('button[aria-label="Punktevergabe"]').attributes('disabled')).toBeDefined()
+    expect(single.find('button[aria-label="Punktevergabe"]').text()).toContain('Klassisch (3 · 0)')
+    expect(best.text()).not.toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte')
+    expect(best.find('button[aria-label="Punktevergabe"]').attributes('disabled')).toBeUndefined()
+    expect(best.find('button[aria-label="Punktevergabe"]').text()).toContain('Nach Spielen')
+  })
+
+  it('brings back the scoring by games that was chosen when the duel is best of 3 again', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ ...tournament() }))
+    vi.stubGlobal('$fetch', fetchSpy)
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 3, scoring: 'games' }) } })
+    const form = (component.vm as unknown as { form: { bestOf: number } }).form
+
+    form.bestOf = 1
+    await nextTick()
+    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Klassisch (3 · 0)')
+    form.bestOf = 3
+    await nextTick()
+    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Nach Spielen')
+
+    await findButton(component, 'Einstellungen speichern').trigger('click')
+    await flushPromises()
+    const call = fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments/t-1')!
+    expect(call[1]).toMatchObject({ body: { bestOf: 3, scoring: 'games' } })
   })
 
   it('estimates Spieltage by the days, not by the tables', async () => {

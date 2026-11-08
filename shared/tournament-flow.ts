@@ -85,13 +85,16 @@ function drawFirstRound(ids: readonly string[], random: () => number): PairedRou
 /**
  * Pairs round `round` of the Swiss system from the state, as a maximum matching: similar record, nobody twice, and the
  * pause for the lowest in the table who has not paused (and, in an even round, not met the player who paused before).
+ * `allowRematch` is for a day added to a tournament that is already played out (ADR 0044): players who have met are
+ * paired too, but only where no one else is left for them (the duel is then a `rematch`).
  */
-export function pairSwissRound(state: DuelsState, round: number): PairedRound {
+export function pairSwissRound(state: DuelsState, round: number, options: { allowRematch?: boolean } = {}): PairedRound {
   const players = pairablePlayers(state)
   const pauses = state.pauses ?? []
   const previous = round % 2 === 0 ? pauses.find(pause => pause.round === round - 1) : undefined
   const result = pairPlayers(players, {
     pause: true,
+    allowRematch: options.allowRematch,
     pauseNot: previous ? new Set(players.find(player => player.id === previous.playerId)?.opponents ?? []) : undefined,
   })
   const pause = result.pause ? { round, playerId: result.pause } : null

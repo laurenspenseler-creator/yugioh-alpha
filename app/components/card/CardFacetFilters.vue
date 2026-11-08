@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CARD_KINDS } from '~~/shared/card-kind'
+import { CARD_KINDS, SPELL_TRAP_RACES, spellTrapRaces } from '~~/shared/card-kind'
 import type { CardKind } from '~~/shared/card-kind'
 
 /**
@@ -10,6 +10,10 @@ import type { CardKind } from '~~/shared/card-kind'
  * - Multi-select; an empty array means "no filter".
  * - "Kartenart" (`kind`) is the grouped filter by frame, "Typ" the exact type
  *   line below it (shared/card-kind.ts); leave out `v-model:kind` to hide it.
+ * - With a `kind` the menus follow it (tester feedback: too much monster, too little Spell and Trap): when only Spell
+ *   and/or Trap are picked, Typ, Attribut and Stufe (which mean nothing for them) give way to one menu with the
+ *   subtypes (Normal, Schnell, Permanent, Ausrüstung, Spielfeld, Ritual, Konter); otherwise "Monsterart" lists only the
+ *   monsters' races. A value that is picked stays in its menu, so no filter is ever active without being visible.
  * - Multi-root (no wrapper): the parent's grid or flex places the menus, and
  *   `menuClass` sets their width (a multi-root component doesn't inherit `class`).
  * - Leave out `v-model:level` to hide the level menu (the format editor
@@ -43,8 +47,70 @@ const { cardValueOptions } = useCardText()
 const kindItems = computed(() => CARD_KINDS.map(value => ({ label: t(`card.kind.${value}`), value })))
 const typeItems = computed(() => cardValueOptions('type', props.facets.types))
 const attributeItems = computed(() => cardValueOptions('attribute', props.facets.attributes))
-const raceItems = computed(() => cardValueOptions('race', props.facets.races))
 const levelItems = computed(() => props.facets.levels.map(value => ({ label: t('card.levelFilterOption', { value }), value })))
+
+/**
+ * What the picked kinds are: no `kind` model at all (the menus stay as they are), nothing picked or only monsters, only
+ * Spells and/or Traps, or a mix of both.
+ */
+const scope = computed<'plain' | 'monster' | 'spellTrap' | 'mixed'>(() => {
+  const picked = kind.value
+  if (picked === undefined) {
+    return 'plain'
+  }
+  const spellTrap = picked.filter(value => value === 'spell' || value === 'trap').length
+  if (spellTrap === 0) {
+    return 'monster'
+  }
+  return spellTrap === picked.length ? 'spellTrap' : 'mixed'
+})
+
+/** The race values to offer: the monsters' races, the subtypes of the picked Spells and Traps, or all of them. */
+const raceValues = computed(() => {
+  const all = props.facets.races
+  if (scope.value === 'spellTrap') {
+    const wanted = spellTrapRaces(kind.value ?? [])
+    return all.filter(value => wanted.includes(value))
+  }
+  if (scope.value === 'monster') {
+    return all.filter(value => !SPELL_TRAP_RACES.includes(value))
+  }
+  return all
+})
+const raceItems = computed(() => cardValueOptions('race', [...new Set([...raceValues.value, ...race.value])]))
+
+const raceLabel = computed(() => {
+  if (scope.value === 'spellTrap') {
+    const picked = kind.value ?? []
+    return t(picked.includes('spell') && picked.includes('trap') ? 'card.field.raceSpellTrap' : picked.includes('spell') ? 'card.field.raceSpell' : 'card.field.raceTrap')
+  }
+  return t(scope.value === 'mixed' ? 'card.field.raceAny' : 'card.field.race')
+})
+
+// Spells and Traps have no exact type to choose from, no attribute and no level: those menus step aside, unless a value
+// is still picked in them (an old link), which keeps it visible.
+const showType = computed(() => scope.value !== 'spellTrap' || type.value.length > 0)
+const showAttribute = computed(() => scope.value !== 'spellTrap' || attribute.value.length > 0)
+const showLevel = computed(() => level.value !== undefined && (scope.value !== 'spellTrap' || level.value.length > 0))
+
+// Changing the kinds takes along what no longer fits: the monster menus are emptied for Spells and Traps, and the
+// values of the other group (a subtype, or a monster race) are dropped from the race menu.
+watch(() => kind.value && [...kind.value], () => {
+  if (scope.value === 'spellTrap') {
+    type.value = []
+    attribute.value = []
+    if (level.value !== undefined) {
+      level.value = []
+    }
+    const wanted = spellTrapRaces(kind.value ?? [])
+    if (race.value.some(value => !wanted.includes(value))) {
+      race.value = race.value.filter(value => wanted.includes(value))
+    }
+  }
+  else if (scope.value === 'monster' && race.value.some(value => SPELL_TRAP_RACES.includes(value))) {
+    race.value = race.value.filter(value => !SPELL_TRAP_RACES.includes(value))
+  }
+})
 </script>
 
 <template>
@@ -60,6 +126,7 @@ const levelItems = computed(() => props.facets.levels.map(value => ({ label: t('
     :class="menuClass"
   />
   <USelectMenu
+    v-if="showType"
     v-model="type"
     multiple
     value-key="value"
@@ -70,6 +137,7 @@ const levelItems = computed(() => props.facets.levels.map(value => ({ label: t('
     :class="menuClass"
   />
   <USelectMenu
+    v-if="showAttribute"
     v-model="attribute"
     multiple
     value-key="value"
@@ -85,12 +153,12 @@ const levelItems = computed(() => props.facets.levels.map(value => ({ label: t('
     value-key="value"
     :items="raceItems"
     :disabled="disabled"
-    :placeholder="t('card.field.race')"
-    :aria-label="t('card.field.race')"
+    :placeholder="raceLabel"
+    :aria-label="raceLabel"
     :class="menuClass"
   />
   <USelectMenu
-    v-if="level !== undefined"
+    v-if="showLevel"
     v-model="level"
     multiple
     value-key="value"

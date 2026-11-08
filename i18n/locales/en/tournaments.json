@@ -59,18 +59,21 @@
       },
       "board": {
         "tableTitle": "Standings",
-        "tableHelp": "Sorted by points, then by wins. Then Buchholz decides (the sum of the wins of all opponents), then the direct duel. Whoever left is grey and at the end without a place.",
+        "tableHelp": "Sorted by points. Ties are broken first by the direct comparison (who won the duel against the player level on points), then by the difference between games won and lost, then by the games won. Whoever left is grey and at the end without a place.",
         "columns": {
           "place": "Place",
           "player": "Player",
           "wins": "Wins",
           "played": "Duels",
           "open": "Open",
-          "buchholz": "Buchholz",
           "now": "Now",
           "decks": "Decks",
           "points": "Points",
-          "pointsHelp": "Points by the chosen scoring"
+          "pointsHelp": "Points by the chosen scoring",
+          "games": "Games",
+          "gamesHelp": "Games won : lost (a single game counts as 1:0)",
+          "diff": "Diff.",
+          "diffHelp": "Games won minus games lost. With equal points and an equal direct comparison the better difference decides, then the games won."
         },
         "atTable": "Table {number}",
         "inQueue": "Waiting · No. {position}",
@@ -114,7 +117,12 @@
         "hideTable": "Hide table",
         "playing": "Playing",
         "matchdaysTitle": "Matchdays",
-        "scheduleHelpRounds": "All duels of a matchday are played side by side. The next matchday starts as soon as the last duel of the current one is done."
+        "scheduleHelpRounds": "All duels of a matchday are played side by side. The next matchday starts as soon as the last duel of the current one is done.",
+        "pinTable": "Pin table",
+        "unpinTable": "Release table",
+        "pinTableHelp": "The table stays at the top when you scroll.",
+        "unpinTableHelp": "The table scrolls with the page and shows every player at once.",
+        "tableScrolls": "The table scrolls: more players are above or below. With “Release table” you see everybody at once."
       },
       "rematch": {
         "title": "Rematch needed",
@@ -212,7 +220,13 @@
         },
         "label": "A duel is"
       },
-      "scoringSingleHint": "With single duels a win is always 3 points; the difference only counts with best of 3."
+      "scoringSingleHint": "With single games a win is 3 points and a loss 0. Scoring by games (3 · 2 · 1 · 0) only exists for best of 3.",
+      "extend": {
+        "label": "Play another matchday",
+        "title": "Play another matchday?",
+        "description": "A new matchday is drawn: players level on points meet, and nobody plays someone they already played unless there is no other way (after a round robin the new day is a return leg). The tournament keeps running until you save and end it.",
+        "failed": "The matchday could not be added."
+      }
     },
     "status": {
       "registration": "Registration",
@@ -318,8 +332,8 @@
       "participants": {
         "title": "Players",
         "count": "Players: {count}",
-        "hint": "One name per line – or the e-mail address of an account. At most {max}; you can add more later.",
-        "placeholder": "Anna\nBen\nCara",
+        "hint": "One name per line – or the e-mail address of an account. Put the decks in brackets behind the name, separated by comma or /. At most {max}; you can add more later.",
+        "placeholder": "Anna (Blue-Eyes, Guardians)\nBen (Dark Magician / Chaos)\nCara",
         "selfIn": "You play too and are already on the list.",
         "selfOut": "You are not playing and only run the tournament."
       }

@@ -9,6 +9,7 @@ import {
   confirmRematch,
   createTournament,
   decideParticipantLeave,
+  extendTournament,
   finishTournament,
   getTournamentDetail,
   leaveParticipant,
@@ -530,6 +531,159 @@ describe('players named when the tournament is created', () => {
   it('refuses a list that is not a list of names', () => {
     expect(codeOf(() => validateTournamentInput({ name: 'x', participants: 'Anna' }))).toBe('invalid_participants')
     expect(codeOf(() => validateTournamentInput({ name: 'x', participants: [1, 2] }))).toBe('invalid_participants')
+  })
+
+  const decksOf = (detail: TournamentDetail) => Object.fromEntries(detail.participants.map(participant => [participant.name, participant.decks.map(deck => deck.name)]))
+
+  it('takes the decks in brackets behind a name: comma and slash tell them apart, spaces do not matter', () => {
+    const detail = createTournament(db, ORGANIZER, validateTournamentInput({
+      name: 'Q',
+      engine: 'queue',
+      includeSelf: false,
+      participants: ['ANna (blue eyes, Grabwächter)', 'Fabi ( antiker antrieb, Cyber drache)', 'Darius ( Dark magician / Blue eyes )', 'Cara'],
+    }))
+
+    expect(detail.participants.map(participant => participant.name)).toEqual(['ANna', 'Fabi', 'Darius', 'Cara'])
+    expect(decksOf(detail)).toEqual({
+      ANna: ['blue eyes', 'Grabwächter'],
+      Fabi: ['antiker antrieb', 'Cyber drache'],
+      Darius: ['Dark magician', 'Blue eyes'],
+      Cara: [],
+    })
+  })
+
+  it('takes comma and slash in one bracket, a deck once, an unclosed bracket and the decks of an account', () => {
+    const detail = createTournament(db, ORGANIZER, validateTournamentInput({
+      name: 'Q',
+      engine: 'queue',
+      includeSelf: false,
+      participants: ['Anna (Chaos, Zombie / Chaos, ,)', 'Ben (Drache', 'b@example.com (Dunkler Magier)'],
+    }))
+
+    expect(decksOf(detail)).toEqual({ Anna: ['Chaos', 'Zombie'], Ben: ['Drache'], Somebody: ['Dunkler Magier'] })
+  })
+
+  it('refuses a line with decks but no name, too many decks, and a deck name that is too long', () => {
+    const create = (participants: string[]) => () => createTournament(db, ORGANIZER, validateTournamentInput({ name: 'Q', engine: 'queue', participants }))
+
+    expect(codeOf(create(['(blue eyes)']))).toBe('invalid_participant')
+    expect(codeOf(create(['Anna (a, b, c, d, e, f)']))).toBe('deck_limit')
+    expect(codeOf(create([`Anna (${'x'.repeat(61)})`]))).toBe('invalid_deck_name')
+    expect(db.select().from(schema.tournament).all()).toHaveLength(0)
+  })
+})
+
+describe('one more Spieltag', () => {
+  let db: TestDb
+  beforeEach(() => {
+    db = createTestDb()
+    seedUsers(db)
+  })
+
+  const extend = (id: string) => extendTournament(db, ORGANIZER, id)
+
+  it('is offered only when every duel is played, and then adds a day that is paired from the table', () => {
+    const created = newQueueTournament(db, { mode: 'round_robin', flow: 'rounds' }, 4)
+    const started = startTournament(db, ORGANIZER, created.id)
+    expect(started.queue!.canExtend).toBe(false)
+    expect(codeOf(() => extend(created.id))).toBe('schedule_not_over')
+
+    const finished = playOut(db, created.id)
+    expect(finished.queue!.canExtend).toBe(true)
+    expect(finished.queue!.duelsTotal).toBe(6)
+
+    const extended = extend(created.id)
+
+    // After a full round robin everybody has met everybody: the new day is a return leg, played as the next day.
+    const added = extended.queue!.duels.filter(duel => duel.round === 4)
+    expect(added).toHaveLength(2)
+    expect(new Set(added.flatMap(duel => [duel.participantAId, duel.participantBId])).size).toBe(4)
+    expect(added.every(duel => duel.kind === 'rematch' && duel.status === 'running')).toBe(true)
+    expect(extended.queue!.duelsTotal).toBe(8)
+    expect(extended.queue!.canExtend).toBe(false)
+
+    // ... and the tournament can be extended again once that day is played.
+    expect(playOut(db, created.id).queue!.canExtend).toBe(true)
+  })
+
+  it('gives a Swiss tournament one more round', () => {
+    const created = newQueueTournament(db, { mode: 'swiss', plannedRounds: 2, flow: 'rounds' }, 4)
+    startTournament(db, ORGANIZER, created.id)
+    expect(playOut(db, created.id).queue!.rounds).toBe(2)
+
+    const extended = extend(created.id)
+
+    expect(extended.queue!.rounds).toBe(3)
+    expect(extended.queue!.duels.filter(duel => duel.round === 3)).toHaveLength(2)
+    expect(running(extended.queue!).every(duel => duel.round === 3)).toBe(true)
+  })
+
+  it('draws a new day for a Champions League, with nobody twice on it', () => {
+    const created = newQueueTournament(db, { mode: 'champions_league', plannedRounds: 4, flow: 'rounds' }, 8)
+    startTournament(db, ORGANIZER, created.id)
+    const finished = playOut(db, created.id)
+    expect(finished.queue!.duelsTotal).toBe(16)
+
+    const extended = extend(created.id)
+
+    const added = extended.queue!.duels.filter(duel => duel.round > Math.max(...finished.queue!.duels.map(duel => duel.round)))
+    expect(added).toHaveLength(4)
+    expect(new Set(added.flatMap(duel => [duel.participantAId, duel.participantBId])).size).toBe(8)
+  })
+
+  it('pauses one player on a day of an odd field and still plays the others', () => {
+    const created = newQueueTournament(db, { mode: 'round_robin', flow: 'rounds' }, 3)
+    startTournament(db, ORGANIZER, created.id)
+    playOut(db, created.id)
+
+    const extended = extend(created.id)
+
+    expect(extended.queue!.duels.filter(duel => duel.round === 4)).toHaveLength(1)
+    expect(running(extended.queue!)).toHaveLength(1)
+  })
+
+  it('is not possible before the start, after the end, or for the classic tournament', () => {
+    const created = newQueueTournament(db, { mode: 'round_robin', flow: 'rounds' }, 4)
+    expect(codeOf(() => extend(created.id))).toBe('tournament_not_running')
+
+    startTournament(db, ORGANIZER, created.id)
+    playOut(db, created.id)
+    finishTournament(db, ORGANIZER, created.id)
+    expect(codeOf(() => extend(created.id))).toBe('tournament_not_running')
+    expect(getTournamentDetail(db, ORGANIZER, created.id).queue!.canExtend).toBe(false)
+
+    const classic = createTournament(db, ORGANIZER, validateTournamentInput({ name: 'Classic' }))
+    expect(codeOf(() => extend(classic.id))).toBe('not_queue_tournament')
+  })
+})
+
+describe('the table shows everybody', () => {
+  let db: TestDb
+  beforeEach(() => {
+    db = createTestDb()
+    seedUsers(db)
+  })
+
+  it('has a row for each of 11 players with single games and the scoring by games, whoever has played', () => {
+    const created = newQueueTournament(db, { mode: 'round_robin', flow: 'rounds', bestOf: 1, scoring: 'games' }, 11)
+    const started = startTournament(db, ORGANIZER, created.id)
+    expect(started.queue!.duelsTotal).toBe(55)
+    const [first, second] = running(started.queue!)
+
+    reportDuelResult(db, ORGANIZER, created.id, first!.id, { winnerParticipantId: first!.participantAId })
+    const detail = reportDuelResult(db, ORGANIZER, created.id, second!.id, { winnerParticipantId: second!.participantBId })
+
+    const table = detail.queue!.table
+    expect(table).toHaveLength(11)
+    expect(new Set(table.map(row => row.participantId)).size).toBe(11)
+    // The two winners share the first place and the points of a won single game.
+    expect(table.slice(0, 2).map(row => [row.participantId, row.place, row.points]).sort()).toEqual(
+      [[first!.participantAId, 1, 3], [second!.participantBId, 1, 3]].sort(),
+    )
+    // Games are shown for single games, too: 1:0 for the winner, 0:1 for the loser, who is below the ones who have not played.
+    expect(table[0]).toMatchObject({ gamesWon: 1, gamesLost: 0 })
+    expect(table.at(-1)).toMatchObject({ gamesWon: 0, gamesLost: 1 })
+    expect(table.filter(row => row.gamesWon === 0 && row.gamesLost === 0)).toHaveLength(7)
   })
 })
 

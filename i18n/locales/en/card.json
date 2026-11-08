@@ -36,7 +36,11 @@
       "attribute": "Attribute",
       "race": "Monster type",
       "level": "Level/Rank",
-      "kind": "Card kind"
+      "kind": "Card kind",
+      "raceSpell": "Spell type",
+      "raceTrap": "Trap type",
+      "raceSpellTrap": "Spell/Trap type",
+      "raceAny": "Subtype"
     },
     "value": {
       "type": {

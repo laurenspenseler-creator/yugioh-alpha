@@ -73,6 +73,10 @@ const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournament
 const flowItems = computed(() => QUEUE_FLOWS.map(flow => ({ label: t(`tournaments.queue.flow.${flow}.label`), value: flow })))
 const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`tournaments.queue.bestOf.${choice}.label`), value: choice })))
 const scoringItems = computed(() => SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
+// A single game has no score, so the scoring by games cannot tell anything apart: it is shown as the classic 3 and 0 and
+// cannot be changed while a duel is one game (it comes back as chosen when the duel is best of 3 again).
+const singleGame = computed(() => form.bestOf === 1)
+const effectiveScoring = computed<ScoringSystem>(() => singleGame.value ? 'match' : form.scoring)
 // New tournaments are only played in Spieltage; the choice is left to the ones that still have tables and a queue.
 const showFlow = computed(() => setup.value.flow === 'queue')
 const recommended = computed(() => players.value >= 2 ? recommendedMode(players.value) : null)
@@ -167,7 +171,7 @@ async function save() {
         queueMode: form.mode,
         flow: form.flow,
         bestOf: form.bestOf,
-        scoring: form.scoring,
+        scoring: effectiveScoring.value,
         plannedRounds: form.mode === 'round_robin' ? null : parsedInteger(form.rounds),
         prelaunch: form.mode === 'swiss' && form.prelaunch,
         // What is not a whole number goes to the server as typed, which answers with the matching message.
@@ -263,14 +267,15 @@ async function save() {
 
       <UFormField :label="t('tournaments.new.scoring')">
         <USelect
-          v-model="form.scoring"
+          :model-value="effectiveScoring"
           :items="scoringItems"
+          :disabled="singleGame"
           :aria-label="t('tournaments.new.scoring')"
           class="w-full"
+          @update:model-value="form.scoring = $event"
         />
         <p class="mt-1 text-xs text-muted">
-          {{ t(`tournaments.scoring.${form.scoring}.description`) }}
-          {{ form.bestOf === 1 ? t('tournaments.queue.scoringSingleHint') : '' }}
+          {{ singleGame ? t('tournaments.queue.scoringSingleHint') : t(`tournaments.scoring.${form.scoring}.description`) }}
         </p>
       </UFormField>
 

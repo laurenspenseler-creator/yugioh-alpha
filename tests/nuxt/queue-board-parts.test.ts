@@ -50,6 +50,15 @@ describe('a duel row', () => {
     ])
   })
 
+  it('puts the buttons of the player named first on the left, in a column, and the other player right', async () => {
+    const component = await mountSuspended(QueueDuelRow, { props: { duel: DUEL, canEdit: true, bestOf: 3 } })
+
+    const grid = component.find('[data-testid="queue-duel-scores"]')
+    // Filled column by column in two rows: the first two buttons (Anna) are the left column, the last two (Ben) the right one.
+    expect(grid.classes()).toEqual(expect.arrayContaining(['grid', 'grid-flow-col', 'grid-cols-2', 'grid-rows-2']))
+    expect(grid.findAll('button').map(button => button.text())).toEqual(['Anna gewinnt 2:0', 'Anna gewinnt 2:1', 'Ben gewinnt 2:0', 'Ben gewinnt 2:1'])
+  })
+
   it('shows the score of a finished best-of-3 duel next to the winner', async () => {
     const finished = { ...DUEL, status: 'done' as const, winnerParticipantId: 'pb', gamesA: 1, gamesB: 2 }
     const component = await mountSuspended(QueueDuelRow, { props: { duel: finished, canEdit: false, bestOf: 3 } })
@@ -88,7 +97,8 @@ function row(patch: Partial<QueueTableRowDto>): QueueTableRowDto {
     points: 3,
     played: 1,
     open: 2,
-    buchholz: 0,
+    gamesWon: 1,
+    gamesLost: 0,
     left: false,
     tied: false,
     tableNumber: null,
@@ -124,6 +134,7 @@ describe('the standings table of a duel tournament', () => {
   beforeEach(() => {
     try {
       localStorage.removeItem('ygo-queue-table-hidden')
+      localStorage.removeItem('ygo-queue-table-pinned')
     }
     catch {
       // Without storage there is nothing to clear.
@@ -139,7 +150,7 @@ describe('the standings table of a duel tournament', () => {
 
   it('puts every number under its own heading', async () => {
     const detail = tournament('rounds')
-    detail.queue!.table = [row({ participantId: 'pa', name: 'Anna', place: 4, wins: 7, points: 21, played: 9, open: 5, buchholz: 11 })]
+    detail.queue!.table = [row({ participantId: 'pa', name: 'Anna', place: 4, wins: 7, points: 21, played: 9, open: 5, gamesWon: 15, gamesLost: 8 })]
     const component = await mountSuspended(QueueTable, { props: { tournament: detail } })
 
     const headings = component.findAll('thead th').map(heading => heading.text())
@@ -149,7 +160,73 @@ describe('the standings table of a duel tournament', () => {
     expect(under('Punkte')).toBe('21')
     expect(under('Duelle')).toBe('9')
     expect(under('Offen')).toBe('5')
-    expect(under('Buchholz')).toBe('11')
+    expect(under('Partien')).toBe('15:8')
+    expect(under('Diff.')).toBe('+7')
+  })
+
+  it('shows a negative difference with its minus and a level one as 0', async () => {
+    const detail = tournament('rounds')
+    detail.queue!.table = [
+      row({ participantId: 'pa', name: 'Anna', gamesWon: 1, gamesLost: 3 }),
+      row({ participantId: 'pb', name: 'Ben', place: 2, gamesWon: 2, gamesLost: 2 }),
+    ]
+    const component = await mountSuspended(QueueTable, { props: { tournament: detail } })
+
+    const headings = component.findAll('thead th').map(heading => heading.text())
+    const column = headings.indexOf('Diff.')
+    expect(component.findAll('tbody tr').map(tr => tr.findAll('td')[column]!.text())).toEqual(['-2', '0'])
+  })
+
+  it('follows the reader down the page when it is pinned, and scrolls away with the page when it is released', async () => {
+    const component = await mountSuspended(QueueTable, { props: { tournament: tournament('queue') } })
+    const section = () => component.find('[data-testid="queue-table"]')
+    const body = () => component.find('[data-testid="queue-table-body"]')
+
+    // Pinned is the way it comes: stuck to the top, and it scrolls inside so it never covers the page.
+    expect(section().classes()).toContain('sticky')
+    expect(body().classes()).toContain('overflow-y-auto')
+    expect(component.find('[data-testid="queue-table-pin"]').text()).toBe('Tabelle lösen')
+
+    await component.find('[data-testid="queue-table-pin"]').trigger('click')
+
+    // Released: part of the page, every player at once, nothing scrolls inside.
+    expect(section().classes()).not.toContain('sticky')
+    expect(body().classes()).not.toContain('overflow-y-auto')
+    expect(body().classes().join(' ')).not.toContain('max-h')
+    expect(component.find('thead').classes()).not.toContain('sticky')
+    expect(component.find('[data-testid="queue-table-pin"]').text()).toBe('Tabelle anheften')
+    expect(localStorage.getItem('ygo-queue-table-pinned')).toBe('0')
+
+    await component.find('[data-testid="queue-table-pin"]').trigger('click')
+    expect(section().classes()).toContain('sticky')
+    expect(localStorage.getItem('ygo-queue-table-pinned')).toBe('1')
+  })
+
+  it('says so when the pinned table scrolls inside and some players are out of sight, and not when it is released', async () => {
+    const component = await mountSuspended(QueueTable, { props: { tournament: tournament('rounds') } })
+    const hint = () => component.find('[data-testid="queue-table-scrolls"]')
+    const body = component.find('[data-testid="queue-table-body"]').element
+    expect(hint().exists()).toBe(false)
+
+    // The table is taller than its box (a layout engine would know; the test says so).
+    Object.defineProperty(body, 'scrollHeight', { configurable: true, value: 500 })
+    Object.defineProperty(body, 'clientHeight', { configurable: true, value: 300 })
+    window.dispatchEvent(new Event('resize'))
+    await nextTick()
+    expect(hint().exists()).toBe(true)
+    expect(hint().text()).toContain('Tabelle lösen')
+
+    await component.find('[data-testid="queue-table-pin"]').trigger('click')
+    await nextTick()
+    await nextTick()
+    expect(hint().exists()).toBe(false)
+  })
+
+  it('opens released when it was released before', async () => {
+    localStorage.setItem('ygo-queue-table-pinned', '0')
+    const component = await mountSuspended(QueueTable, { props: { tournament: tournament('queue') } })
+
+    expect(component.find('[data-testid="queue-table"]').classes()).not.toContain('sticky')
   })
 
   it('shows the points next to the wins', async () => {
