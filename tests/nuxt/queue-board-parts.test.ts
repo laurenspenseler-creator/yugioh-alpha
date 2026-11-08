@@ -137,6 +137,21 @@ describe('the standings table of a duel tournament', () => {
     expect(decks).toEqual(['Dunkler Magier, Chaos', '–'])
   })
 
+  it('puts every number under its own heading', async () => {
+    const detail = tournament('rounds')
+    detail.queue!.table = [row({ participantId: 'pa', name: 'Anna', place: 4, wins: 7, points: 21, played: 9, open: 5, buchholz: 11 })]
+    const component = await mountSuspended(QueueTable, { props: { tournament: detail } })
+
+    const headings = component.findAll('thead th').map(heading => heading.text())
+    const cells = component.findAll('tbody tr')[0]!.findAll('td').map(cell => cell.text())
+    const under = (heading: string) => cells[headings.indexOf(heading)]
+    expect(under('Siege')).toBe('7')
+    expect(under('Punkte')).toBe('21')
+    expect(under('Duelle')).toBe('9')
+    expect(under('Offen')).toBe('5')
+    expect(under('Buchholz')).toBe('11')
+  })
+
   it('shows the points next to the wins', async () => {
     const component = await mountSuspended(QueueTable, { props: { tournament: tournament('rounds') } })
 

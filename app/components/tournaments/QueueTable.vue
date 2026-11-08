@@ -106,15 +106,15 @@ const remaining = computed(() => {
             </th>
             <th
               class="w-12 px-1 py-1 text-right font-medium"
-              :title="t('tournaments.queue.board.columns.played')"
-            >
-              {{ t('tournaments.queue.board.columns.played') }}
-            </th>
-            <th
-              class="w-12 px-1 py-1 text-right font-medium"
               :title="t('tournaments.queue.board.columns.pointsHelp')"
             >
               {{ t('tournaments.queue.board.columns.points') }}
+            </th>
+            <th
+              class="w-12 px-1 py-1 text-right font-medium"
+              :title="t('tournaments.queue.board.columns.played')"
+            >
+              {{ t('tournaments.queue.board.columns.played') }}
             </th>
             <th
               class="hidden w-12 px-1 py-1 text-right font-medium sm:table-cell"
