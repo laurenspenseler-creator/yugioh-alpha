@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted.
+Accepted. Extended by [ADR 0045](0045-classic-plus-v3-1.md) (v3.1: a fixed card list, and rule 8 also for the Extra Deck
+monsters, which this decision exempted).
 
 ## Context
 
@@ -73,9 +74,9 @@ steps and their limits live in `shared/classic-plus.ts`.
    --reclassify` batches the affected cards again.
 3. `scripts/classic-plus/combine.ts` checks the results (known steps, quotes
    that really occur in the text), applies the frequency modifier and the
-   stacking rule, drops rule 8 for Extra Deck monsters, applies
-   `overrides.json` (manual corrections after review), and writes the
-   banlist plus `review.csv`.
+   stacking rule, applies `overrides.json` (manual corrections after review),
+   and writes the banlist plus `review.csv`. (Until v3.1 it also dropped rule 8
+   for Extra Deck monsters.)
 
 `classifications.jsonl` stores each result with a hash of the card text. A
 rerun only classifies new cards and cards whose text changed; changing a

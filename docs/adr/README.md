@@ -52,3 +52,4 @@ mark the old as superseded.
 | [0042](0042-tournament-duel-queue.md) | A tournament with tables and a queue (round robin, Champions League, Swiss) | Accepted |
 | [0043](0043-tournament-spieltage-and-best-of.md) | Spieltage, best of 3 and the players named when a tournament is created | Accepted |
 | [0044](0044-tournament-ranking-extension-and-table-view.md) | The ranking ladder, one more Spieltag, the pinnable table, decks at creation | Accepted |
+| [0045](0045-classic-plus-v3-1.md) | Classic Plus v3.1: the card list and rule 8 for the Extra Deck | Accepted |

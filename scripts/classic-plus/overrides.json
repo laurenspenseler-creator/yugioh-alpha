@@ -1,1 +1,319 @@
-{}
+{
+  "4929256": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Möbius der Frostmonarch. Rule 8, Tribute costs (Ä2) → 2, as in v3."
+  },
+  "16762927": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list: Grabwächters Diener stays forbidden."
+  },
+  "19523799": {
+    "hits": [
+      {
+        "rule": "6a",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Ookazi. Rule 6(a) is flat → 1, checked."
+  },
+  "20654247": {
+    "hits": [
+      {
+        "rule": "9a",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Blauäugiger Chaosdrache. Rule 9(a), unconditional: cannot be targeted, cannot be destroyed → 1."
+  },
+  "22842126": {
+    "hits": [
+      {
+        "rule": "5",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Pantheismus der Monarchen. Rule 5, own cost bound to one kind of card (Ä3) → 2, as in v3."
+  },
+  "23015896": {
+    "hits": [
+      {
+        "rule": "7b",
+        "reason": "v3.1 card list"
+      },
+      {
+        "rule": "8",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Feuerkönig Hochavatar Garunix. Rule 8 plus self-revival, which a copy limit does not stop (trait III) → 1. If it dominates in play: a second stacking rule (mass removal plus self-revival = forbidden), not the number."
+  },
+  "23020408": {
+    "hits": [
+      {
+        "rule": "5",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Seelendiener. Rule 5 → 1, checked."
+  },
+  "23171610": {
+    "hits": [
+      {
+        "rule": "6b",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Begrenzer-Entferner. Rule 6(b), own costs (Ä2) → 2, as in v3."
+  },
+  "31305911": {
+    "hits": [
+      {
+        "rule": "9b",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Marshmallon. Rule 9(b) → 2."
+  },
+  "34966096": {
+    "hits": [
+      {
+        "rule": "7b",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Chaosbetrüger. Rule 7(b), it brings itself back (trait III) → 1, checked."
+  },
+  "37576645": {
+    "hits": [
+      {
+        "rule": "5",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Tollkühne Gier. Rule 5 → 1, checked."
+  },
+  "37630732": {
+    "hits": [
+      {
+        "rule": "6b",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Kraftbündnis. Rule 6(b), own costs (Ä2) → 2, as in v3."
+  },
+  "40854197": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Elementar-HELD Absoluter Nullpunkt. Rule 8; its destruction triggers it (trait III) → 1."
+  },
+  "41578483": {
+    "hits": [
+      {
+        "rule": "7a",
+        "reason": "v3.1 card list"
+      },
+      {
+        "rule": "10",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Millenniumäugiges Opfer. Rule 10 stays flat → 1."
+  },
+  "43228023": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list"
+      },
+      {
+        "rule": "9a",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Blauäugiger alternativer ultimativer Drache (K3). Rule 9(a), unconditional protection (trait III) → 1; rule 8 belongs in the reasons too (up to 3 cards)."
+  },
+  "47355498": {
+    "hits": [
+      {
+        "rule": "3.2",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Tal der Toten. One of the four cards of rule 3, step 2 → 2."
+  },
+  "56532353": {
+    "hits": [
+      {
+        "rule": "10",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Neo-Blauäugiger ultimativer Drache (K2). Rule 10 (negation from the GY); it has no protection effect → 1."
+  },
+  "58481572": {
+    "hits": [
+      {
+        "rule": "3.2",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Maskierter HELD Dunkles Gesetz. One of the four cards of rule 3, step 2 → 2."
+  },
+  "59400890": {
+    "hits": [
+      {
+        "rule": "7c",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Dunkler Magier der Zerstörung. Rule 7(c), body + banishes one of your own monsters → 2."
+  },
+  "60461804": {
+    "hits": [
+      {
+        "rule": "7b",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Schicksals-HELD - Destroyer Phoenix Enforcer. Rule 7(b), body (Ä2) → 2, as in v3."
+  },
+  "63176202": {
+    "hits": [
+      {
+        "rule": "3.2",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Großer Shogun Shien. One of the four cards of rule 3, step 2 → 2."
+  },
+  "63519819": {
+    "hits": [],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Tausendäugiges Opfer (K4). Check step 2b of rule 3 already said limit 1 → 1."
+  },
+  "70000776": {
+    "hits": [
+      {
+        "rule": "3.2",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Verborgene Tempel im Tal der Toten. One of the four cards of rule 3, step 2 → 2."
+  },
+  "70551291": {
+    "hits": [],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Schwarz Glänzender Soldat - Legendärer Schwertkämpfer (K4). Check step 2b of rule 3 says limit 1 → 1."
+  },
+  "79206925": {
+    "hits": [
+      {
+        "rule": "9a",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Grabwächters Übernatürlicher (K6). Rule 9(a), the protection depends on Necrovalley (Ä4, chain of named cards) → 2."
+  },
+  "82301904": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Chaos-Imperatordrache - Gesandter des Endes. Rule 8; 1000 LP, own hand and field, no other activation that turn → 2. The conspicuous result of the new tiers; the round will most likely object."
+  },
+  "83555666": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list: Ring der Zerstörung stays unlimited (current text after errata)."
+  },
+  "86346643": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Regenbogen-Neos. Rule 8 (Ä1), body + own costs (Ä2), no self-revival (Nomi) → 2."
+  },
+  "87910978": {
+    "hits": [
+      {
+        "rule": "7a",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list: Gehirnkontrolle (K7: the official name). Rule 7(a) → 1, checked."
+  },
+  "90434657": {
+    "hits": [
+      {
+        "rule": "10",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Pharaonengräber im Tal der Toten (K6). Rule 10 plus a chain of named cards (Ä4) → 2."
+  },
+  "90488465": {
+    "hits": [
+      {
+        "rule": "7b",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Der Chaosschöpfer. Rule 7(b), body + banishes two of your own monsters → 2."
+  },
+  "93920745": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list: Pinguinsoldat. Rule 8, Flip monster with a body → 2. The authors have not checked its text against the database themselves."
+  }
+}

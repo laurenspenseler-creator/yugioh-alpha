@@ -74,9 +74,13 @@ Field Spell, Tribut = Tribute, Kosten = cost, Material = material, Kontrolle
 übernehmen = take/gain control, Kampfschaden = battle damage, Effektschaden =
 effect damage, Spielzug = turn, Hand = hand, Extra Deck = Extra Deck.
 
-## Rules (verbatim; "Testfassung")
+## Rules (verbatim; "Testfassung", rule 8 as of v3.1)
 
-Rules 1 and 2 are listed for context only.
+Rules 1 and 2 are listed for context only. The tiers of Classic Plus v3.1 (Ä2 to
+Ä4: limit 2 for a body or own costs, back to 1 for no real answer, one step milder
+for a chain of named cards) are not yours to decide: they are applied to the
+named cards by hand (`scripts/classic-plus/overrides.json`, ADR 0045). You only
+record the hits.
 
 **1 — VERBOTEN.** Synchro-, Xyz-, Pendel- und Linkmonster.
 
@@ -137,8 +141,8 @@ ausschließlich über (a) bis (d).
 Spielfeld entfernen können — zerstören, auf den Friedhof legen, verbannen, auf
 Hand oder Deck zurück, als Tribut. Der Wortlaut ist egal. Es zählt das
 Potenzial, nicht der Spielstand. Was der aktivierende Spieler selbst als
-Kosten, Material oder Tribut abgibt, zählt nicht. Regel 8 gilt nicht für
-Extra-Deck-Monster. Deren Begrenzung ist die Deckelung auf zehn Plätze.
+Kosten, Material oder Tribut abgibt, zählt nicht. Regel 8 gilt auch für
+Extra-Deck-Monster (v3.1, Ä1: die frühere Ausnahme entfällt ersatzlos).
 
 **9 — SCHUTZ.** Karten, die bewirken, dass ein Monster einen der folgenden
 Zustände hat — unabhängig davon, ob die Karte selbst das betroffene Monster

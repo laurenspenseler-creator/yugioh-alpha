@@ -49,7 +49,6 @@ interface CandidateInput {
   desc: string
   sentences: string[]
   isMonster: boolean
-  isExtraDeck: boolean
   /** Continuous, Field or Equip Spell/Trap, i.e. a card whose own text can hold a lasting effect. */
   isLastingSpellTrap: boolean
 }
@@ -76,8 +75,8 @@ const CANDIDATE_PATTERNS: Record<string, (card: CandidateInput) => boolean> = {
   revive: both(/\b(?:GY|Graveyard|banished)\b/i, /\bSpecial Summon/i),
   // 7c: Extra Deck summons; 7d: Fusion material from the Deck
   extraDeck: card => both(/\bExtra Deck\b/i, /\bSummon/i)(card) || both(/\bFusion\b/i, /\b(?:from|in) your Deck\b/i)(card),
-  // 8 (does not apply to Extra Deck monsters)
-  removal: card => !card.isExtraDeck && both(REMOVAL, MULTIPLE)(card),
+  // 8 (also for Extra Deck monsters since v3.1, Ä1)
+  removal: both(REMOVAL, MULTIPLE),
   // 9
   protection: card => /\b(?:cannot be destroyed|cannot be targeted|unaffected|cannot be the target|cannot target)\b/i.test(card.desc),
   // 10
@@ -186,7 +185,6 @@ function main() {
         desc: row.desc,
         sentences: row.desc.split(SENTENCE_SPLIT),
         isMonster: row.type.includes('Monster'),
-        isExtraDeck: row.frame_type === 'fusion',
         isLastingSpellTrap: !row.type.includes('Monster') && ['Continuous', 'Field', 'Equip'].includes(row.race ?? ''),
       }
       card.patterns = Object.entries(CANDIDATE_PATTERNS)

@@ -24,7 +24,11 @@
 //   - stacking rule: 9a (protection from card effects) plus 6b (multiplied
 //     battle damage) is forbidden
 //
-// See docs/adr/0022-classic-plus-format.md.
+// Rule 8 applies to Extra Deck monsters too (v3.1, Ä1). An override may carry
+// `maxCopies`: then that is the card's final limit whatever its hits say (the
+// Classic Plus v3.1 card list, ADR 0045); the hits are only its reasons.
+//
+// See docs/adr/0022-classic-plus-format.md and docs/adr/0045-classic-plus-v3-1.md.
 
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -64,6 +68,8 @@ interface Classification {
 
 interface Override {
   hits: Hit[]
+  /** The card's final limit (0 to 3), whatever the hits say. */
+  maxCopies?: 0 | 1 | 2 | 3
   note?: string
 }
 
@@ -165,6 +171,9 @@ function main() {
         throw new Error(`overrides.json: card ${id} has unknown rule ${hit.rule}`)
       }
     }
+    if (override.maxCopies !== undefined && ![0, 1, 2, 3].includes(override.maxCopies)) {
+      throw new Error(`overrides.json: card ${id} has maxCopies ${override.maxCopies}, expected 0 to 3`)
+    }
   }
 
   const missing = [...candidates.values()].filter(card => !classifications.has(card.id) && !overrides[card.id])
@@ -208,17 +217,16 @@ function main() {
       stepCounts.set('2', (stepCounts.get('2') ?? 0) + 1)
       continue
     }
-    if (card.route !== 'candidate') {
+    const override = overrides[card.id]
+    // A card no pattern matched is not classified, but the card list may still name it (an override).
+    if (card.route !== 'candidate' && !(card.route === 'clear' && override)) {
       continue
     }
-    const override = overrides[card.id]
     const classification = classifications.get(card.id)
     if (!override && !classification) {
       continue
     }
-    const hits = (override?.hits ?? classification!.hits)
-      // Rule 8 does not apply to Extra Deck monsters, whatever the classifier said.
-      .filter(hit => !(hit.rule === '8' && card.frameType === 'fusion'))
+    const hits = override?.hits ?? classification!.hits
 
     const codes = new Set(hits.map(hit => hit.rule))
     const frequency = hits.some(hit => hit.repeatable && (stepByCode.get(hit.rule)?.maxCopies ?? 0) > 0)
@@ -232,7 +240,7 @@ function main() {
       stepCounts.set(code, (stepCounts.get(code) ?? 0) + 1)
     }
 
-    const maxCopies = Math.min(3, ...[...codes].map(code => stepByCode.get(code)!.maxCopies))
+    const maxCopies = override?.maxCopies ?? Math.min(3, ...[...codes].map(code => stepByCode.get(code)!.maxCopies))
     if (maxCopies < 3) {
       listFor[maxCopies]!.push(card.id)
     }
@@ -241,7 +249,7 @@ function main() {
     }
     const unsure = !override && classification!.unsure
     const quoteMissing = !override && hits.some(hit => !hit.quote || !card.desc.includes(hit.quote))
-    if (codes.size > 0 || unsure || quoteMissing) {
+    if (codes.size > 0 || unsure || quoteMissing || override) {
       reviewRows.push({
         card,
         maxCopies,
@@ -249,7 +257,7 @@ function main() {
         hits,
         unsure,
         quoteMissing,
-        note: override?.note ?? classification!.note,
+        note: override?.note ?? classification?.note ?? '',
         overridden: Boolean(override),
       })
     }
