@@ -966,6 +966,14 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
         :title="deck.name"
         :description="deck.description ?? undefined"
       >
+        <!-- Who can see the deck belongs to the name (tester feedback, round 10: "Setz das Privat dahin"). -->
+        <template #titleAside>
+          <SharingVisibilityBadge
+            :visibility="deck.visibility"
+            data-testid="visibility-badge"
+          />
+        </template>
+
         <p class="mt-1 text-sm text-muted">
           {{ count('decks.editor.totalCards', counts.total) }}
         </p>
@@ -977,61 +985,58 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
           class="mt-2"
         />
 
-        <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <div class="flex flex-wrap items-center gap-2">
-            <!-- Mobile shortcut: the add panel lives below the deck sections. -->
+        <!-- One line (tester feedback, round 10): the actions on the left, the format at the right end; on a narrow
+             screen the buttons wrap and the format takes the last line. -->
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          <!-- Mobile shortcut: the add panel lives below the deck sections. -->
+          <UButton
+            icon="i-lucide-plus"
+            :label="t('decks.editor.addCards')"
+            class="lg:hidden"
+            @click="openAddPanel"
+          />
+          <UButton
+            icon="i-lucide-list-plus"
+            color="neutral"
+            variant="outline"
+            :label="t('decks.editor.addList')"
+            data-testid="deck-add-list"
+            @click="() => { isAddListOpen = true }"
+          />
+          <UButton
+            icon="i-lucide-share-2"
+            color="neutral"
+            variant="outline"
+            :label="t('decks.editor.share')"
+            :disabled="!ownProfile?.handle"
+            @click="() => { isShareOpen = true }"
+          />
+          <DecksDeckExportMenu
+            :name="deck.name"
+            :sections="deck.sections"
+            :cover-card-id="deck.cover?.catalogCardId ?? null"
+          />
+          <DecksDeckToInventoryButton
+            v-model:open="isToInventoryOpen"
+            :rows="[...deck.sections.main, ...deck.sections.extra, ...deck.sections.side]"
+            @added="refreshDeck"
+          />
+          <UDropdownMenu :items="deckMenuItems">
             <UButton
-              icon="i-lucide-plus"
-              :label="t('decks.editor.addCards')"
-              class="lg:hidden"
-              @click="openAddPanel"
-            />
-            <UButton
-              icon="i-lucide-list-plus"
+              icon="i-lucide-ellipsis"
               color="neutral"
-              variant="outline"
-              :label="t('decks.editor.addList')"
-              data-testid="deck-add-list"
-              @click="() => { isAddListOpen = true }"
+              variant="ghost"
+              :aria-label="t('decks.editor.moreActions')"
+              class="tap-target"
             />
-            <UButton
-              icon="i-lucide-share-2"
-              color="neutral"
-              variant="outline"
-              :label="t('decks.editor.share')"
-              :disabled="!ownProfile?.handle"
-              @click="() => { isShareOpen = true }"
-            />
-            <DecksDeckExportMenu
-              :name="deck.name"
-              :sections="deck.sections"
-              :cover-card-id="deck.cover?.catalogCardId ?? null"
-            />
-            <DecksDeckToInventoryButton
-              v-model:open="isToInventoryOpen"
-              :rows="[...deck.sections.main, ...deck.sections.extra, ...deck.sections.side]"
-              @added="refreshDeck"
-            />
-            <UDropdownMenu :items="deckMenuItems">
-              <UButton
-                icon="i-lucide-ellipsis"
-                color="neutral"
-                variant="ghost"
-                :aria-label="t('decks.editor.moreActions')"
-                class="tap-target"
-              />
-            </UDropdownMenu>
-          </div>
+          </UDropdownMenu>
 
-          <div class="flex items-center gap-2 sm:ml-auto">
-            <SharingVisibilityBadge :visibility="deck.visibility" />
-            <USelect
-              v-model="formatSelection"
-              :items="formatItems"
-              class="min-w-0 flex-1 sm:w-56 sm:flex-none"
-              :aria-label="t('decks.editor.formatLabel')"
-            />
-          </div>
+          <USelect
+            v-model="formatSelection"
+            :items="formatItems"
+            class="w-full min-w-0 sm:ml-auto sm:w-44 sm:shrink-0"
+            :aria-label="t('decks.editor.formatLabel')"
+          />
         </div>
       </LayoutPageHeader>
 

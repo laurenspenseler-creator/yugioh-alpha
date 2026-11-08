@@ -1422,6 +1422,33 @@ describe('deck editor header and row layout', () => {
     expect(component.findComponent(DecksDeckToInventoryButton).props('open')).toBe(true)
   })
 
+  // Tester feedback, round 10: "Setz das Privat da hin [neben den Namen] und zieh die Leiste nach unten. So dass das
+  // Format wieder passt." and, seeing it: "Bring das auf eine Linie" (the format and the actions).
+  it('has the visibility beside the name, and the format on the line of the actions', async () => {
+    state.source = { items: [], total: 0 }
+    state.deck = { ...deckDetail({ main: [row({ name: 'Dark Magician', section: 'main' })] }), visibility: 'private' }
+
+    const component = await mountSuspended(DeckEditorPage)
+    const heading = component.find('h1')
+    const badge = component.find('header [data-testid="visibility-badge"]')
+
+    expect(heading.text()).toBe('Test Deck')
+    expect(badge.exists()).toBe(true)
+    expect(badge.text()).toBe('Privat')
+    // Right next to the heading, not inside it.
+    expect(heading.find('[data-testid="visibility-badge"]').exists()).toBe(false)
+    expect(heading.element.nextElementSibling?.contains(badge.element)).toBe(true)
+
+    // The format sits on the line of the actions, at its end: one flex row, the format after the buttons.
+    const format = component.find('button[aria-label="Format"]')
+    const addList = component.find('[data-testid="deck-add-list"]')
+    expect(component.findAll('button[aria-label="Format"]')).toHaveLength(1)
+    expect(format.exists()).toBe(true)
+    expect(format.element.parentElement).toBe(addList.element.parentElement)
+    expect(addList.element.compareDocumentPosition(format.element) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(format.classes()).toContain('sm:ml-auto')
+  })
+
   // Tester feedback, round 10: "Lass mich bei bereits erstellten Decks auch Listen hinzufügen."
   it('has a "Liste hinzufügen" button that opens the import dialog for this deck, and reloads the deck when the list is in', async () => {
     state.source = { items: [], total: 0 }

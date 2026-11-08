@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Page title row: one `<h1>`, an optional one-line description and the page
- * actions on the right (below the title on phones).
+ * actions on the right (below the title on phones). The `titleAside` slot puts a badge right of the title.
  *
  * Convention: list pages put their item count in `description` (use
  * `pluralize`), other pages a one-sentence explanation.
@@ -38,13 +38,18 @@ withDefaults(defineProps<{
       >
         {{ eyebrow }}
       </p>
-      <h1
-        :class="['font-display text-[1.625rem] leading-tight font-semibold tracking-[0.01em] text-highlighted sm:text-3xl', truncate ? 'truncate' : 'break-words hyphens-auto']"
-      >
-        <slot name="title">
-          {{ title }}
-        </slot>
-      </h1>
+      <!-- `titleAside`: something that belongs to the title but is not part of it (a badge), right of it; it wraps below
+           a long title. Outside the `<h1>`, so the heading stays just the name. -->
+      <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <h1
+          :class="['min-w-0 font-display text-[1.625rem] leading-tight font-semibold tracking-[0.01em] text-highlighted sm:text-3xl', truncate ? 'truncate' : 'break-words hyphens-auto']"
+        >
+          <slot name="title">
+            {{ title }}
+          </slot>
+        </h1>
+        <slot name="titleAside" />
+      </div>
       <p
         v-if="description || $slots.description"
         class="mt-1.5 text-sm text-muted"

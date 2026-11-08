@@ -62,6 +62,22 @@ describe('LayoutPageHeader', () => {
     expect(component.find('h1').text()).toBe('Inventar von Fabian')
     expect(component.find('p').text()).toBe('4 Karten insgesamt')
   })
+
+  // Tester feedback, round 10: the "Privat" badge of a deck sits right of its name.
+  it('puts the titleAside slot right of the title, outside the h1', async () => {
+    const component = await mountSuspended(PageHeader, {
+      props: { title: 'HJG' },
+      slots: { titleAside: () => h('span', { 'data-testid': 'aside' }, 'Privat') },
+    })
+
+    expect(component.find('h1').text()).toBe('HJG')
+    const aside = component.find('[data-testid="aside"]')
+    expect(aside.text()).toBe('Privat')
+    expect(component.find('h1').find('[data-testid="aside"]').exists()).toBe(false)
+    // Siblings in one row, the title first.
+    expect(aside.element.parentElement).toBe(component.find('h1').element.parentElement)
+    expect(component.find('h1').element.nextElementSibling).toBe(aside.element)
+  })
 })
 
 describe('LayoutBackLink', () => {
