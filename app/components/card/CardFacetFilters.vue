@@ -43,6 +43,9 @@ const level = defineModel<number[]>('level')
 const { t } = useI18n()
 const { cardValueOptions } = useCardText()
 
+/** The plain Spell or Trap, listed first in the subtype menu. */
+const NORMAL_SUBTYPE = 'Normal'
+
 // Filter values stay English (the APIs filter on them); labels follow the card language (ADR 0015).
 const kindItems = computed(() => CARD_KINDS.map(value => ({ label: t(`card.kind.${value}`), value })))
 const typeItems = computed(() => cardValueOptions('type', props.facets.types))
@@ -80,9 +83,11 @@ const raceValues = computed(() => {
   }
   return all
 })
-// Each subtype carries the symbol of the card frame (infinity, plus, lightning, ...), the Normal one has none.
+// Each subtype carries the symbol of the card frame (infinity, plus, lightning, ...), the Normal one has none. "Normal"
+// is the plain one and leads the list (tester feedback), the others follow in the order of their names.
 const raceItems = computed(() => cardValueOptions('race', [...new Set([...raceValues.value, ...race.value])])
-  .map(item => ({ ...item, icon: spellTrapIcon(item.value) })))
+  .map(item => ({ ...item, icon: spellTrapIcon(item.value) }))
+  .sort((a, b) => Number(b.value === NORMAL_SUBTYPE) - Number(a.value === NORMAL_SUBTYPE)))
 
 const raceLabel = computed(() => {
   if (scope.value === 'spellTrap') {

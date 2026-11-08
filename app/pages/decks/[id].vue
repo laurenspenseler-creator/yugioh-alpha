@@ -117,6 +117,7 @@ const deckId = computed(() => String(route.params.id ?? ''))
 const { t, n } = useI18n()
 const { cardLocale, cardName, cardMetaLine, cardValueOptions } = useCardText()
 const count = useCount()
+const toast = useToast()
 const apiError = useApiError()
 const validationText = useValidationText()
 const { formatName, ruleLabel, sortFormats } = useFormatLabel()
@@ -909,6 +910,15 @@ async function deleteDeck() {
 // toolbar stays one short row and the title keeps its full width (#40).
 // The deck's cards into the inventory: a button in the toolbar and the same dialog from the "..." menu.
 const isToInventoryOpen = ref(false)
+
+// A list (a deck list, a .ydk file, photos, speech) added to the cards the deck has: the same dialog as "Deck
+// importieren", pointed at this deck. The reload goes through the queue, so it cannot overwrite a pending write's answer.
+const isAddListOpen = ref(false)
+
+async function onListAdded(added: { copies: number }) {
+  toast.add({ title: count('decks.import.toast.added', added.copies), color: 'success' })
+  await onDeckSaved({ id: deckId.value })
+}
 const deckIsEmpty = computed(() => !deck.value
   || deck.value.sections.main.length + deck.value.sections.extra.length + deck.value.sections.side.length === 0)
 
@@ -975,6 +985,14 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
               :label="t('decks.editor.addCards')"
               class="lg:hidden"
               @click="openAddPanel"
+            />
+            <UButton
+              icon="i-lucide-list-plus"
+              color="neutral"
+              variant="outline"
+              :label="t('decks.editor.addList')"
+              data-testid="deck-add-list"
+              @click="() => { isAddListOpen = true }"
             />
             <UButton
               icon="i-lucide-share-2"
@@ -1495,6 +1513,12 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
         v-model:open="isFormOpen"
         :initial-values="{ id: deck.id, name: deck.name, description: deck.description }"
         @saved="onDeckSaved"
+      />
+
+      <DecksDeckImportModal
+        v-model:open="isAddListOpen"
+        :deck-id="deck.id"
+        @added="onListAdded"
       />
 
       <SharingShareModal

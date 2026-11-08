@@ -112,6 +112,26 @@ showing. A card facet filter without a kind menu (the format editor) is unchange
   beenden" is the way out; the list is where a test tournament goes. The name and the description of a finished
   tournament can be changed (they are labels); every other setting still answers `tournament_finished`.
 
+## Addendum: the same evening, third look (feedback "Setz normal nach oben")
+
+* **"Normal" leads the subtype menu.** In "Zauberart", "Fallenart" and "Zauber-/Fallenart" the plain Spell or Trap is
+  the first entry; the others stay in the order of their names (`CardFacetFilters.vue`). The values and the filter
+  itself did not change.
+* **A list into a deck that exists.** "Lass mich bei bereits erstellten Decks auch Listen hinzufügen." The deck editor
+  has a "Liste hinzufügen" button next to "Karten hinzufügen" and "Teilen". It opens the dialog of "Deck importieren"
+  with a `deckId`: the same input (text, `.ydk`, `ydke://`, Omega code, photos, speech) and the same review, but no name
+  and no format to choose, and the button says "Zum Deck hinzufügen". The cards go in through the new
+  `POST /api/decks/:id/cards/import` (`{ cards: [{ catalog_card_id, section, quantity }] }`, at least one, at most
+  `MAX_DECK_CREATE_CARDS`): `addDeckCards` adds each entry's copies to the ones the section already holds, as the
+  increment mode of `PUT /api/decks/:id/cards` does one card at a time, but in one transaction. A card that does not fit
+  (unknown, a section its type forbids, more than 99 copies) leaves the deck as it was. Copy limits stay warnings, as
+  everywhere. A cover from an Omega code is not used (the deck has its own).
+* **The format until the start.** "Lass mich vor Start nochmal das Format ändern können." The settings of a duel
+  tournament that has not started begin with a "Format" select (no format, the built-in formats by name, then the
+  organizer's own), saved with "Einstellungen speichern". The server already allowed it (`PATCH` with `formatId`, only in
+  the registration phase, like the scoring); the panel sends `formatId` only when it was changed, and `null` for "Ohne
+  Format". A format that is set but not in the list (not the organizer's to assign any more) stays visible in the select.
+
 ## Consequences
 
 * `QueueTableRowDto` loses `buchholz` and gains `gamesWon`, `gamesLost`, `matchdays`; `QueueDetail` gains `canExtend`.

@@ -55,7 +55,9 @@
         "save": "Einstellungen speichern",
         "saveFailed": "Die Einstellungen konnten nicht gespeichert werden.",
         "summary": "{mode} · {tables} Tische · {minutes} Min. pro Match",
-        "summaryRounds": "{mode} · Spieltage · {minutes} Min. pro Match"
+        "summaryRounds": "{mode} · Spieltage · {minutes} Min. pro Match",
+        "format": "Format",
+        "formatHint": "Wogegen die Decks der Spieler geprüft werden. Du kannst es ändern, bis das Turnier startet."
       },
       "board": {
         "tableTitle": "Tabelle",

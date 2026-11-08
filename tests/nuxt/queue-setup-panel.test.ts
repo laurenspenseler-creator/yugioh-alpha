@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { USelect } from '#components'
 import QueueSetupPanel from '~/components/tournaments/QueueSetupPanel.vue'
-import type { QueueSetupDto, TournamentDetail } from '~~/shared/tournaments'
+import type { QueueSetupDto, TournamentDetail, TournamentFormatRef } from '~~/shared/tournaments'
+import { optionLabels, selectWithOption } from './fixtures/select-wrapper'
 
 enableAutoUnmount(afterEach)
 
@@ -14,11 +16,12 @@ afterEach(() => {
 const SETUP: QueueSetupDto = { mode: 'swiss', rounds: null, prelaunch: true, flow: 'queue', bestOf: 1, scoring: 'games', tables: 4, duelMinutes: 30 }
 
 /** Only what the panel reads: the organizer of a tournament that has not started, with eleven players. */
-function tournament(setup: Partial<QueueSetupDto> = {}): TournamentDetail {
+function tournament(setup: Partial<QueueSetupDto> = {}, format: TournamentFormatRef | null = null): TournamentDetail {
   return {
     id: 't-1',
     role: 'organizer',
     status: 'registration',
+    format,
     queueSetup: { ...SETUP, ...setup },
     participants: Array.from({ length: 11 }, (_, index) => ({ id: `p${index}`, name: `Spieler ${index}` })),
   } as unknown as TournamentDetail
@@ -139,5 +142,85 @@ describe('the settings of a duel tournament', () => {
 
     // 6 days of 20 minutes.
     expect(component.find('[data-testid="queue-estimate"]').text()).toBe('ca. 2 Std. 0 Min.')
+  })
+})
+
+// Tester feedback, round 10: "Lass mich vor Start nochmal das Format ändern können."
+describe('the format of a duel tournament that has not started', () => {
+  const FORMATS = [
+    { id: 'tcg-advanced', name: 'TCG Advanced', isBuiltin: true },
+    { id: 'goat', name: 'GOAT Format', isBuiltin: true },
+    { id: 'own-1', name: 'Mein Format', isBuiltin: false },
+  ]
+  const GOAT = { id: 'goat', name: 'GOAT Format', isBuiltin: true }
+
+  function stubFormatsAndSave() {
+    const fetchSpy = vi.fn(async (url: string, _options?: unknown) => (url === '/api/formats' ? { items: FORMATS } : { ...tournament() }))
+    vi.stubGlobal('$fetch', fetchSpy)
+    return fetchSpy
+  }
+
+  const formatSelect = (component: VueWrapper) => selectWithOption(component.findAllComponents(USelect), 'goat')!
+  const savedBody = (fetchSpy: ReturnType<typeof stubFormatsAndSave>) =>
+    (fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments/t-1')![1] as { body: Record<string, unknown> }).body
+
+  it('offers no format and every format, the current one chosen', async () => {
+    stubFormatsAndSave()
+    const withFormat = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({}, GOAT) } })
+    const without = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament() } })
+
+    // The built-in formats by name, then the organizer's own.
+    expect(optionLabels(formatSelect(withFormat))).toEqual(['Ohne Format', 'GOAT Format', 'TCG Advanced', 'Mein Format'])
+    expect(withFormat.find('button[aria-label="Format"]').text()).toContain('GOAT Format')
+    expect(without.find('button[aria-label="Format"]').text()).toContain('Ohne Format')
+  })
+
+  it('saves the format that was picked with the other settings', async () => {
+    const fetchSpy = stubFormatsAndSave()
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament() } })
+
+    await formatSelect(component).setValue('goat')
+    await findButton(component, 'Einstellungen speichern').trigger('click')
+    await flushPromises()
+
+    expect(savedBody(fetchSpy)).toMatchObject({ formatId: 'goat', queueMode: 'swiss' })
+    expect(component.emitted('updated')).toHaveLength(1)
+  })
+
+  it('takes the format off again with "Ohne Format" (null on the wire)', async () => {
+    const fetchSpy = stubFormatsAndSave()
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({}, GOAT) } })
+
+    await formatSelect(component).setValue('none')
+    await findButton(component, 'Einstellungen speichern').trigger('click')
+    await flushPromises()
+
+    expect(savedBody(fetchSpy)).toHaveProperty('formatId', null)
+  })
+
+  it('leaves the format out of the request when it was not changed', async () => {
+    const fetchSpy = stubFormatsAndSave()
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({}, GOAT) } })
+
+    await findButton(component, 'Einstellungen speichern').trigger('click')
+    await flushPromises()
+
+    expect(savedBody(fetchSpy)).not.toHaveProperty('formatId')
+  })
+
+  it('keeps a format that is set visible although it is not in the list', async () => {
+    stubFormatsAndSave()
+    const strange = { id: 'someone-elses', name: 'Fremdes Format', isBuiltin: false }
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({}, strange) } })
+
+    expect(component.find('button[aria-label="Format"]').text()).toContain('Fremdes Format')
+  })
+
+  it('shows no format select once the tournament has started', async () => {
+    stubFormatsAndSave()
+    const started = { ...tournament({}, GOAT), status: 'running' } as TournamentDetail
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: started } })
+
+    expect(component.find('button[aria-label="Format"]').exists()).toBe(false)
   })
 })

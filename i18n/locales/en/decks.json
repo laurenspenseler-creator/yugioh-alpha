@@ -158,7 +158,8 @@
         "quantity": "Copies in the {section}",
         "decrease": "One copy fewer in the {section}",
         "increase": "One more copy in the {section}"
-      }
+      },
+      "addList": "Add list"
     },
     "breakdown": {
       "label": "Card kinds in the {section}",
@@ -225,12 +226,19 @@
         "fileTooLarge": "The file is too large for a deck list.",
         "fileUnreadable": "The file couldn't be read.",
         "previewFailed": "The deck list couldn't be read.",
-        "createFailed": "Couldn't create the deck."
+        "createFailed": "Couldn't create the deck.",
+        "addFailed": "The list could not be added to the deck.",
+        "tooManyCardsAdd": "A list can have at most {max} different cards."
       },
       "toast": {
-        "created": "Deck imported"
+        "created": "Deck imported",
+        "added": "{count} card added | {count} cards added"
       },
-      "searchCatalogFor": "Search the catalog for {line}"
+      "searchCatalogFor": "Search the catalog for {line}",
+      "addTitle": "Add a list to the deck",
+      "addDescription": "Paste a deck list or upload a .ydk file. The cards are added to the ones the deck already has. YDK, ydke:// links, YGO Omega deck codes and text lists (recipe) are recognised.",
+      "add": "Add to deck",
+      "addUnresolvedHint": "Some lines are still open. Pick a card or remove the line to add the list."
     },
     "toInventory": {
       "button": "Add to inventory",

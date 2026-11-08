@@ -3,7 +3,7 @@ import { DOMWrapper as BodyWrapper, enableAutoUnmount, flushPromises } from '@vu
 import type { DOMWrapper } from '@vue/test-utils'
 import type { Ref } from 'vue'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
-import { DecksDeckFormModal, DecksDeckToInventoryButton, UApp, UDropdownMenu, USelect } from '#components'
+import { DecksDeckFormModal, DecksDeckImportModal, DecksDeckToInventoryButton, UApp, UDropdownMenu, USelect } from '#components'
 import DeckEditorPage from '~/pages/decks/[id].vue'
 import { optionLabels, selectWithOption } from './fixtures/select-wrapper'
 import type { DeckValidation } from '~~/shared/rule-formats'
@@ -1420,6 +1420,29 @@ describe('deck editor header and row layout', () => {
     items[1]!.onSelect()
     await component.vm.$nextTick()
     expect(component.findComponent(DecksDeckToInventoryButton).props('open')).toBe(true)
+  })
+
+  // Tester feedback, round 10: "Lass mich bei bereits erstellten Decks auch Listen hinzufügen."
+  it('has a "Liste hinzufügen" button that opens the import dialog for this deck, and reloads the deck when the list is in', async () => {
+    state.source = { items: [], total: 0 }
+    state.deck = deckDetail({ main: [row({ name: 'Dark Magician', section: 'main' })] })
+    const fetchMock = vi.fn(async (_url: string, _options?: unknown) => state.deck)
+    vi.stubGlobal('$fetch', fetchMock)
+
+    const component = await mountSuspended(DeckEditorPage)
+    const addList = component.find('[data-testid="deck-add-list"]')
+    const modal = component.findComponent(DecksDeckImportModal)
+
+    expect(addList.text()).toContain('Liste hinzufügen')
+    expect(modal.props('open')).toBe(false)
+    expect(modal.props('deckId')).toBe('deck-1')
+
+    await addList.trigger('click')
+    expect(modal.props('open')).toBe(true)
+
+    modal.vm.$emit('added', { copies: 3 })
+    await vi.waitFor(() => expect(fetchMock.mock.calls.some(([url]) => url === '/api/decks/deck-1')).toBe(true))
+    vi.unstubAllGlobals()
   })
 
   it('lets a long deck name wrap instead of truncating it', async () => {

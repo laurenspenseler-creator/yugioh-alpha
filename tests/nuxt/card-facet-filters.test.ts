@@ -155,6 +155,26 @@ describe('CardFacetFilters following the kind', () => {
     expect(iconOf('Normal')).toBeUndefined()
   })
 
+  // Tester feedback, round 10: "Setz Normal nach oben": the plain Spell or Trap leads the list, the others stay in the
+  // order of their names.
+  it('lists "Normal" first, then the other subtypes by name', async () => {
+    const orderOf = (component: Awaited<ReturnType<typeof mountKinds>>, label: string) => {
+      const menus = component.findAllComponents(USelectMenu) as unknown as VueWrapper[]
+      const props = menus.map(menu => menu.props() as { placeholder?: string, items: Array<{ value: string }> })
+      return props.find(candidate => candidate.placeholder === label)!.items.map(item => item.value)
+    }
+
+    const spells = await mountKinds(['spell'])
+    const traps = await mountKinds(['trap'])
+    const both = await mountKinds(['spell', 'trap'])
+
+    // Ausrüstung, Permanent, Ritual, Schnell, Spielfeld.
+    expect(orderOf(spells, 'Zauberart')).toEqual(['Normal', 'Equip', 'Continuous', 'Ritual', 'Quick-Play', 'Field'])
+    // Konter, Permanent.
+    expect(orderOf(traps, 'Fallenart')).toEqual(['Normal', 'Counter', 'Continuous'])
+    expect(orderOf(both, 'Zauber-/Fallenart')).toEqual(['Normal', 'Equip', 'Counter', 'Continuous', 'Ritual', 'Quick-Play', 'Field'])
+  })
+
   it('offers Traps theirs, and both together the lot', async () => {
     const traps = await mountKinds(['trap'])
     const both = await mountKinds(['spell', 'trap'])

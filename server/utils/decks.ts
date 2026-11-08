@@ -367,6 +367,18 @@ export function validateDeckCreateCardsInput(body: unknown): DeckCardInput[] | u
   })
 }
 
+/**
+ * The `cards` of `POST /api/decks/:id/cards/import` (a list added to a deck that exists): the same entries as at
+ * creation, but at least one of them.
+ */
+export function validateDeckAddCardsInput(body: unknown): DeckCardInput[] {
+  const cards = validateDeckCreateCardsInput(body)
+  if (!cards || cards.length === 0) {
+    badRequest('cards must be a non-empty array')
+  }
+  return cards
+}
+
 export function validateDeckCardMoveInput(body: unknown): DeckCardMoveInput {
   if (!isRecord(body)) {
     badRequest('Request body must be an object')
@@ -1068,6 +1080,71 @@ export function incrementDeckCard(db: Db, userId: string, deckId: string, input:
         createdAt: now,
         updatedAt: now,
       }).run()
+    }
+
+    touchDeck(txDb, deckId, now)
+    return row
+  })
+
+  return buildDeckDetail(db, userId, { ...deckRow, updatedAt: now })
+}
+
+/**
+ * Adds a whole list to a deck that exists (the deck editor's "Liste hinzufügen"): every entry brings its copies to
+ * what the section already holds, as `incrementDeckCard` does one by one, but all in one transaction, so a card that
+ * does not fit (unknown, wrong section, more than `MAX_DECK_CARD_QUANTITY` copies) leaves the deck as it was. Entries
+ * for the same card and section are summed first.
+ */
+export function addDeckCards(db: Db, userId: string, deckId: string, cards: DeckCardInput[]): DeckDetail {
+  const now = new Date()
+
+  const deckRow = db.transaction((tx) => {
+    const txDb = tx as unknown as Db
+    const row = requireDeckRow(txDb, userId, deckId)
+
+    const wanted = new Map<string, DeckCardInput>()
+    for (const input of cards) {
+      const card = requireCatalogCard(txDb, input.catalogCardId)
+      assertSectionAllowed(card, input.section)
+
+      const key = `${input.catalogCardId}:${input.section}`
+      const entry = wanted.get(key)
+      if (entry) {
+        entry.quantity += input.quantity
+      }
+      else {
+        wanted.set(key, { ...input })
+      }
+    }
+
+    for (const input of wanted.values()) {
+      const existing = findDeckCard(txDb, deckId, input.catalogCardId, input.section)
+      const quantity = (existing?.quantity ?? 0) + input.quantity
+      if (quantity > MAX_DECK_CARD_QUANTITY) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: `quantity must be at most ${MAX_DECK_CARD_QUANTITY}`,
+          data: { code: 'quantity_too_large', params: { max: MAX_DECK_CARD_QUANTITY } },
+        })
+      }
+
+      if (existing) {
+        txDb.update(deckCard)
+          .set({ quantity, updatedAt: now })
+          .where(eq(deckCard.id, existing.id))
+          .run()
+      }
+      else {
+        txDb.insert(deckCard).values({
+          id: randomUUID(),
+          deckId,
+          catalogCardId: input.catalogCardId,
+          section: input.section,
+          quantity,
+          createdAt: now,
+          updatedAt: now,
+        }).run()
+      }
     }
 
     touchDeck(txDb, deckId, now)

@@ -5,6 +5,10 @@
  * Main / Extra / Side, and create the deck. Matching is the server's
  * (`POST /api/decks/import/preview`, the same as quick capture); the deck is
  * created by the existing `POST /api/decks`.
+ *
+ * With a `deckId` the list goes into that deck instead (tester feedback: "auch bei bereits erstellten Decks Listen
+ * hinzufügen"): same input and review, but no name and no format to choose, and the copies are added to the deck's
+ * by `POST /api/decks/:id/cards/import`.
  */
 import { DECK_NAME_MAX_LENGTH, DECK_SECTIONS } from '~~/shared/deck-sections'
 import type { DeckSection } from '~~/shared/deck-sections'
@@ -32,12 +36,18 @@ const props = defineProps<{
   open: boolean
   /** The deck's name when the list brings none (a file's name), instead of the generic one: "Deck von Anton". */
   defaultName?: string
+  /** Add the list to this deck instead of creating a new one. */
+  deckId?: string
 }>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
   'created': [deck: { id: string }]
+  /** The list is in the deck; `copies` is how many cards were added. */
+  'added': [result: { copies: number }]
 }>()
+
+const adding = computed(() => props.deckId !== undefined)
 
 const { t, n } = useI18n()
 const count = useCount()
@@ -95,7 +105,7 @@ const summary = computed(() => summarizeEntryRows(rows.value))
 const unresolvedCount = computed(() => summary.value.unsicher + summary.value.ohneTreffer)
 const counts = computed(() => importCounts(rows.value))
 const cards = computed(() => buildImportCards(rows.value))
-const canCreate = computed(() => cards.value.length > 0 && unresolvedCount.value === 0 && deckName.value.trim() !== '')
+const canCreate = computed(() => cards.value.length > 0 && unresolvedCount.value === 0 && (adding.value || deckName.value.trim() !== ''))
 
 /** Cards read from photos or said aloud join the list in the box. */
 function onCardLines(lines: string[]) {
@@ -175,13 +185,19 @@ async function create() {
     return
   }
   if (cards.value.length > MAX_IMPORT_CARDS) {
-    errorMessage.value = t('decks.import.errors.tooManyCards', { max: n(MAX_IMPORT_CARDS, 'integer') })
+    errorMessage.value = t(adding.value ? 'decks.import.errors.tooManyCardsAdd' : 'decks.import.errors.tooManyCards', { max: n(MAX_IMPORT_CARDS, 'integer') })
     return
   }
 
   isCreating.value = true
   errorMessage.value = ''
   try {
+    if (adding.value) {
+      await $fetch(`/api/decks/${props.deckId}/cards/import`, { method: 'POST', body: { cards: cards.value } })
+      emit('added', { copies: cards.value.reduce((sum, card) => sum + card.quantity, 0) })
+      openProxy.value = false
+      return
+    }
     const deck = await $fetch<{ id: string }>('/api/decks', {
       method: 'POST',
       body: {
@@ -195,7 +211,7 @@ async function create() {
     openProxy.value = false
   }
   catch (error) {
-    errorMessage.value = apiError(error, 'decks.import.errors.createFailed')
+    errorMessage.value = apiError(error, adding.value ? 'decks.import.errors.addFailed' : 'decks.import.errors.createFailed')
   }
   finally {
     isCreating.value = false
@@ -206,8 +222,8 @@ async function create() {
 <template>
   <UModal
     v-model:open="openProxy"
-    :title="t('decks.import.title')"
-    :description="step === 'input' ? t('decks.import.description') : t('decks.import.reviewDescription')"
+    :title="adding ? t('decks.import.addTitle') : t('decks.import.title')"
+    :description="step === 'input' ? t(adding ? 'decks.import.addDescription' : 'decks.import.description') : t('decks.import.reviewDescription')"
     :ui="{ content: 'sm:max-w-3xl' }"
   >
     <template #body>
@@ -288,7 +304,10 @@ async function create() {
         class="space-y-4"
         @submit.prevent="create"
       >
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div
+          v-if="!adding"
+          class="grid gap-3 sm:grid-cols-2"
+        >
           <UFormField :label="t('decks.form.name')">
             <UInput
               v-model="deckName"
@@ -358,7 +377,7 @@ async function create() {
           v-if="unresolvedCount > 0"
           class="text-xs text-warning"
         >
-          {{ t('decks.import.unresolvedHint') }}
+          {{ t(adding ? 'decks.import.addUnresolvedHint' : 'decks.import.unresolvedHint') }}
         </p>
 
         <p
@@ -380,10 +399,10 @@ async function create() {
           />
           <UButton
             type="submit"
-            icon="i-lucide-file-down"
+            :icon="adding ? 'i-lucide-list-plus' : 'i-lucide-file-down'"
             :loading="isCreating"
             :disabled="!canCreate"
-            :label="t('decks.import.create')"
+            :label="adding ? t('decks.import.add') : t('decks.import.create')"
           />
         </div>
       </form>

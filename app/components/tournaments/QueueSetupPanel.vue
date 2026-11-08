@@ -34,6 +34,22 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const apiError = useApiError()
+const { formatName, sortFormats } = useFormatLabel()
+
+// reka-ui reserves the empty string for "clear selection", so "no format" is a sentinel that maps back to `null` on the
+// wire (as in the form that creates a tournament).
+const NO_FORMAT = 'none'
+
+interface RuleFormatListItem {
+  id: string
+  name: string
+  isBuiltin: boolean
+}
+
+const { data: formatsData } = await useFetch<{ items: RuleFormatListItem[] }>('/api/formats', {
+  headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
+  default: () => ({ items: [] }),
+})
 
 const setup = computed(() => props.tournament.queueSetup!)
 const editable = computed(() => props.tournament.role === 'organizer' && props.tournament.status === 'registration')
@@ -45,7 +61,10 @@ const players = computed(() => props.tournament.participants.length)
  */
 type FieldValue = string | number
 
+const currentFormatId = computed(() => props.tournament.format?.id ?? NO_FORMAT)
+
 const form = reactive({
+  formatId: currentFormatId.value,
   mode: setup.value.mode as QueueMode,
   flow: setup.value.flow as QueueFlow,
   bestOf: setup.value.bestOf as BestOf,
@@ -67,6 +86,21 @@ watch(setup, (next) => {
   form.prelaunch = next.prelaunch
   form.tables = String(next.tables)
   form.duelMinutes = String(next.duelMinutes)
+})
+watch(currentFormatId, (next) => {
+  form.formatId = next
+})
+
+// The format is chosen until the tournament starts (tester feedback): built-in formats first, then the organizer's own;
+// one that is set but not in the list (it is not the organizer's to assign any more) stays visible.
+const formatItems = computed(() => {
+  const listed = formatsData.value?.items ?? []
+  const current = props.tournament.format
+  const all = current && !listed.some(format => format.id === current.id) ? [...listed, current] : listed
+  return [
+    { label: t('tournaments.noFormat'), value: NO_FORMAT },
+    ...sortFormats(all).map(format => ({ label: formatName(format), value: format.id })),
+  ]
 })
 
 const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
@@ -168,6 +202,8 @@ async function save() {
     const detail = await $fetch<TournamentDetail>(`/api/tournaments/${props.tournament.id}`, {
       method: 'PATCH',
       body: {
+        // Only when it was changed: a tournament keeps the format it has otherwise.
+        ...(form.formatId === currentFormatId.value ? {} : { formatId: form.formatId === NO_FORMAT ? null : form.formatId }),
         queueMode: form.mode,
         flow: form.flow,
         bestOf: form.bestOf,
@@ -218,6 +254,18 @@ async function save() {
       <p class="text-xs text-muted">
         {{ t('tournaments.queue.setup.editHint') }}
       </p>
+
+      <UFormField :label="t('tournaments.queue.setup.format')">
+        <USelect
+          v-model="form.formatId"
+          :items="formatItems"
+          :aria-label="t('tournaments.queue.setup.format')"
+          class="w-full"
+        />
+        <p class="mt-1 text-xs text-muted">
+          {{ t('tournaments.queue.setup.formatHint') }}
+        </p>
+      </UFormField>
 
       <UFormField
         v-if="showFlow"

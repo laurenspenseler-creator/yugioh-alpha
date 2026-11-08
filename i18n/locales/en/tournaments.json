@@ -55,7 +55,9 @@
         "save": "Save settings",
         "saveFailed": "The settings could not be saved.",
         "summary": "{mode} · {tables} tables · {minutes} min per match",
-        "summaryRounds": "{mode} · Matchdays · {minutes} min per match"
+        "summaryRounds": "{mode} · Matchdays · {minutes} min per match",
+        "format": "Format",
+        "formatHint": "What the players' decks are checked against. You can change it until the tournament starts."
       },
       "board": {
         "tableTitle": "Standings",

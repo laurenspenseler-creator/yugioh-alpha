@@ -158,7 +158,8 @@
         "quantity": "Kopien im {section}",
         "decrease": "Eine Kopie weniger im {section}",
         "increase": "Eine Kopie mehr im {section}"
-      }
+      },
+      "addList": "Liste hinzufügen"
     },
     "breakdown": {
       "label": "Kartenarten im {section}",
@@ -225,12 +226,19 @@
         "fileTooLarge": "Die Datei ist zu groß für eine Deckliste.",
         "fileUnreadable": "Die Datei konnte nicht gelesen werden.",
         "previewFailed": "Die Deckliste konnte nicht gelesen werden.",
-        "createFailed": "Das Deck konnte nicht angelegt werden."
+        "createFailed": "Das Deck konnte nicht angelegt werden.",
+        "addFailed": "Die Liste konnte nicht zum Deck hinzugefügt werden.",
+        "tooManyCardsAdd": "Eine Liste kann höchstens {max} verschiedene Karten haben."
       },
       "toast": {
-        "created": "Deck importiert"
+        "created": "Deck importiert",
+        "added": "{count} Karte hinzugefügt | {count} Karten hinzugefügt"
       },
-      "searchCatalogFor": "Katalog nach Karte für {line} durchsuchen"
+      "searchCatalogFor": "Katalog nach Karte für {line} durchsuchen",
+      "addTitle": "Liste zum Deck hinzufügen",
+      "addDescription": "Füge eine Deckliste ein oder lade eine .ydk-Datei hoch. Die Karten kommen zu denen dazu, die das Deck schon hat. Erkannt werden YDK, ydke://-Links, YGO-Omega-Deckcodes und Textlisten (Rezept).",
+      "add": "Zum Deck hinzufügen",
+      "addUnresolvedHint": "Einige Zeilen sind noch offen. Wähle eine Karte oder entferne die Zeile, um die Liste hinzuzufügen."
     },
     "toInventory": {
       "button": "Zum Inventar hinzufügen",
