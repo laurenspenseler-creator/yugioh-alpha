@@ -72,16 +72,22 @@ The banlist was last generated on 18 October. Running the pipeline again reads t
 
 * 17 ids of the old list are no longer in the catalog and dropped out.
 * 8 cards whose text now mentions Synchro, Link or Pendulum are forbidden by rule 2 (e.g. Marincess Azuri).
-* 42 candidates whose text changed since they were classified keep their classification (its hash was refreshed
-  without re-reading the text; the note on each says so), so they do not fall out of the list.
-* 46 candidates are new cards without a classification; they stay unrestricted until the classifier runs on them.
+* 88 candidates had no classification for their current text: 46 new cards and 42 whose text changed. All 88 were
+  classified by hand against the current text and the owner's rulings (70 hit at least one rule; the note on each says
+  so). The 42 changed ones kept their limit; of the 46 new cards 35 are limited and 4 forbidden (Super Critical, Silent
+  Magician the Silent Fighter, and the two new hand traps Heretic Eradicator and The Secret Crane Princess Who Returns A
+  Favor, which also joined the handtrap list of the "Classic Plus definition"); the others hit nothing. Cards with a
+  limit that can be used again within a turn (Super Critical, Trirealm Rift Judgment, Reversal Box, Silent Magician's
+  draw) are marked "repeatable", which the frequency modifier turns into a ban; 13 of the hand-classified cards are
+  flagged "unsure" for review (`review.csv`).
 
 ## Consequences
 
 * 44 cards moved in the banlist for v3.1 (the card list and rule 8 for Extra Deck monsters: 1 from forbidden to
   limited, 12 from limited to semi-limited, 3 from semi-limited to limited, 25 from unlimited to limited, 2 from
   unlimited to semi-limited, 1 from unlimited to forbidden), and 25 more through the catalog drift above (17 dropped, 8 newly
-  forbidden by rule 2). The handtrap list is unchanged.
+  forbidden by rule 2); then 39 more when the 88 unclassified candidates were classified (see above). Two hand traps
+  joined the handtrap list.
 * The card list is the final word for 32 cards. If the classifier or a ruling later disagrees with it, the card list
   wins until the rule authors change it.
 * The format description in the app (`formats.classic-plus.description`) still holds: it names the rule families, not
@@ -90,7 +96,6 @@ The banlist was last generated on 18 October. Running the pipeline again reads t
 ## Not built
 
 * The tiers for the other ~3,000 cards (Ä2 to Ä4), which needs a classifier run with trait output and the text of v3.
-* A classification of the 46 new and a re-reading of the 42 changed cards.
 * The block's open questions: whether a third attack is a multiplication in 6(b), the German name of Gravity Bind, the
   name "Anmutige Barmherzigkeit" (also not in the German database), Pinguinsoldat checked against the database, and
   three rules of the June version that v3 no longer holds (receiver monsters, Gemini monsters, the Flip monster rule).

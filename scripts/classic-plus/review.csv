@@ -143,6 +143,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 44665365,Herald of Perfection,0,10 frequency,false,false,false,10 (repeatable): Repeatable negation with a hand-discard cost.,10: negate the activation,
 94689635,Herald of Purple Light,0,4 10,false,false,false,4: Handtrap that negates and destroys. | 10: Negates a Trap activation.,"4: negate the activation, and if you do, destroy it | 10: negate the activation",
 48546368,Herald of Ultimateness,0,10 frequency,false,false,false,10 (repeatable): Negates Summons and activations with no once-per-turn limit.,10: negate the Special Summon or activation,
+101403021,Heretic Eradicator,0,4 10,false,false,false,4: Hand trap that negates or removes something. | 10: Negates.,"4: You can negate the Summon, and if you do, destroy that monster | 10: negate the Summon",v3.1 run: classified by hand against the current card text.
 48229808,Horus the Black Flame Dragon LV8,0,10 frequency,false,false,false,10 (repeatable): Negates Spell activations with no once-per-turn limit.,10: You can negate the activation,
 95772051,Ignoble Knight of Black Laundsallyn,0,7b frequency,false,false,false,7b (repeatable): Can Special Summon itself from the GY; that effect has no once-per-turn.,7b: Special Summon this card from your hand or Graveyard,
 89027418,Imposter Shift,0,10 frequency,false,false,false,10 (repeatable): Continuous conditional negation.,10: negate the activated effect,
@@ -182,7 +183,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 37310367,Lockout Gardna,0,9b 10 frequency,false,false,false,"9b: Battle protection. | 10 (repeatable): Negates opponent monster effects, no per-turn limit.",9b: it cannot be destroyed by battle this turn | 10: You can negate the effects of both that Cyberse monster you control and that opponent's monster,"Hand effect is Battle Phase only, rule 4 exception."
 96012004,Lucky Chance,0,5 frequency,false,false,false,"5 (repeatable): Draws cards; once per Chain, not per turn.",5: draw 1 card,
 5556499,Machina Fortress,0,7b frequency,false,false,false,7b (repeatable): Can Special Summon itself from the GY without a once-per-turn limit.,7b: Special Summon this card (from your hand or GY),
-33822112,Mad Tempest Trirealm Rift Ploutonion,0,4 5,true,false,false,5: Draws cards. | 4: Quick Effect from hand that banishes another own card (ruling 16).,"5: draw 2 cards | 4: banish both (face-down), and if you do, draw 2 cards",Rule 4 hit relies on ruling 16 for a cost banish of own card. v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+33822112,Mad Tempest Trirealm Rift Ploutonion,0,4 5,true,false,false,5: Draws cards. | 4: Hand trap that negates or removes something.,"5: draw 2 cards | 4: You can reveal this card and 1 other ""Trirealm Rift"" card in your hand; banish both (face-down)",v3.1 run: classified by hand against the current card text. Hand trap by ruling 16: it banishes another card from the hand.
 34206604,Magical Scientist,0,7c frequency,false,false,false,"7c (repeatable): Summons Fusion Monsters without materials, repeatedly per turn.",7c: Special Summon 1 level 6 or lower Fusion Monster from your Extra Deck,
 53119267,Magical Thorn,0,3.4,true,false,false,3.4: Punishes opponent discards (ruling 4).,3.4: inflict 500 points of damage to their Life Points for each card that was discarded,Discarding is often forced by own cards; 3 vs 6a.
 45796834,"Maha Vailo, Light of the Heavens",0,3.2 6b 10 frequency,false,false,false,"3.2: Continuous activation lock on an attackable monster. | 10 (repeatable): Negates effects targeting it, no per-turn limit. | 6b: Doubles battle damage.",3.2: Your opponent cannot activate monster effects during the Battle Phase. | 10: negate that effect | 6b: Any battle damage this card inflicts to your opponent is doubled.,
@@ -232,7 +233,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 21140872,Red-Eyes Slash Dragon,0,7b 10 frequency,false,false,false,10 (repeatable): Negates activations with no once-per-turn limit. | 7b: Revives monsters from the GY.,10: negate the activation | 7b: Special Summon as many monsters from your GY as possible,
 5186893,Red-Eyes Zombie Dragon,0,7b frequency,false,false,false,7b (repeatable): Summons a monster from the GY; unlimited trigger.,7b: You can Special Summon that Zombie monster,
 41406613,"Reign-Beaux, Overking of Dark World",0,7b frequency,false,false,false,7b (repeatable): Special Summons itself from the GY.,7b: You can Special Summon this card (from your GY),
-2606417,Reversal Box,0,10 frequency,false,true,false,10 (repeatable): Negates monster effects; limited only by counters.,10: also its effects are negated,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+2606417,Reversal Box,0,10 frequency,false,false,false,10 (repeatable): Negates.,10: negate its effects,v3.1 run: classified by hand against the current card text. Counters let it activate more than once a turn.
 47647354,"Rex, Ride Fur Hire",0,5 frequency,false,false,false,5 (repeatable): Draws a card; no once-per-turn limit on this effect.,5: You can draw 1 card,
 132308,Rikka Princess,0,4 10,false,false,false,4: Can be activated from the hand on the opponent's turn to negate an effect. | 10: Negates a monster effect.,4: You can shuffle this card from your hand or GY into the Deck and Tribute 1 Plant monster; negate that effect | 10: negate that effect,
 56655675,Ritual Beast Ulti-Gaiapelio,0,10 frequency,false,false,false,10 (repeatable): Negates activations with no once-per-turn limit.,10: negate the activation,
@@ -249,6 +250,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 9603356,Shadowknight Archfiend,0,10 frequency,false,false,false,10 (repeatable): Negates an opponent's targeting effect.,10: negate the effect and destroy the opponent's card,
 27869883,Shadowpriestess of Ohm,0,6a frequency,false,false,false,"6a (repeatable): Damage with only a Tribute cost, no per-turn limit.",6a: inflict 800 damage to your opponent,
 12197223,"Shiina, Twin Tempests of Celestial Thunder",0,4 8 9b,false,false,false,9b: Battle-destruction protection. | 8: Bounces all monsters or Spells/Traps. | 4: Handtrap on opponent's turn that removes cards.,"9b: The first time this card would be destroyed by battle each turn, it is not destroyed | 8: Return all face-up monsters on the field to the hand | 4: You can Special Summon this card from your hand",
+99522650,"Silent Magician, the Silent Fighter",0,5 9a 9b 10 frequency,true,false,false,10: Negates. | 5 (repeatable): Draws cards. | 9a: Protects a monster from card effects. | 9b: Protects a monster from battle destruction.,"10: negate all your opponent's activated Spell Cards and effects | 5: You can draw 1 card, or if your opponent drew by their own card effect, you draw the same number of cards instead | 9a: The first time this card would be destroyed by battle or card effect each turn, it is not destroyed | 9b: The first time this card would be destroyed by battle or card effect each turn, it is not destroyed",v3.1 run: classified by hand against the current card text. The draw effect can be used twice per turn (frequency).
 32484853,Singularity Fiend,0,4 8,false,false,false,4: Handtrap in opponent's turn that removes opponent's monsters. | 8: Can destroy several summoned monsters.,4: You can discard this card and 1 Spell; destroy that monster(s) | 8: destroy that monster(s),
 98139712,Skull Invitation,0,3.4,false,false,false,3.4: Continuous punishment of sending cards to GY (ruling 4).,"3.4: Each time a card(s) is sent to the Graveyard, inflict 300 damage to its owner",
 67750322,Skull Meister,0,4 10,false,false,false,4: Handtrap that negates an opponent's effect. | 10: Negates an effect.,4: You can send this card from your hand to the GY; negate that effect | 10: negate that effect,
@@ -275,6 +277,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 61650133,Summoning Curse,0,3.4,false,false,false,"3.4: Continuous punishment of Special Summons, no property limit.",3.4: The current controller of that monster(s) banishes 1 card from their hand,
 53618293,Sunvine Maiden,0,4 10,false,false,false,4: Handtrap that negates an opponent's effect. | 10: Negates an effect.,"4: Special Summon this card from your hand, and if you do, negate that effect | 10: negate that effect",
 29913783,Super Anti-Kaiju War Machine Mecha-Thunder-King,0,4 7b 9a 9b,false,false,false,4: Handtrap usable in opponent's Main Phase that removes a card. | 7b: Revives from the GY. | 9a: Partial immunity against opponent's Kaiju (ruling 31). | 9b: Partial battle protection.,"4: banish 1 ""Kaiju"" monster you control | 7b: you can Special Summon 1 monster from your GY | 9a: This card is unaffected by other ""Kaiju"" cards' effects | 9b: cannot be destroyed by battle with a ""Kaiju"" monster",
+51193716,Super Critical,0,7b 8 10 frequency,true,false,false,8 (repeatable): Can remove more than 1 card of the opponent from the field in one resolution. | 7b (repeatable): Brings a monster back from the GY or banishment onto the field. | 10 (repeatable): Negates.,8: They destroy up to 3 monsters their opponent controls | 7b: They Special Summon 1 monster from their GY | 10: they negate the effects of 1 monster their opponent controls,"v3.1 run: classified by hand against the current card text. Once per Chain, not once per turn: it can be used again every time a die shows 1 (frequency)."
 6849042,Super-Ancient Dinobeast,0,5 frequency,false,false,false,"5 (repeatable): Draws a card, no once-per-turn limit.",5: You can draw 1 card.,
 88307361,Superancient Deepsea King Coelacanth,0,10 frequency,false,false,false,10 (repeatable): Negation without a per-turn limit.,10: negate the activation,
 23738096,Supply Soldier of the Indestructible Insects,0,4 10,false,false,false,4: Quick Effect from hand in opponent's turn that negates an opponent's effect. | 10: Negates an effect.,4: negate that effect | 10: negate that effect,
@@ -293,6 +296,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 26704411,The Fabled Kokkator,0,5 frequency,false,false,false,"5 (repeatable): Draw on battle destruction, with no once-per-turn limit.",5: draw 1 card,
 94845226,The Fabled Rubyruda,0,10 frequency,false,false,false,10 (repeatable): Negates attacks without limit.,10: negate the attack,
 44968687,The Legendary Fisherman III,0,6b 8 9a 9b stacking,true,false,false,8: Banishes all opponent monsters. | 9a: Indestructible by effects and unaffected by Spells/Traps. | 9b: Cannot be destroyed by battle. | 6b: Doubles battle damage.,"8: banish all monsters your opponent controls | 9a: Cannot be destroyed by battle or card effects, also unaffected by Spell/Trap effects | 9b: Cannot be destroyed by battle | 6b: the first battle or effect damage your opponent takes this turn becomes doubled",Doubling applies to battle or effect damage; only the battle part is 6b.
+101403023,The Secret Crane Princess Who Returns A Favor,0,4 5 8,false,false,false,5: Draws cards. | 8: Can remove more than 1 card of the opponent from the field in one resolution. | 4: Hand trap that negates or removes something.,"5: each player draws 1 card, then your opponent can draw 1 card | 8: destroy all face-up cards your opponent controls | 4: You can banish this revealed card from your hand; destroy all face-up cards your opponent controls",v3.1 run: classified by hand against the current card text.
 11587414,The True Sun God,0,3.4,true,false,false,"3.4: Continuous attack lock on a Continuous Spell; subset defined by summon state, not a printed property.","3.4: Monsters, except ""The Winged Dragon of Ra"", cannot attack the turn they are Special Summoned",Could be argued 3.3 since Ra is exempted by name.
 5973663,The World Tree,0,7b frequency,false,false,false,"7b (repeatable): Can Special Summon a Plant from the GY, repeatable with counters.",7b: Special Summon that target,
 24207889,There Can Be Only One,0,3.4 8,true,false,false,3.4: Continuous summon/control lock on both players. | 8: Can force several opponent's monsters to the GY.,3.4: Each player can only control 1 monster of each Type | 8: they must send some to the GY,3.3 (Type) vs 3.4; unclear whether a forced send by game rule counts for rule 8.
@@ -312,7 +316,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 35371948,Trickstar Light Stage,0,6a frequency,true,false,false,"6a (repeatable): Extra damage without field change, repeating.",6a: inflict 200 damage to them,"Triggered by damage, possibly battle; could be byproduct. Set-card lock is single-card (ruling 8)."
 48568432,Trigon,0,7b 9a 9b frequency,false,false,false,7b (repeatable): Revives from GY on each battle destruction. | 9a: Destruction substitute. | 9b: Destruction substitute incl. battle.,"7b: Special Summon 1 Level 4 or lower LIGHT Machine-Type monster from your Graveyard | 9a: If the equipped monster would be destroyed, destroy this card instead. | 9b: If the equipped monster would be destroyed, destroy this card instead.",
 60811211,Trirealm Rift Darkness,0,9b 11b,false,false,false,9b: Battle protection for itself. | 11b: Continuous skip of opponent Draw Phase every turn.,9b: Cannot be destroyed by battle | 11b: Skip both players' Draw Phases,
-65195679,Trirealm Rift Judgment,0,7b frequency,false,false,false,7b (repeatable): Summons a banished monster; can repeat with different Attributes.,7b: either add it to your hand or Special Summon it,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+65195679,Trirealm Rift Judgment,0,7b frequency,false,false,false,7b (repeatable): Brings a monster back from the GY or banishment onto the field.,7b: Special Summon it,v3.1 run: classified by hand against the current card text. No once-per-turn limit: it can run again for another Attribute in the same turn.
 21237481,Type Zero Magic Crusher,0,6a frequency,false,false,false,6a (repeatable): Repeatable burn from a Continuous Trap.,6a: inflict 500 points of damage,
 76721030,Tyrant's Tirade,0,3.4,true,false,false,3.4: Broad Continuous activation lock on a Trap.,3.4: Effects of Effect Monsters that activate in the hand or on the field cannot be activated.,"'Effect Monsters' could be read as a card-type subset (3.3), but covers practically all monster effects."
 11819616,"Tytannial, Princess of Camellias",0,10 frequency,false,false,false,10 (repeatable): Negates activations with no once-per-turn restriction.,10: negate the activation,
@@ -480,6 +484,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 4810585,Ancient Warriors Saga - Defense of Changban,1,3.3,true,false,false,3.3: Continuous lock on a card-type subset of activations.,3.3: your opponent cannot activate any Spell/Trap Cards until the end of the Damage Step,"Could be 3.4 if Spell/Trap is seen as the whole class; the lock sits on a Continuous Trap, not a monster."
 91706817,Angel of Blue Tears,1,6a 10,false,false,false,6a: Damage without changing the field. | 10: Negates a monster's effects.,6a: takes damage equal to the number of cards in their hand x 200 | 10: negate that target's effects,
 44822037,Angel Statue - Azurune,1,10,false,false,false,10: Negates a Summon.,10: negate the Summon,
+59062857,Angelechy Brilliant Move,1,7c,true,false,false,7c: Summons an Extra Deck monster without its full materials.,"7c: Special Summon 1 ""Angelechy"" monster from your Extra Deck","v3.1 run: classified by hand against the current card text. Summons an Extra Deck monster for a cost of 1 card, not its materials."
 54171327,Angelechy Disturbance,1,10,false,false,false,10: Negates effects of opponent's cards.,10: their effects are negated,
 12845564,Angelechy Endgame Problem,1,3.2 5 7c 8,true,false,false,5: Draws. | 3.2: Continuous restriction on a Field Spell. | 8: Can banish several monsters. | 7c: Extra Deck summon without materials.,"5: You can draw 1 card | 3.2: When your opponent would Special Summon a monster(s), you choose the zone(s) to place it. | 8: You can banish that monster(s) | 7c: Special Summon 1 ""Angelechy"" monster from your Extra Deck",Zone choice as floodgate is debatable.
 17782288,Angelechy Problem,1,7c,false,false,false,7c: Special Summons from the Extra Deck without its materials.,"7c: Special Summon 1 Level 2 ""Angelechy"" monster from your Extra Deck",
@@ -504,6 +509,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 41830887,Appliancer Copybokkle,1,7b,false,false,false,7b: Special Summons from the GY.,7b: Special Summon 1 monster with the same name from your hand or GY,
 30996652,Appliancer Reuse,1,7b,false,false,false,7b: Special Summons a monster from the GY.,"7b: Target 1 ""Appliancer"" monster in your GY; Special Summon it",
 96427353,Aqua Armor Ninja,1,10,false,false,false,10: Negates an attack.,10: negate that attack,
+100460028,Aqua Leviathan @Marincess,1,8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution.,"8: return cards your opponent controls to the hand up to the number of ""Marincess"" Monster Cards you control",v3.1 run: classified by hand against the current card text.
 28325165,Aqua Story - Urashima,1,9a 10,false,false,false,10: Negates effects. | 9a: Grants unaffected status.,10: its effects are negated | 9a: it is unaffected by your opponent's card effects,
 91831066,Aquarium Lighting,1,6b 7b,false,false,false,6b: Doubles a monster's ATK. | 7b: Revives from GY.,6b: ATK and DEF each become double its current ATK and DEF | 7b: target 1 Aqua-Type monster in your Graveyard; Special Summon it,
 65446452,Aquarium Set,1,7b,false,false,false,7b: Revives from GY.,7b: target 1 Aqua-Type monster in your Graveyard; Special Summon it,
@@ -521,6 +527,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 68371799,Archfiend Commander,1,7b,false,false,false,7b: Special Summons a monster from the GY.,"7b: target 1 Level 6 ""Archfiend"" monster in your Graveyard; Special Summon that target",
 31766317,Archfiend Empress,1,7b 9a 9b,false,false,false,9a: Destruction substitute covering card effects. | 9b: Destruction substitute covering battle. | 7b: Special Summons a monster from the GY.,"9a: would be destroyed, you can remove from play 1 DARK Fiend-Type monster from your Graveyard, instead | 9b: would be destroyed, you can remove from play 1 DARK Fiend-Type monster from your Graveyard, instead | 7b: select 1 Level 6 or higher DARK Fiend-Type monster in your Graveyard, except ""Archfiend Empress"", and Special Summon it",
 84341431,Archfiend Giant,1,9a,false,false,false,9a: Destruction substitute against effects.,"9a: would be destroyed by a card effect, you can pay 500 LP instead",
+86343295,Archfiend of Gilfer - Flame Attack,1,5 7b,false,false,false,5: Draws cards. | 7b: Brings a monster back from the GY or banishment onto the field.,"5: draw 1 card, then discard 1 card | 7b: Special Summon this card, but banish it when it leaves the field",v3.1 run: classified by hand against the current card text.
 63883999,Archfiend Palabyrinth,1,7b,false,false,false,7b: Special Summons from the GY.,"7b: Deck, or Graveyard",
 53008933,Archfiend's Advent,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: take control of it until the End Phase,
 95825679,Archfiend's Awakening,1,7b 9a 9b,false,false,false,9b: Battle destruction protection. | 9a: Effect destruction protection. | 7b: Can Special Summon from the GY.,"9b: Cannot be destroyed by battle, except by battle with a Ritual Monster | 9a: cannot be destroyed by monster effects, except those of Ritual Monsters | 7b: Special Summon 1 ""Summoned Skull"" from your hand, Deck, or GY",
@@ -593,6 +600,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 79875526,Attachment Cybern,1,7b,false,false,false,7b: Revives from GY.,7b: in your GY; Special Summon it,
 63689843,Attack and Receive,1,6a,false,false,false,6a: Burn as primary function.,6a: Inflict 700 points of damage,
 85352446,Attention!,1,8,false,false,false,8: Can destroy multiple opponent monsters.,8: destroy all face-up monsters on the field with a different Level,
+52245126,"Audhumla, Progenitor of the Frozen Expanse",1,5 9a,true,false,false,5: Draws cards. | 9a: Protects a monster from card effects.,5: draw that many cards | 9a: all face-down cards you control cannot be destroyed by your opponent's card effects,v3.1 run: classified by hand against the current card text. The protection for face-down cards only lasts for the turn.
 7183277,"Aurkus, Lightsworn Druid",1,9a,false,false,false,9a: Untargetability for monsters.,"9a: Neither player can target ""Lightsworn"" monsters (anywhere) with card effects",
 70089580,Aurora Wing,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: You can Special Summon this card in face-up Attack Position,
 37970940,Aussa the Earth Charmer,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: take control of 1 EARTH monster your opponent controls,
@@ -627,6 +635,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 31969219,Baneshade,1,8,false,false,false,8: Can banish several opponent cards.,8: also all cards with that name from your opponent's field,
 55705473,Baobaboon,1,5,false,false,false,5: Draws a card.,5: You can draw 1 card,
 81992475,"Barbar, Malebranche of the Burning Abyss",1,6a,false,false,false,6a: Burn from banishing own GY cards.,6a: inflict 300 damage to your opponent for each,
+27855495,Barrel Dragon the Machine Dragon,1,7b 8,false,false,false,7b: Brings a monster back from the GY or banishment onto the field. | 8: Can remove more than 1 card of the opponent from the field in one resolution.,7b: You can Special Summon it | 8: destroy monsters on the field up to the number of heads,v3.1 run: classified by hand against the current card text.
 98477480,Barrier of the Voiceless Voice,1,9a,false,false,false,9a: Grants targeting protection.,9a: your opponent cannot target LIGHT monsters you control with card effects,
 69167267,Basal Rose Shoot,1,7b,false,false,false,7b: Special Summons from the GY.,7b: from your hand or GY in Defense Position,
 61181383,Battery Charger,1,7b,false,false,false,7b: special summons from the GY,"7b: Special Summon 1 ""Batteryman"" monster from your Graveyard",
@@ -666,7 +675,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 23969415,Beta Evolution Pill - Ultranscendance,1,7c,false,false,false,7c: Brings an Extra Deck monster out without its materials.,7c: Special Summon 1 Level 5 or higher Dinosaur monster from your Deck or Extra Deck,
 92714517,Big Welcome Labrynth,1,7b,false,false,false,7b: Can Special Summon from the GY.,"7b: from your hand, Deck, or GY",
 55461744,Big-Winged Berfomet,1,7b,false,false,false,7b: Special Summons from GY.,7b: target 1 Illusion monster in your GY; Special Summon it,
-99505609,Bingo!,1,5 8,false,true,false,8: Can destroy several opponent cards. | 5: Draws cards.,8: destroy as many cards in that column as possible | 5: each player draws 1 card,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+99505609,Bingo!,1,5 8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution. | 5: Draws cards.,"8: destroy as many of those cards as possible, except this card | 5: then each player draws 1 card",v3.1 run: classified by hand against the current card text.
 84845628,Bird of Paradise Lost,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: take control of it until the End Phase,
 35539880,Birthright,1,7b,false,false,false,7b: Revives a monster from the GY.,7b: Normal Monster in your Graveyard; Special Summon that target,
 98684220,Black Chaos,1,8 9a,false,false,false,9a: Self unaffected protection. | 8: Banishes 2 opponent cards.,9a: this card is unaffected by your opponent's activated effects | 8: You can banish 2 cards your opponent controls,
@@ -681,7 +690,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 46985799,Black Rose Dragon/Assault Mode,1,7b 8,false,false,false,7b: Revives from the GY. | 8: Destroys all cards on the field.,"7b: Special Summon 1 ""Black Rose Dragon"" from your GY | 8: destroy all cards on the field",
 88671720,Black Salvo,1,7b,false,false,false,7b: Revives from GY.,7b: Level 4 DARK Machine-Type monster in your Graveyard; Special Summon that target,
 96367119,Black Shadow Squall,1,10,false,false,false,10: Negates a Spell/Trap activation.,10: negate the activation,
-97818130,"Black Skull Dragon, the Archfiend of Unity",1,6a,true,false,false,6a: LP loss without board change.,6a: You can make your opponent lose 800 LP,Hand Quick Effect discards a Spell as cost; judged not rule 4. v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+97818130,"Black Skull Dragon, the Archfiend of Unity",1,6a,true,false,false,6a: Effect damage as its primary function.,6a: make your opponent lose 800 LP,"v3.1 run: classified by hand against the current card text. LP loss at the start of the Battle Phase, not caused by a battle."
 72930878,Black Sonic,1,8,false,false,false,8: Banishes all opponent's attack position monsters.,8: Banish all face-up Attack Position monsters your opponent controls,
 44028461,Blackback,1,7b,false,false,false,7b: Revives from GY.,7b: in your Graveyard; Special Summon that target,
 53519297,Blackboost,1,5,false,false,false,5: Draws cards.,5: draw 2 cards,
@@ -730,6 +739,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 30576089,Blue-Eyes Jet Dragon,1,7b 9a,false,false,false,9a: Grants effect indestructibility. | 7b: Special Summons itself from the GY.,9a: Other cards you control cannot be destroyed by your opponent's card effects | 7b: Special Summon this card from the GY,
 57043986,Blue-Eyes Solid Dragon,1,10,false,false,false,10: Negates an opponent monster's effects.,10: negate its effects,
 11443677,Blue-Eyes Tyrant Dragon,1,9a,false,false,false,9a: Partial unaffected protection.,9a: Unaffected by Trap Cards or effects,
+91461780,"Blue-Eyes Ultimate Dragon, the God-Surpassing Servant",1,9a,false,false,false,9a: Protects a monster from card effects.,9a: Cannot be destroyed by card effects,v3.1 run: classified by hand against the current card text.
 71808988,Blue-Eyes Ultimate Toon Dragon,1,7b,true,false,false,7b: Flicker returns a monster from banishment (ruling 1).,7b: banish it until the end of the Damage Step,Flicker as 7b per ruling 1.
 55349375,"Bluebeard, the Plunder Patroll Shipwright",1,5,false,false,false,5: Draws a card.,5: draw 1 card,
 60709218,Bond Between Teacher and Student,1,7b,false,false,false,7b: Can Special Summon from the GY.,"7b: from your hand, Deck, or GY",
@@ -800,10 +810,13 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 59251766,Bujingi Hare,1,9a 9b,false,false,false,9a: Grants effect-destruction protection. | 9b: Grants battle-destruction protection.,9a: it cannot be destroyed by battle or by card effects | 9b: it cannot be destroyed by battle or by card effects,
 5818294,Bujingi Turtle,1,10,false,false,false,10: Negates an effect.,10: negate that effect,
 80555062,Bujingi Warg,1,9a,false,false,false,9a: Grants effect-destruction protection.,9a: cannot be destroyed by card effects,
+101403066,Bunnillin Extract,1,5,true,false,false,5: Draws cards.,5: draw 2 cards instead of 1 for your normal draw during your Draw Phase,v3.1 run: classified by hand against the current card text. An extra card on every normal draw.
+101403080,Bunnillin Soft,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,"7b: target 2 Normal Monsters in your GY with different Types, Attributes, and Levels; Special Summon them",v3.1 run: classified by hand against the current card text.
+101403020,Bunnillin: Mocha MOD,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: Special Summon 1 Normal Monster from your GY,v3.1 run: classified by hand against the current card text.
 39643167,Bunny Ear Enthusiast,1,7b 9b,false,false,false,9b: Grants battle protection. | 7b: Temporary banish returns monsters to field (ruling 1).,9b: it cannot be destroyed by battle as long as it has that Counter | 7b: banish both it and this card until the Standby Phase of the next turn,
 86690572,Burgeoning Whirlflame,1,10,false,false,false,10: Negates a Trap activation.,10: negate the activation and destroy it,
 89974735,Burgundy the Magic Elf,1,6a,false,false,false,6a: Damage from discards.,6a: inflict 400 damage to your opponent for each card discarded,
-7428507,Burial Summit Trirealm Rift Helheim,1,7b 9a,false,true,false,7b: Special Summons from banishment. | 9a: Grants effect-destruction and targeting protection.,"7b: Special Summon 1 of your face-down banished ""Xenovader△"" monsters | 9a: cannot be destroyed by your opponent's card effects, also your opponent cannot target them",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+7428507,Burial Summit Trirealm Rift Helheim,1,7b 9a,false,false,false,7b: Brings a monster back from the GY or banishment onto the field. | 9a: Protects a monster from card effects.,"7b: Special Summon 1 of your face-down banished ""Trirealm Rift"" monsters, except a Level 6 monster | 9a: cannot be destroyed by your opponent's card effects",v3.1 run: classified by hand against the current card text.
 8085950,Burning Dragon,1,8,false,false,false,8: Destroys all Spells/Traps.,8: destroy all Spells and Traps on the field,
 24294108,Burning Land,1,6a,false,false,false,6a: Burn with no board change.,6a: The turn player takes 500 damage,
 25669282,Burnout,1,7b,false,false,false,7b: Special Summons a banished monster.,7b: target 1 of your banished Gemini monsters; Special Summon it,
@@ -812,6 +825,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 27191436,Burst Return,1,8,false,false,false,8: Can bounce several opponent monsters.,"8: Return all face-up ""Elemental HERO"" monsters on the field to the hand",
 17655904,Burst Stream of Destruction,1,8,false,false,false,8: Destroys all opponent monsters.,8: Destroy all monsters your opponent controls,
 3428069,"Buster Blader, the Destruction Swordmaster",1,8,false,false,false,8: Mass destruction.,8: destroy all monsters your opponent controls with the same Type,
+100461001,"Buster Blader, the One Who Surpasses the Limits",1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: Special Summon that monster to your field,v3.1 run: classified by hand against the current card text.
 63676256,Buster Blaster,1,8 9a 9b,false,false,false,8: Can destroy several opponent monsters. | 9a: Destruction substitute covers card effects. | 9b: Destruction substitute covers battle.,"8: Destroy all face-up monsters on the field with the same Monster Type as the destroyed monster | 9a: If the equipped monster would be destroyed, destroy this card instead | 9b: If the equipped monster would be destroyed, destroy this card instead",
 4998619,Buster Gundil the Cubic Behemoth,1,7b,false,false,false,7b: Revives monsters from the GY.,"7b: target up to 3 ""Cubic"" monsters in your Graveyard; Special Summon them",
 49823708,Buster Whelp of the Destruction Swordsman,1,7b,false,false,false,"7b: Revives from GY, also itself.","7b: Special Summon 1 ""Buster Blader"" from your hand or Graveyard",
@@ -823,7 +837,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 87288189,Caius the Mega Monarch,1,6a 8,true,false,false,"8: Can banish 2 cards. | 6a: Damage tied to banishing, not destruction/summon/battle.","8: You can target 2 cards, instead. | 6a: inflict 1000 damage to your opponent",Unclear whether banishing makes the damage a byproduct.
 9748752,Caius the Shadow Monarch,1,6a,true,false,false,"6a: Damage tied to a banish, which ruling 20 does not list as byproduct trigger.",6a: inflict 1000 damage to your opponent if it is a DARK monster,Damage follows a banish that changes the field; ruling 20 lists only destruction/summon/battle as byproduct triggers.
 50251045,"Calamity of the Sacred Beasts - Hamon, Lord of Striking Thunder",1,6a,false,false,false,6a: Damage triggered by cards sent to GY is primary.,6a: Inflict 1000 damage to your opponent,
-65785782,Call of Atlantis,1,10,false,false,false,10: Negates monster effects.,10: negate the effects of 1 Effect Monster,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+65785782,Call of Atlantis,1,10,false,false,false,10: Negates.,10: negate the effects of 1 Effect Monster your opponent controls,v3.1 run: classified by hand against the current card text.
 78637313,Call of Darkness,1,3.3,false,false,false,3.3: Continuous lock on a named card.,"3.3: ""Monster Reborn"" also cannot be played as long as this card remains on the field.",
 97803170,Call of the Archfiend,1,7b,false,false,false,7b: Special Summons from the GY.,7b: Special Summon the targeted monster,
 73199638,Call of the Atlanteans,1,7b,false,false,false,7b: Special Summons monsters from the GY.,7b: Sea Serpent-Type monsters in your Graveyard; Special Summon all 3 of them,
@@ -836,6 +850,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 95614612,Cannonball Spear Shellfish,1,9a,false,false,false,9a: Partial unaffected protection.,9a: this card is unaffected by any Spell Cards,
 28120197,Canyon,1,6b,false,false,false,6b: Doubles battle damage.,6b: double any Battle Damage,
 37806313,Caravan of the Ice Barrier,1,5,false,false,false,5: Draws a card.,5: each player draws 1 card,
+101403069,Card Crawl,1,10,false,false,false,10: Negates.,10: Negate its effects,v3.1 run: classified by hand against the current card text.
 72892473,Card Destruction,1,5,false,false,false,5: Draws cards.,5: each player draws the same number of cards they discarded,
 59750328,Card of Demise,1,5,false,false,false,5: Draw effect.,5: Draw until you have 3 cards in your hand,
 88513608,Card of Sacrifice,1,5,false,false,false,5: Draws cards.,5: Draw 2 cards,
@@ -847,7 +862,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 54977057,Cards from the Sky,1,5,false,false,false,5: Draws cards.,5: draw 2 cards,
 39701395,Cards of Consonance,1,5,false,false,false,5: Draws cards.,5: draw 2 cards,
 32566831,Cards of the Red Stone,1,5,false,false,false,5: Draws cards.,5: draw 2 cards,
-55363218,Cartoon Shade,1,8,false,true,false,8: Can return up to 2 cards on the field to the hand.,8: you can target 2 if you control a monster with 2000 ATK or DEF; return that card(s) to the hand,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+55363218,Cartoon Shade,1,8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution.,"8: target 1 card on the field, or target 2 if you control a monster with 2000 ATK or DEF; return them to the hand",v3.1 run: classified by hand against the current card text.
 94076521,Cartorhyn the Hidden Gem of the Seafront,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: while this card is in your GY: You can Special Summon this card,
 59957503,Cash Back,1,10,false,false,false,10: Negates activations.,10: Negate the activation,
 36931229,Castle Gate,1,6a 9b,false,false,false,9b: Battle protection. | 6a: Damage with Tribute as cost is primary (ruling 19).,9b: This card cannot be destroyed by battle | 6a: inflict damage to your opponent equal to that monster's original ATK,
@@ -959,6 +974,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 91654806,Cosmos Channelling,1,5 7b,false,false,false,7b: Can Special Summon from the GY. | 5: Draws a card for its controller.,7b: Special Summon 1 Machine monster from your hand or GY | 5: draw 1 card,
 42309337,Counter Counter,1,10,false,false,false,10: Negates a Counter Trap.,10: Negate the activation,
 94561645,Counter Gate,1,5 10,false,false,false,10: Negates an attack. | 5: Draws a card.,10: Negate the attack | 5: draw 1 card,
+100200298,"Counter Spell ""Negate Attack""",1,10,false,false,false,10: Negates.,"10: Negate that effect, and if you do, destroy that monster",v3.1 run: classified by hand against the current card text.
 30488793,Counterforce,1,6a,false,false,false,6a: Damage triggered by a negation is primary (ruling 20).,6a: Inflict damage to your opponent equal to the difference in ATK,
 26259179,Couple of Aces,1,5,false,false,false,5: Draws 2.,5: Draw 2 cards,
 91479482,Courageous Crimson Chevalier Bradamante,1,7a 7b,false,false,false,7b: Special Summons itself from the GY. | 7a: Equips an opponent's monster to own card (ruling 24).,"7b: You can Special Summon this card, and if you do | 7a: equip that monster your opponent controls to this card",
@@ -977,7 +993,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 37083210,Cross Counter,1,6b,false,false,false,6b: Doubles battle damage.,6b: the Battle Damage inflicted to your opponent is doubled,
 40740224,Cross Keeper,1,5 7b,false,false,false,7b: Special Summons from the GY. | 5: Draws cards.,"7b: Special Summon 1 ""Elemental HERO"" monster or 1 ""Neo-Spacian"" monster from your hand or GY | 5: draw 2 cards",
 65681983,Crossout Designator,1,10,false,false,false,10: Negates effects of cards with the declared name.,10: negate its effects,
-63111591,"Crow, the Carrion Cutpurse",1,7b,false,true,false,7b: Special Summons a monster from the GY.,7b: Special Summon 1 of the monsters sent to the GY,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+63111591,"Crow, the Carrion Cutpurse",1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: Special Summon 1 monster from among those cards,v3.1 run: classified by hand against the current card text.
 96434581,Crusadia Power,1,9a,false,false,false,9a: Makes a monster unaffected by card effects.,9a: unaffected by card effects this turn,
 57728570,Crush Card Virus,1,8,false,false,false,8: Destroys multiple opponent monsters.,8: destroy the monsters among them with 1500 or more ATK,
 72881007,Crystal Abundance,1,7b 8,false,false,false,8: Sends all cards to the GY. | 7b: Summons from the GY.,"8: send all cards on the field to the Graveyard | 7b: Special Summon as many ""Crystal Beast"" monsters as possible from your Graveyard",
@@ -1124,8 +1140,10 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 1102515,Dark Mimic LV3,1,5,false,false,false,5: Draws cards.,5: Draw 1 card,
 20522190,Dark Mirror Force,1,8,false,false,false,8: Banishes multiple opponent monsters.,8: Banish all Defense Position monsters your opponent controls,
 31829185,Dark Necrofear,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: take control of that monster,
+90249148,"Dark Necrofear, the Ruler of Demise",1,7a,false,false,false,7a: Takes control of a card of the opponent.,7a: take control of 1 monster your opponent controls (until the End Phase),v3.1 run: classified by hand against the current card text.
 21960890,Dark Necromancer,1,7b,false,false,false,7b: Special Summons a monster from banishment.,7b: target 1 of your banished Level 4 or lower Fiend or Zombie monsters; Special Summon it,
 38107923,Dark Nephthys,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: Special Summon this card from the Graveyard,
+53038955,Dark Paladin - Wave-Motion,1,10,false,false,false,10: Negates.,10: negate that effect,v3.1 run: classified by hand against the current card text.
 9287078,Dark Renewal,1,7b,false,false,false,7b: Can Special Summon from the GY.,7b: Special Summon 1 DARK Spellcaster monster from your Deck or GY,
 85562745,Dark Room of Nightmare,1,6a,false,false,false,6a: Continuous burn without field change.,6a: inflict 300 damage to your opponent,
 53982768,Dark Ruler Ha Des,1,10,false,false,false,10: Continuously negates effects of monsters it destroys in battle.,10: Negate the effects of monsters destroyed by battle,
@@ -1216,7 +1234,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 81866673,Destiny HERO - Dasher,1,7b,false,false,false,7b: Summons itself from GY.,7b: Special Summon it,
 16605586,Destiny HERO - Denier,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: You can Special Summon this card from your GY,
 39829561,Destiny HERO - Departed,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: if this card is in your Graveyard: Special Summon it,
-25158975,Destiny HERO - Destro-Dogma,1,6a 7b,false,true,false,7b: Can summon itself from GY. | 6a: Burn without changing the field.,7b: Must be Special Summoned (from your hand or GY) | 6a: inflict 2000 damage to your opponent during the next Standby Phase,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+25158975,Destiny HERO - Destro-Dogma,1,6a 7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field. | 6a: Effect damage as its primary function.,7b: Must be Special Summoned (from your hand or GY) by banishing 3 Warrior and/or DARK monsters from your GY | 6a: inflict 2000 damage to your opponent,v3.1 run: classified by hand against the current card text.
 56570271,Destiny HERO - Disk Commander,1,5,false,false,false,5: Draws cards.,5: You can draw 2 cards,
 17132130,Destiny HERO - Dogma,1,6a,false,false,false,6a: Halving LP counts as damage (ruling 21).,6a: Halve your opponent's LP,
 69394324,Destiny HERO - Dominance,1,5 7b,false,false,false,5: Draws a card. | 7b: Special Summons monsters from the GY.,5: You can draw 1 card | 7b: Special Summon them,
@@ -1224,7 +1242,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 62542673,Destiny HERO - Doom Overlord,1,7b,false,false,false,7b: Temporarily banishes a monster that returns (ruling 27).,7b: banish it until the next Standby Phase,
 48150362,Destiny HERO - Drawhand,1,5 7b,false,false,false,5: Draws a card. | 7b: Revives itself from the GY.,5: make each player draw 1 card | 7b: Special Summon this card from your GY,
 40591390,Destiny HERO - Dreadmaster,1,7b 9a 9b,false,false,false,7b: Revives monsters from GY. | 9a: Grants indestructibility including by effects. | 9b: Grants indestructibility including by battle.,"7b: Special Summon up to 2 ""Destiny HERO"" monsters from your GY | 9a: ""Destiny HERO"" monsters you control cannot be destroyed | 9b: ""Destiny HERO"" monsters you control cannot be destroyed",
-54641720,Destiny HERO - Dreadnought Master,1,7c,false,false,false,7c: Summoned from Extra Deck without its listed materials.,"7c: Special Summoned (from your Extra Deck) by Tributing 1 ""Destiny HERO - Dreadmaster""",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+54641720,Destiny HERO - Dreadnought Master,1,7c,false,false,false,7c: Summons an Extra Deck monster without its full materials.,"7c: Special Summoned (from your Extra Deck) by Tributing 1 ""Destiny HERO - Dreadmaster""",v3.1 run: classified by hand against the current card text.
 66262416,Destiny HERO - Dreamer,1,7b 9b,false,false,false,7b: Special Summons itself from GY. | 9b: Grants battle indestructibility.,7b: You can Special Summon this card | 9b: your monster cannot be destroyed by that battle,
 93657021,Destiny HERO - Dusktopia,1,9a 9b,false,false,false,9a: grants indestructibility by effects | 9b: grants indestructibility by battle,9a: make it unable to be destroyed by battle or card effects | 9b: make it unable to be destroyed by battle or card effects,
 37780349,Destiny HERO - Dynatag,1,6a,true,false,false,6a: Effect damage from a discarded card.,6a: each player takes 1000 damage,"Occurs during damage calculation; unclear if battle makes it a byproduct. Hand effect is battle-only, rule 4 exception."
@@ -1539,6 +1557,8 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 71203602,Evigishki Levianima,1,5,false,false,false,5: Draws a card when it declares an attack.,5: Draw 1 card,
 88926295,Evigishki Neremanas,1,7b 9b 10,false,false,false,7b: Special Summons from GY. | 9b: Partial battle protection. | 10: Negates monster effect activation.,7b: target 1 WATER monster in your GY; Special Summon it | 9b: Cannot be destroyed by battle with a monster Special Summoned from the Extra Deck | 10: negate the activation,
 15684835,Evil Blast,1,6a,false,false,false,6a: Burn damage each Standby Phase without changing the field.,"6a: During each of your opponent's Standby Phases, inflict 500 damage to your opponent.",
+88300002,Evil Dragon Cards - Earth Dragon,1,9a 9b 10,true,false,false,10: Negates. | 9a: Protects a monster from card effects. | 9b: Protects a monster from battle destruction.,10: You can negate that effect | 9a: this card cannot be destroyed by battle or card effects this turn | 9b: this card cannot be destroyed by battle or card effects this turn,v3.1 run: classified by hand against the current card text. Its protection only lasts for the turn and needs a WATER monster.
+25799717,Evil Dragon Cards - Metal Dragon,1,5,false,false,false,5: Draws cards.,"5: if an EARTH monster is on the field, you can draw 1 card",v3.1 run: classified by hand against the current card text.
 17616743,Evil Eye Awakening,1,7b,false,false,false,7b: Can revive from GY.,"7b: Special Summon 1 ""Evil Eye"" monster from your hand or GY",
 6494106,Evil Eye Defeat,1,8,false,false,false,8: Can bounce 2 cards.,8: or up to 2 instead,
 42899204,Evil Eye Mesmerism,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: take control of that monster,
@@ -1574,6 +1594,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 25209168,Exchange of Despair and Hope,1,7b 8,false,false,false,8: Can send multiple opponent monsters to the GY. | 7b: Special Summons monsters from a GY.,8: Send as many monsters from the field to the GY as possible | 7b: Special Summon monsters from their opponent's GY to their own field,
 26725158,Exile of the Wicked,1,8,false,false,false,8: Mass destruction.,8: Destroy all Fiend monsters on the field.,
 12600382,Exodia Necross,1,9a 9b,false,false,false,9b: Battle protection. | 9a: Partial effect-destruction protection.,9b: Cannot be destroyed by battle | 9a: or Spell/Trap effect,
+91583378,Exodia the Obliterator,1,8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution.,8: destroy as many monsters your opponent controls as possible,v3.1 run: classified by hand against the current card text.
 84125619,Expendable Dai,1,5,false,false,false,5: Draws a card.,5: draw 1 card,
 52140003,Explosive Urchin,1,6a,false,false,false,6a: Burns each Standby Phase without changing the field.,6a: Inflict 1000 damage to your opponent,
 68456353,Exterio's Fang,1,10,false,false,false,10: Negates a Spell/Trap activation.,10: Negate the activation,
@@ -1622,7 +1643,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 41763141,Fata Dragna,1,7c 9a,false,false,false,9a: Grants targeting protection. | 7c: Summons from the Extra Deck without material.,9a: Your opponent cannot target Fusion Monsters you control with card effects | 7c: You can Special Summon 1 Fusion Monster from your Extra Deck in Defense Position,
 77910045,Fatal Abacus,1,6a,true,false,false,6a: Damage triggered by cards sent to GY is primary per ruling 20.,6a: inflict 500 points of damage per card,Could be read as floodgate punishing actions (ruling 4); affects both players' monsters regardless of cause.
 786906,Fateful Hour,1,7b,false,false,false,7b: Special Summons a monster from either GY.,7b: in either GY; Special Summon it,
-82970905,Father Grizzly,1,10,false,false,false,10: Negates a monster effect activation from the GY.,10: negate the activation,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+82970905,Father Grizzly,1,10,false,false,false,10: Negates.,"10: negate the activation, and if you do, destroy that card",v3.1 run: classified by hand against the current card text.
 11881272,Favorite Hero,1,9a,false,false,false,9a: Grants untargetability.,9a: your opponent cannot target it with card effects,
 87758525,Favorite HERO Shining Flare Wingman,1,5,false,false,false,5: Draws cards.,5: then draw 2 cards,
 34193084,Fear from the Dark,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: Special Summon this card,
@@ -1635,6 +1656,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 6696168,Festiballoon,1,8 9b,false,false,false,9b: Battle-destruction immunity. | 8: Destroys all other cards.,9b: neither can be destroyed by that battle | 8: destroy all other cards on the field,
 78706415,Fiber Jar,1,5 8,false,false,false,5: Draws cards. | 8: Removes all opponent field cards.,"5: then draws 5 cards | 8: Each player shuffles all cards from their hand, field, and Graveyard into the Deck",
 7153114,Field Barrier,1,3.3,false,false,false,3.3: Continuous lock on activating one card type.,3.3: Neither player can activate a new Field Spell Card,
+88288421,Field Power Bonus,1,10,true,false,false,10: Negates.,10: Negate the effects of all face-up monsters currently on the field,v3.1 run: classified by hand against the current card text. Negates every monster when it is destroyed.
 66235877,Fiend Skull Dragon,1,10,false,false,false,10: Continuous negation.,10: Negate the effects of Flip Effect Monsters,
 50078509,Fiendish Chain,1,10,false,false,false,10: Negates a monster's effects.,10: negate the effects of that face-up monster,
 81035362,Fiendish Rhino Warrior,1,9a 9b,false,false,false,9a: Grants effect-destruction immunity. | 9b: Grants battle immunity.,9a: cannot be destroyed by battle or card effects | 9b: cannot be destroyed by battle or card effects,
@@ -1654,6 +1676,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 16832845,Final Geas,1,7b,false,false,false,7b: Special Summons from banishment.,7b: Special Summon the 1 highest-Level Spellcaster-Type monster among those banished monsters,
 23269426,Final Gesture,1,7b,false,false,false,7b: Can Special Summon a monster from the GY.,7b: from your hand or Graveyard,
 51549976,Final Inzektion,1,8,false,false,false,8: Destroys all opponent's cards.,8: destroy all cards your opponent controls,
+85121747,Final Journey of the Soul,1,7b 8 10,false,false,false,10: Negates. | 7b: Brings a monster back from the GY or banishment onto the field. | 8: Can remove more than 1 card of the opponent from the field in one resolution.,10: Negate that effect | 7b: Special Summon 1 monster from your opponent's GY to their field | 8: send any number of face-up monsters they control to the GY whose total ATK equal 6000 or less,v3.1 run: classified by hand against the current card text.
 17956906,Final Light,1,7b,false,false,false,7b: Special Summons monsters from GY.,7b: Special Summon them,
 51849482,"Finis Terrae, Tower of the Necroworld",1,9a,false,false,false,9a: Grants effect-destruction protection.,9a: that card cannot be destroyed by card effects this turn,
 78275321,Fire Ant Ascator,1,7b,false,false,false,7b: Special Summons from the GY.,7b: target 1 Level 5 monster in your GY; Special Summon that target,
@@ -1723,7 +1746,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 72413000,Fluffal Wings,1,5,false,false,false,5: Draws cards.,5: draw 1 card,
 21861412,Flux Ochsenfeld,1,7b,false,false,false,7b: Can Special Summon from the GY.,7b: Special Summon 1 Rock monster from your hand or GY,
 66765023,Flying Elephant,1,9a,false,false,false,9a: Cannot be destroyed by an opponent's card effect once per turn.,"9a: if this card would be destroyed by their card effect, it is not destroyed",
-65118318,Foolish Graverobber,1,7b,false,false,false,7b: Special Summons from either GY.,7b: Special Summon 1 monster from either GY to your field,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+65118318,Foolish Graverobber,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: Special Summon 1 monster from either GY to your field,v3.1 run: classified by hand against the current card text.
 83778600,Foolish Revival,1,7b,false,false,false,7b: Revival onto the opponent's field (ruling 26).,7b: Special Summon it in face-up Defense Position on your opponent's side of the field,
 10529441,Foolish Trap Hole,1,8,false,false,false,8: Can destroy several opponent cards.,8: destroy them,
 28429121,Forbidden Arts of the Gishki,1,8,false,false,false,8: Can Tribute several opponent monsters (ruling 28).,8: Tribute face-up monsters from anywhere on the field,
@@ -1814,6 +1837,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 86319972,Gamma Summon,1,7b 7c,false,false,false,7c: Brings a Fusion from the Extra Deck without its materials. | 7b: Special Summons a banished monster.,"7c: Special Summon 1 ""Invoked"" monster from your Extra Deck, ignoring its Summoning conditions | 7b: target 1 of your banished ""Invoked"" monsters; Special Summon it",
 65758454,Ganbara Lancer,1,7b,false,false,false,7b: Special Summons a copy from the GY.,7b: from your hand or Graveyard,
 2333466,Gandora-G the Dragon of Destruction,1,8,false,false,false,8: Destroys all other cards on the field.,8: destroy as many other cards on the field as possible,
+100463002,Gandora-X the Blackmetal Rampaging Dragon,1,8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution.,8: destroy as many other monsters on the field as possible,v3.1 run: classified by hand against the current card text.
 71525232,Gandora-X the Dragon of Demolition,1,8,false,false,false,8: Destroys all other monsters.,8: destroy as many other monsters on the field as possible,
 30646525,"Garlandolf, King of Destruction",1,8,false,false,false,8: Can destroy multiple opponent monsters.,8: destroy all other face-up monsters on the field,
 11765832,"Garura, Wings of Resonant Life",1,5 6b,false,false,false,6b: Doubles battle damage. | 5: Draws.,6b: Any battle damage your opponent takes from battles involving this card is doubled | 5: You can draw 1 card,
@@ -1884,6 +1908,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 58330108,Gigarays Gandora the Dragon of Destruction,1,8,false,false,false,8: Mass destruction/banishment.,8: Destroy all other cards on the field,
 79080761,Gigastone Omega,1,8,false,false,false,8: Destroys all opponent Spells/Traps.,8: destroy all Spell and Trap Cards your opponent controls,
 36354007,Gilford the Lightning,1,8,false,false,false,8: Destroys all opponent monsters.,8: Destroy all monsters your opponent controls,
+26633847,"Gilford the Lightning, the Warrior of Thunderbolts",1,8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution.,8: Your opponent must send all monsters they control to the GY,v3.1 run: classified by hand against the current card text.
 49161188,Gilti-Gearfried the Magical Steel Knight,1,10,false,false,false,10: Negates an effect.,10: You can negate that effect,
 79086452,Gimmick Puppet Bisque Doll,1,9a,false,false,false,9a: Grants untargetability.,"9a: your opponent cannot target ""Gimmick Puppet"" monsters you control with card effects",
 20032555,Gimmick Puppet Egg Head,1,6a,false,false,false,6a: Direct effect damage without changing the field.,6a: Inflict 800 damage to your opponent,
@@ -2028,6 +2053,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 97904474,Handcuffs Dragon,1,7b,false,false,false,7b: Special Summons itself from the GY.,"7b: When it is destroyed and this card is sent to the Graveyard, you can Special Summon this card",
 47330808,"Hapi, Guidance of Horus",1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: you can Special Summon this card (from your GY),
 68473226,Hardened Armed Dragon,1,9a,false,false,false,9a: Grants effect-destruction protection.,9a: that monster cannot be destroyed by card effects,
+64972181,Harpie Lady - Elegant Egotist,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,"7b: Special Summon up to 2 Level 5 ""Harpie"" monsters from your hand, Deck, and/or GY",v3.1 run: classified by hand against the current card text.
 27927359,Harpie Lady 2,1,10,false,false,false,10: Negates effects.,10: Negate the effects of Flip monsters this card destroys by battle.,
 65664792,Harpie Lady Elegance,1,7b,false,false,false,7b: Special Summons a monster from the GY.,"7b: 1 each from your hand, Deck, and GY",
 86308219,Harpie Lady Phoenix Formation,1,8,false,false,false,8: Destroys multiple opponent monsters.,8: Target as many monsters your opponent controls as possible,
@@ -2077,7 +2103,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 18548966,Heroic Challenger - Morning Star,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: If this card is in your GY and your LP are 500 or less: You can Special Summon this card,
 1833916,Heroic Challenger - Thousand Blades,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: You can Special Summon this card in Attack Position,
 95920682,Heroic Gift,1,5,false,false,false,5: Draws cards.,5: draw 2 cards,
-2729965,"Hey, Space Trunade!",1,8,false,true,false,8: Can bounce 2 opponent cards.,8: Return up to 2 cards on the field to the hand,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+2729965,"Hey, Space Trunade!",1,8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution.,8: Return up to 2 cards from the field to the hand,v3.1 run: classified by hand against the current card text.
 64697431,"Hey, Trunade!",1,8,false,false,false,8: Bounces all set Spells/Traps.,8: Return all Set Spells and Traps on the field to the hand,
 47128571,Hidden Fangs of Revenge,1,8 10 11a,true,false,false,8: Mass destruction. | 10: Negates an attack. | 11a: Skips to the End Phase once.,8: destroy as many monsters your opponent controls as possible | 10: negate that attack | 11a: then it becomes the End Phase,Skip to End Phase during Battle Phase takes Main Phase 2; unclear.
 26232916,Hidden Village of Ninjitsu Arts,1,9a 9b,false,false,false,9a: Destruction substitute against card effects. | 9b: Destruction substitute against battle.,"9a: would be destroyed by battle or an opponent's card effect, you can banish 1 ""Ninja"" monster from your GY instead | 9b: would be destroyed by battle",
@@ -2209,10 +2235,11 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 93946239,Into the Void,1,5,false,false,false,5: Draws a card.,5: Draw 1 card,
 3056267,Invader of the Throne,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: switch control of it with this card,
 71108540,Invincible Demise Lord,1,7b 9a,false,false,false,7b: Can Special Summon itself from the GY. | 9a: Grants effect-destruction protection.,7b: Special Summon this card from your hand or GY | 9a: it cannot be destroyed by card effects,
-76334960,"Invocation - ""Grail""",1,7d,false,true,false,7d: Uses Fusion Material from the Deck.,7d: 1 monster from your Deck,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+76334960,"Invocation - ""Grail""",1,7d,false,false,false,7d: Uses Fusion material from the Deck.,7d: by banishing 1 monster in your hand or field and 1 monster in your Deck as material,v3.1 run: classified by hand against the current card text.
 85908279,Invoked Cocytus,1,9a,false,false,false,9a: Cannot be targeted or destroyed by the opponent's effects.,9a: Your opponent cannot target this card with card effects,
 80635735,Invoked De Anima,1,8 10,false,true,false,"10: Negates a GY effect. | 8: Extra Deck monster that can remove more than 1 card of the opponent from the field (rule 8 applies to the Extra Deck since v3.1, Ä1).",10: negate that effect | 8: Destroy all monsters your opponent controls that were Special Summoned from the Extra Deck.,v3.1 (Ä1): reviewed by hand.
 11270236,Invoked Elysium,1,8,false,false,false,"8: Extra Deck monster that can remove more than 1 card of the opponent from the field (rule 8 applies to the Extra Deck since v3.1, Ä1).","8: Once per turn, during either player's turn: You can target 1 ""Invoked"" monster you control or in your Graveyard; banish it and all monsters your opponent controls with the same Attribute as that monster.",v3.1 (Ä1): reviewed by hand.
+100462002,Invoked Magistus Heruvim,1,7c,false,false,false,7c: Summons an Extra Deck monster without its full materials.,"7c: Special Summon 1 ""Magistus"" or ""Invoked"" monster from your Extra Deck, except ""Invoked Magistus Heruvim""",v3.1 run: classified by hand against the current card text.
 75286621,Invoked Mechaba,1,10,false,false,false,10: Negates activations.,10: negate the activation,
 43989315,Invoked Sorath,1,7b,false,false,false,7b: Revives from GY.,7b: target 1 Level 6 or lower monster in either GY; Special Summon it,
 259314,Inzektor Gauntlet,1,9a,false,false,false,9a: Grants protection from effect destruction.,9a: cannot be destroyed by your opponent's card effects,
@@ -2237,7 +2264,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 33784505,Jar Robber,1,5 10,false,false,false,10: Negates an effect. | 5: Draws a card.,10: Negate the effect | 5: draw 1 card from your Deck,
 83725008,"Jenis, Lightsworn Mender",1,6a,false,false,false,6a: Inflicts damage without changing the field.,6a: Inflict 500 damage to your opponent,
 77585513,Jinzo,1,3.2 10,false,false,false,3.2: Trap activation lock on an attackable monster. | 10: Continuous negation.,"3.2: Trap Cards, and their effects on the field, cannot be activated. | 10: Negate all Trap effects on the field.",
-40275470,Jinzo - Energy Shocker,1,3.2 8,false,true,false,8: Mass destruction. | 3.2: Trap lock on a monster that can be attacked.,8: destroy as many Traps your opponent controls as possible | 3.2: Your opponent cannot activate Trap Cards or effects,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+40275470,Jinzo - Energy Shocker,1,3.2 8,false,false,false,"8: Can remove more than 1 card of the opponent from the field in one resolution. | 3.2: A lasting lock on the opponent that depends on a monster, which the opponent can get rid of by attacking it.",8: destroy all Traps your opponent controls | 3.2: your opponent cannot activate Trap Cards or effects,v3.1 run: classified by hand against the current card text.
 35803249,Jinzo - Lord,1,3.2 8 10,false,false,false,3.2: Continuous Trap lock on a monster the opponent can attack. | 10: Continuously negates Traps. | 8: Destroys all face-up Traps.,3.2: Trap Cards cannot be activated | 10: the effects of all Trap Cards on the field are negated | 8: you can destroy all face-up Trap Cards,
 9418534,Jinzo - Returner,1,7b,false,false,false,7b: Special Summons from the GY.,"7b: Special Summon 1 ""Jinzo"" from your Graveyard",
 39987731,Jinzo the Machine Menace,1,7b 8,false,false,false,7b: Revives from the GY. | 8: Mass destruction.,"7b: Special Summon 1 ""Jinzo"" from your hand or GY | 8: destroy all Traps your opponent controls",
@@ -2259,6 +2286,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 93170499,Jurrac Megalo,1,5,false,false,false,5: discard-and-draw effect,5: then draw 2 cards,
 85028288,Jurrac Titano,1,9a,false,false,false,9a: Targeting protection.,9a: Cannot be targeted by Trap or monster effects,
 24068492,Just Desserts,1,6a,false,false,false,6a: Direct effect damage as primary function.,6a: Inflict 500 damage to your opponent for each monster they control.,
+25024929,Just Flip a Coin,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: Special Summon 1 monster from your GY,v3.1 run: classified by hand against the current card text.
 62271284,Justi-Break,1,8,false,false,false,8: Can destroy multiple opponent monsters.,8: Destroy all monsters on the field,
 26842483,Justice Bringer,1,10,false,false,false,10: Negates monster effect activations once per turn.,10: you can negate the activation,
 20065259,Kagero the Cannon Ninja,1,7b,false,false,false,"7b: Special Summons from the GY, including itself.","7b: Special Summon 1 ""Ninja"" monster from your hand or GY",
@@ -2284,6 +2312,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 99529628,"Keaf, Murk of the Ghoti",1,7b,false,false,false,7b: Special Summons from banishment.,7b: Special Summon this banished card,
 48048590,Keeper of Dragon Magic,1,7b,false,false,false,7b: Special Summons from the GY.,7b: Special Summon 1 of the Fusion Materials whose name is specifically listed on that monster from your GY,
 66752837,Keeper of the Shrine,1,7b,false,false,false,7b: Can Special Summon itself from the GY.,7b: While this card is in your hand or GY,
+98518633,Kerolia the Frolicsome,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: You can Special Summon this card from your GY (if it was there when that card was returned) or hand (even if not),v3.1 run: classified by hand against the current card text.
 62383431,"Keurse, the Ogdoadic Light",1,7b,false,false,false,7b: Revives from the GY.,7b: Special Summon this card,
 72578374,Khaos Starsource Dragon,1,8,false,false,false,"8: Extra Deck monster that can remove more than 1 card of the opponent from the field (rule 8 applies to the Extra Deck since v3.1, Ä1).","8: If this card is Fusion Summoned: You can target cards your opponent controls, up to the number of LIGHT and DARK monsters used as this card's material; destroy them.",v3.1 (Ä1): reviewed by hand.
 11501629,Kickfire,1,6a,false,false,false,6a: Burn without changing the field.,6a: inflict 1000 damage to your opponent for each counter on this card,
@@ -2292,6 +2321,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 13756293,King Dragun,1,9a,false,false,false,9a: Makes Dragons untargetable by opponent.,9a: Your opponent cannot target Dragon monsters with card effects,
 67757079,King of the Beasts,1,7b,false,false,false,7b: Special Summons itself from the GY.,7b: Special Summon this card from your hand or Graveyard,
 36021814,King of the Skull Servants,1,7b,false,false,false,7b: Revives itself from the GY.,7b: Special Summon this card,
+50071178,King of Yamimado,1,9a,false,false,false,9a: Protects a monster from card effects.,9a: cannot be destroyed by your opponent's card effects,v3.1 run: classified by hand against the current card text.
 20438745,King Pyron,1,6a,false,false,false,6a: Direct effect damage.,6a: inflict 1000 damage to your opponent,
 16528181,King's Sarcophagus,1,9a,false,false,false,9a: Grants partial effect-destruction immunity.,9a: cannot be destroyed by card effects that do not target them,
 45452224,Kinka-byo,1,7b,false,false,false,7b: Special Summons a monster from the GY.,7b: target 1 Level 1 monster in your GY; Special Summon that target,
@@ -2334,7 +2364,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 78355370,Kuribohrn,1,7b,false,false,false,7b: Special Summons from the GY.,"7b: target any number of ""Kuriboh"" monsters in your GY; Special Summon them",
 35405755,Kurikara Divincarnate,1,7b 8,false,false,false,8: Tributes several opponent monsters (ruling 28). | 7b: Revives from the GY.,8: by Tributing all face-up monsters on the field that activated their effects this turn in your opponent's Monster Zone | 7b: target 1 monster in your opponent's GY; Special Summon it to your field,
 66102515,Kurikurinku @Ignister,1,7b 10,false,false,false,7b: Special Summons itself from the GY. | 10: Negates an effect.,"7b: If this card is in your hand or GY (Quick Effect): You can Tribute 1 ""@Ignister"" monster; Special Summon this card | 10: negate that effect",
-65325949,Kuzuha the Hex Ashtra,1,8,false,true,false,8: Destroys multiple targeted cards.,8: destroy them,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+65325949,Kuzuha the Hex Ashtra,1,8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution.,8: You can target 1 card on the field for every 2 face-down cards on the field; destroy it,v3.1 run: classified by hand against the current card text.
 93509766,Kyoro Ryu-Ge Kaiva,1,8,false,false,false,8: can destroy multiple cards,8: up to the number of different Monster Types on the field; destroy them,
 2511,Labrynth Cooclock,1,7b,false,false,false,7b: Special Summons itself from the GY.,"7b: You can add this card to your hand, or Special Summon it",
 33407125,Labrynth Labyrinth,1,7b,false,false,false,7b: Can Special Summon from the GY.,7b: Special Summon 1 Fiend monster from your hand or GY,
@@ -2497,6 +2527,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 31699677,Magikuriboh,1,7b,false,false,false,7b: Can Special Summon a monster from the GY.,"7b: Special Summon 1 ""Dark Magician"" or 1 ""Dark Magician Girl"" from your Deck or GY",
 58270977,Magistery Alchemist,1,6b 7b 10,false,false,false,7b: Revives a monster from the GY. | 10: Negates opponent's cards. | 6b: Doubles a monster's ATK.,"7b: target 1 ""HERO"" monster in your GY; Special Summon it | 10: negate the effects of all face-up cards your opponent currently controls | 6b: the monster's original ATK becomes doubled",
 327051,Magistus Vritra,1,7b,false,false,false,7b: Special Summons a monster from the GY.,7b: monster in your GY; Special Summon it,
+100462004,Magistus Witchcrafter Aruru,1,7b 10,false,false,false,10: Negates. | 7b: Brings a monster back from the GY or banishment onto the field.,"10: negate its effects until the end of this turn | 7b: target 1 ""Magistus"" or ""Witchcrafter"" monster in your GY; Special Summon it",v3.1 run: classified by hand against the current card text.
 95833645,Magma Dragon,1,7b,false,false,false,7b: Special Summons from the GY.,7b: Wyrm-Type monster in your Graveyard,
 50951254,Magmacho Dragon,1,5 7b,false,false,false,7b: Special Summons itself from the GY. | 5: Draws a card.,7b: You can Special Summon this card | 5: then draw 1 card,
 77133792,Magnet Conversion,1,7b,false,false,false,7b: Special Summons a monster from banishment.,"7b: target 1 of your banished Level 4 or lower ""Magnet Warrior"" monsters; Special Summon it",
@@ -2721,7 +2752,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 85401123,Mokomoko,1,5 9b,false,false,false,5: Draws a card. | 9b: Cannot be destroyed by battle.,5: FLIP: Draw 1 card. | 9b: neither can be destroyed by that battle,
 4732017,Molten Zombie,1,5,false,false,false,5: Draws a card.,5: Draw 1 card,
 59983249,Monarchic Perfection,1,8,false,false,false,8: Can destroy 2 cards.,8: Destroy up to 2 Spells/Traps on the field,
-37092104,Monster Arms of Atlantis,1,7b 10,false,true,false,7b: Special Summons from GY. | 10: Negates monster effects.,"7b: target 1 monster in your GY that mentions ""Atlantis, City of the Sea Dragon""; Special Summon it | 10: negate that effect",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+37092104,Monster Arms of Atlantis,1,7b 10,false,false,false,7b: Brings a monster back from the GY or banishment onto the field. | 10: Negates.,7b: Special Summon it in Defense Position | 10: negate that activated effect,v3.1 run: classified by hand against the current card text.
 54564198,Monster Rebirth,1,7b,false,false,false,7b: Special Summons a monster from either GY.,7b: target 1 monster in either GY; Special Summon that monster to your field,
 60621361,Monster Rebone,1,7b,false,false,false,7b: Special Summons a monster from the opponent's GY.,7b: Special Summon it to your side of the field,
 83764719,Monster Reborn,1,7b,false,false,false,7b: Special Summons a monster from either GY.,7b: Target 1 monster in either GY; Special Summon it.,
@@ -2754,7 +2785,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 18837926,Motivating Captain,1,7b,false,false,false,7b: Special Summons from the GY.,7b: target 1 Level 4 or lower monster in your GY; Special Summon it,
 269012,Mound of the Bound Creator,1,9a,false,false,false,9a: Grants targeting and effect-destruction protection to Level 10+ monsters.,9a: cannot be targeted or destroyed by card effects,
 86767655,Ms. Judge,1,10,false,false,false,10: Negates an opponent's effect.,10: negate that effect,
-55585856,Ms. Tick Call,1,7b,false,false,false,7b: Can Special Summon itself from the GY.,7b: If this card is in your hand or GY,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+55585856,Ms. Tick Call,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: Special Summon that banished monster,v3.1 run: classified by hand against the current card text.
 54757758,Mudragon of the Swamp,1,9a,false,false,false,9a: Grants untargetability.,"9a: Your opponent cannot target this card, or monsters on the field with the same Attribute as this card, with card effects",
 42141493,Mulcharmy Fuwalos,1,5,false,false,false,5: Draws cards.,5: immediately draw 1 card,
 87126721,Mulcharmy Meowls,1,5,false,false,false,5: Draws cards.,5: immediately draw 1 card,
@@ -2951,12 +2982,14 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 52228131,Parry,1,10,false,false,false,10: Negates a Trap activation.,10: negate the activation and effect of a Trap Card,
 50292967,Past Image,1,7b,false,false,false,7b: Returns a banished monster to the field (flicker ruling).,7b: it returns to the opponent's side of the field,
 82460246,Peaceful Planet Calarium,1,7b,false,false,false,7b: Revives destroyed Tuner from GY.,7b: You can target 1 of those monsters; Special Summon it,
+26511269,"Penalty Game ""GREED, the Illusion of Avarice""",1,6a,false,false,false,6a: Effect damage as its primary function.,6a: Inflict 400 damage to your opponent for each card in their hand,v3.1 run: classified by hand against the current card text.
 967928,Penalty Game!,1,11a,false,false,false,11a: One-time denial of the opponent's draw.,11a: Your opponent cannot draw during their next Draw Phase,
 73640163,Penguin Cleric,1,7b,false,false,false,7b: Revives a monster from the GY.,7b: Special Summon that monster in face-down Defense Position,
 41255165,Penguin Ninja,1,8,false,false,false,8: Bounces up to 2 opponent cards.,8: target up to 2 Spells/Traps your opponent controls; return them to the hand,
 69792699,Penguin Sword,1,10,false,false,false,10: Negates effects of cards with a name.,10: Negate the activated effects and effects on the field,
 17679043,Penguin Torpedo,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: take control of it until the End Phase,
 46273941,Pere-Zenet Em Heru,1,5 7b,false,false,false,5: Draws a card. | 7b: Ritual Summons from the GY.,5: You can draw 1 card | 7b: from your hand or GY,
+38578076,Perfect Eclosion - Perfectly Ultimate Great Moth,1,3.2 8,true,false,false,"8: Can remove more than 1 card of the opponent from the field in one resolution. | 3.2: A lasting lock on the opponent that depends on a monster, which the opponent can get rid of by attacking it.",8: return as many cards your opponent controls as possible to the hand | 3.2: Each time your opponent Normal or Special Summons a monster(s): All monsters your opponent currently controls lose ATK equal to their own Level x 100,v3.1 run: classified by hand against the current card text. The ATK loss on every summon is read as a lock by cost (ruling 4).
 6471156,Perform Puppet,1,7b,false,false,false,7b: Special Summons from banishment.,"7b: target 1 of your banished ""Gimmick Puppet"" monsters; Special Summon it",
 4081665,Performage Stilts Launcher,1,6a,false,false,false,6a: Deals burn damage without changing the opponent's field.,6a: inflict 2000 damage to your opponent,
 33206889,Performage Trapeze Witch,1,9a,false,false,false,9a: Grants untargetability.,9a: your opponent cannot target them with card effects,
@@ -3231,6 +3264,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 64631466,Relinquished,1,6a 7a 9b,false,false,false,7a: Equips an opponent's monster. | 9b: Battle destruction substitute. | 6a: Reflects battle damage to the opponent.,"7a: equip that target to this card | 9b: If this card would be destroyed by battle, destroy that equipped monster instead | 6a: inflicts equal effect damage to your opponent",
 78063197,Relinquished Fusion,1,7a,false,false,false,7a: Equips an opponent's monster (ruling 24).,"7a: equip that target to an ""Eyes Restrict"" Fusion Monster",
 54248491,Relinquished Spider,1,8,false,false,false,8: Destroys multiple opponent monsters.,8: destroy all face-up Defense Position monsters your opponent controls,
+63250533,Relinquished the Wicked Eye of Illusion,1,7a 10,false,false,false,10: Negates. | 7a: Takes control of a card of the opponent.,10: negate its effects | 7a: equip it to this card as an Equip Spell that gives it 2000 ATK,v3.1 run: classified by hand against the current card text.
 22589918,Reload,1,5,false,false,false,5: Draws cards (exchange draw per ruling 2).,5: draw the same number of cards that you added to your Deck,
 94739788,Remove Brainwashing,1,7a,true,false,false,7a: Regains control of cards the opponent controls.,7a: The control of all monsters on the field returns to the owners,Only returns your own monsters; unclear whether it counts as 7a.
 42090294,Reptilianne Nyami,1,7b,false,false,false,7b: Revives itself from the GY.,7b: You can Special Summon this card from your GY,
@@ -3258,7 +3292,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 46874015,Return of the Six Samurai,1,7b,false,false,false,7b: Special Summons a monster from the GY.,"7b: Target 1 ""Six Samurai"" monster in your GY; Special Summon that target",
 91742238,Return of the Zombies,1,7b,false,false,false,7b: Special Summons from the GY.,7b: Special Summon 1 Zombie monster from the GY,
 34093683,Revendread Executor,1,9a,false,false,false,9a: Grants untargetability.,"9a: your opponent cannot target cards you control with card effects, except this card",
-26116996,Revenge of the Paper Dolls,1,10,false,false,false,10: Negates effects.,10: negate its effects,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+26116996,Revenge of the Paper Dolls,1,10,false,false,false,10: Negates.,10: negate the effects of that opponent's card until the end of this turn,v3.1 run: classified by hand against the current card text.
 51686645,Revenge Rally,1,5,false,false,false,5: Draws cards.,5: Draw 1 card,
 67248304,Reverse Jar,1,8,false,false,false,8: Returns multiple opponent cards to hand.,8: return as many face-up Spells/Traps as possible from the field to the hand,
 93775296,Reverse Reuse,1,7b,false,false,false,"7b: Revival from GY, even onto opponent's field.",7b: Special Summon them to your opponent's side of the field,
@@ -3336,7 +3370,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 11052544,Saber Slash,1,8,false,false,false,8: Can destroy several cards.,8: Destroy a number of face-up cards on the field,
 16261341,Sacred Arch-Airknight Parshath,1,7b,false,false,false,7b: Revives itself.,7b: Special Summon this card from the GY,
 50147815,Sacred Beasts Combined Assault,1,7b 10,false,false,false,7b: Special Summons from the GY. | 10: Negates a card's effects.,"7b: Special Summon 1 ""Sacred Beast"" monster from your hand or GY | 10: negate the effects of 1 face-up card your opponent controls",
-3441553,Sacred Beasts Skyfall,1,10,false,true,false,10: Negates an opponent's effect.,10: Negate that opponent's effect,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+3441553,Sacred Beasts Skyfall,1,10,false,false,false,10: Negates.,10: Negate that effect,v3.1 run: classified by hand against the current card text.
 30914564,Sacred Crane,1,5,false,false,false,5: Draws a card.,5: Draw 1 card.,
 66431519,Sacred Fire King Garunix,1,7b,false,false,false,7b: Special Summons itself from GY.,7b: You can Special Summon this card from your GY,
 61441708,Sacred Phoenix of Nephthys,1,7b 8,false,false,false,7b: special summons itself from the GY | 8: destroys all Spells/Traps,7b: Special Summon this card from the GY | 8: Destroy all Spells and Traps on the field,
@@ -3529,13 +3563,13 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 98338152,Sky Striker Mecha - Widow Anchor,1,7a 10,false,false,false,10: Negates monster effects. | 7a: Takes control of an opponent's monster.,10: negate that face-up monster's effects | 7a: take control of that monster until the End Phase,
 63166095,Sky Striker Mobilize - Engage!,1,5,false,false,false,5: Draws a card.,5: you can draw 1 card,
 9726840,Sky Striker Mobilize - Linkage!,1,7c,false,false,false,7c: Special Summons an Extra Deck monster without its listed materials.,"7c: Special Summon 1 ""Sky Striker Ace"" monster from your Extra Deck",
-61033809,Sky Thunder Trirealm Rift Yomi,1,10,false,false,false,10: Negates monster effect activation.,10: negate the activation,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+61033809,Sky Thunder Trirealm Rift Yomi,1,10,false,false,false,10: Negates.,10: negate the activation,v3.1 run: classified by hand against the current card text.
 51307986,Skyborne Blue Cularsaw,1,10,false,false,false,10: Negates S/T activation.,10: negate the activation,
 40522482,Skydive Scorcher,1,8,false,false,false,8: Can destroy multiple opponent monsters.,8: destroy as many monsters your opponent controls as possible,
 47596607,Skyscraper 2 - Hero City,1,7b,false,false,false,7b: Special Summons a monster from the GY.,7b: monster in your Graveyard that was destroyed by battle; Special Summon that target,
 47349310,Skystarray,1,7b,true,false,false,7b: Returns itself from banishment.,7b: Banish this card until your next Standby Phase,Self-flicker is a drawback here.
 71344451,Slash Draw,1,5 8,false,false,false,5: Draws a card. | 8: Destroys all cards.,5: then draw 1 card | 8: destroy as many cards on the field as possible,
-3129527,Sleepy Scapegoats,1,9a 9b,true,false,false,9a: Destruction substitute against effects. | 9b: Destruction substitute against battle.,"9a: would be destroyed by battle or card effect, you can destroy 1 Token you control that was Special Summoned by this effect instead | 9b: would be destroyed by battle or card effect, you can destroy 1 Token you control that was Special Summoned by this effect instead","Protects cards mentioning Dark Time Wizard, which may include non-monsters. v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it."
+3129527,Sleepy Scapegoats,1,9a 9b,true,false,false,9a: Protects a monster from card effects. | 9b: Protects a monster from battle destruction.,9a: you can destroy 1 Token you control that was Special Summoned by this effect instead | 9b: you can destroy 1 Token you control that was Special Summoned by this effect instead,"v3.1 run: classified by hand against the current card text. A destruction substitute for cards that mention ""Dark Time Wizard"" only."
 72885174,Slip of Fortune,1,7b 10,false,false,false,10: Negates an attack. | 7b: Flickers a monster from banishment back to the field (ruling 1).,10: Negate the attack | 7b: remove from play the attack target monster until the next Standby Phase,
 10505300,Slower Swallow,1,5,false,false,false,5: Grants an extra draw.,5: draw 2 cards instead of 1,
 84650463,Slushy,1,7b,false,false,false,7b: Special Summons from the GY.,7b: target 1 Level 5 or higher Sea Serpent monster in your GY; Special Summon that target,
@@ -3593,10 +3627,10 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 28958464,"Spell Card ""Monster Reborn""",1,7b,false,false,false,7b: Revives a monster from a GY.,7b: Target 1 monster in either GY; Special Summon it,
 15735108,"Spell Card ""Soul Exchange""",1,8,false,false,false,8: Can Tribute several opponent monsters (ruling 28).,8: you can Tribute monsters your opponent controls even though you do not control them,
 76714458,Spell of Pain,1,6a,false,false,false,6a: Redirects damage (ruling 22).,"6a: Your opponent takes the effect damage from that card or effect, instead.",
-39123673,Spell Power Attainment,1,8 10,false,true,false,10: Negates effects. | 8: Can destroy several opponent cards.,"10: negate the effects of that many face-up cards your opponent controls | 8: and if you do that, destroy them",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+39123673,Spell Power Attainment,1,8 10,false,false,false,10: Negates. | 8: Can remove more than 1 card of the opponent from the field in one resolution.,10: negate the effects of that many face-up cards your opponent controls | 8: destroy those cards,v3.1 run: classified by hand against the current card text.
 1669772,Spell Purification,1,8,false,false,false,8: Can destroy multiple opponent cards.,8: Destroy all face-up Continuous Spell Cards,
 93260132,Spell Shattering Arrow,1,8,false,false,false,8: destroys multiple opponent Spells,8: Destroy as many face-up Spells your opponent controls as possible,"Damage is a byproduct of destruction, so no 6a."
-77456448,Spell Shattering Sword,1,8 10,false,true,false,8: Destroys multiple opponent Spells. | 10: Negates monster effects.,8: Destroy all face-up Spells your opponent controls | 10: negate its effects,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+77456448,Spell Shattering Sword,1,8 10,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution. | 10: Negates.,8: Destroy all face-up Spells your opponent controls | 10: its effects are negated,v3.1 run: classified by hand against the current card text.
 38275183,Spell Shield Type-8,1,10,false,false,false,10: Negates Spell activations.,10: negate the activation,
 29735721,Spell Vanishing,1,10,false,false,false,10: Negates Spell activation.,10: Negate the activation of a Spell Card,
 10069180,Spell-Stopping Statute,1,10,false,false,false,10: Negates a Spell activation.,10: Negate the activation,
@@ -3884,8 +3918,9 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 10000090,The Winged Dragon of Ra - Immortal Phoenix,1,7b 9a,false,false,false,9a: Unaffected by other effects. | 7b: Summons itself from the GY; also summons Sphere Mode from GY.,9a: This card is unaffected by other cards' effects | 7b: Special Summon this card,
 10000080,The Winged Dragon of Ra - Sphere Mode,1,8 9a,true,false,false,8: Can tribute several opponent's monsters (ruling 28). | 9a: Untargetable by opponent's effects.,8: Requires 3 Tributes from either side of the field | 9a: Your opponent cannot target this card for attacks or by card effects,Summoning to the opponent's side and shifting control back may also be 7a.
 101403030,"The Winged Dragon of Ra, Sun God of Darkness",1,8 9a,false,false,false,"9a: Unaffected by effects. | 8: Extra Deck monster that can remove more than 1 card of the opponent from the field (rule 8 applies to the Extra Deck since v3.1, Ä1).","9a: Unaffected by other cards' effects | 8: Once per turn, during the Main Phase (Quick Effect): You can discard any number of ""Sun God"" cards, then choose that many of your opponent's occupied Main Monster Zones; your opponent must send the monsters in those zones to the GY.",v3.1 (Ä1): reviewed by hand.
+101403079,Theorealize Ephemeral Lull,1,7b 8,false,false,false,8: Can remove more than 1 card of the opponent from the field in one resolution. | 7b: Brings a monster back from the GY or banishment onto the field.,"8: banish as many monsters on the field as possible that were Special Summoned from the Extra Deck | 7b: Special Summon 1 ""Artmage"" monster from your GY",v3.1 run: classified by hand against the current card text.
 94326720,Theorealize Overdrive,1,7b,false,false,false,7b: Special Summons a monster from GY or banishment.,7b: in your GY or banishment; Special Summon it,
-90875418,Theorealized Medius,1,7c,false,false,false,7c: Summons an Extra Deck monster without its listed materials.,"7c: Special Summon 1 ""Diactorus"" monster from your Extra Deck",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+90875418,Theorealized Medius,1,7c,false,false,false,7c: Summons an Extra Deck monster without its full materials.,"7c: Special Summon 1 ""Diactorus"" monster from your Extra Deck",v3.1 run: classified by hand against the current card text.
 57111330,"Therion ""Duke"" Yul",1,9a,false,false,false,9a: Grants effect-destruction protection.,"9a: ""Therion"" monsters you control cannot be destroyed by your opponent's card effects",
 10604644,"Therion ""King"" Regulus",1,10,false,false,false,10: Negates an effect.,10: negate that effect,
 57285770,Therion Charge,1,5,false,false,false,5: Draws 2 cards.,5: draw 2 cards,
@@ -3916,10 +3951,12 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 42469671,Thunderforce Attack,1,5 8,false,false,false,8: Mass destruction. | 5: Draws cards.,8: Destroy as many face-up monsters your opponent controls as possible | 5: Draw cards equal to the number of monsters destroyed,
 26400609,"Tidal, Dragon Ruler of Waterfalls",1,7b,false,false,false,7b: Can Special Summon itself from the GY.,7b: If this card is in your hand or Graveyard,
 10097168,Tiger Dragon,1,8,false,false,false,8: Destroys up to 2 opponent cards.,8: target up to 2 Set cards in your opponent's Spell & Trap Zone; destroy those targets,
+99630221,Tigress in Silent Repose,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,"7b: Special Summon this card, but banish it when it leaves the field",v3.1 run: classified by hand against the current card text.
 14554127,Tiki Peace,1,7b,true,false,false,7b: Brings a card from GY/banishment to the field as a monster.,"7b: Special Summon 1 Continuous Trap, except ""Tiki Peace"", from your GY or banishment as a Normal Monster","The summoned card is a Trap in the GY, not a monster; unclear if 7b applies."
 20216608,Tilted Try,1,5,false,false,false,5: Exchange draw (ruling 2).,5: draw 1 card,
 53315891,Timaeus the Knight of Destiny,1,7b 9a,false,false,false,9a: Unaffected. | 7b: Summons from GY.,"9a: Unaffected by other cards' effects | 7b: from your hand, Deck, and/or Graveyard",
 85899505,Timaeus the United Magical Dragon,1,9a,false,false,false,9a: Self unaffected by effects.,9a: it is unaffected by other cards' effects,
+100463005,Time Chain,1,7b 9b 10,true,false,false,9b: Protects a monster from battle destruction. | 7b: Brings a monster back from the GY or banishment onto the field. | 10: Negates.,9b: Neither battling monster can be destroyed by that battle | 7b: banish them after damage calculation until their controller's 2nd Standby Phase | 10: Negate the activated effects of monsters with the same original name as monsters that are currently banished by this card's effect,v3.1 run: classified by hand against the current card text. The banished battling monsters come back (ruling 1).
 15216188,Time Engine,1,7b 8,false,false,false,7b: Special Summons a destroyed monster from the GY. | 8: Mass destruction.,7b: Target 1 of those monsters; Special Summon it | 8: Destroy as many monsters your opponent controls as possible,"Damage follows destruction, byproduct."
 80987696,Time Machine,1,7b,false,false,false,7b: Special Summons a destroyed monster from the GY.,7b: Special Summon that monster to the same field it was on,
 86346363,Time Reloader,1,7b,false,false,false,7b: Special Summons a monster from the GY.,7b: target 1 monster in your GY; Special Summon it,
@@ -4003,8 +4040,8 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 25311006,Triple Tactics Talent,1,5 7a,false,false,false,5: Draw effect. | 7a: Takes control of an opponent's monster.,5: Draw 2 cards. | 7a: Take control of 1 monster your opponent controls,
 72632190,Triple-Headed Behemoth,1,7b,false,false,false,7b: Revives from the GY.,7b: Special Summon 1 WIND monster from your GY,
 96205925,Trirealm Rift Gospel,1,7b,false,false,false,7b: Special Summons a monster from banishment.,7b: Special Summon 1 of your face-down banished,
-8540055,Trirealm Rift of Blue Tuonela,1,7b,false,true,false,7b: Special Summons from banishment.,"7b: Special Summon 1 of your face-down banished Level 5 or higher ""Xenovader△"" monsters",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
-34645790,Trirealm Rift of Scarlet Naraka,1,7b,false,true,false,7b: Special Summons from banishment.,"7b: Special Summon 1 of your face-down banished Level 5 or higher ""Xenovader△"" monsters",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+8540055,Trirealm Rift of Blue Tuonela,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,"7b: Special Summon 1 of your face-down banished Level 5 or higher ""Trirealm Rift"" monsters",v3.1 run: classified by hand against the current card text.
+34645790,Trirealm Rift of Scarlet Naraka,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,"7b: Special Summon 1 of your face-down banished Level 5 or higher ""Trirealm Rift"" monsters",v3.1 run: classified by hand against the current card text.
 7436169,Trivikarma,1,10,false,false,false,10: Negates monster effects.,10: negate that opponent's monster's effects,
 76384284,Trojan Gladiator Beast,1,5,false,false,false,5: Draws a card.,5: draw 1 card,
 72144675,Troposphere,1,9a,false,false,false,9a: Partial unaffected protection.,9a: This card is unaffected by the effects of Trap Cards.,
@@ -4203,8 +4240,9 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 71331215,War Rock Ordeal,1,5,false,false,false,5: Draws cards on battle destruction.,5: draw 1 card,
 72554862,War Rock Skyler,1,7b,false,false,false,7b: Summons a monster from the GY.,7b: Special Summon it,
 83880473,War Rock Spirit,1,7b 9b,false,false,false,7b: Special Summons a monster from the GY. | 9b: Grants battle-destruction protection.,"7b: Special Summon that target | 9b: would be destroyed by battle this turn, it is not destroyed",
-90098000,Warchief of Atlantis,1,7b,false,true,false,7b: Special Summons itself from the GY.,"7b: If this card is in your GY and you control ""Umi"": You can Special Summon this card",v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+90098000,Warchief of Atlantis,1,7b,false,false,false,7b: Brings a monster back from the GY or banishment onto the field.,7b: this card is in your GY: You can Special Summon this card,v3.1 run: classified by hand against the current card text.
 90873992,Warrior Elimination,1,8,false,false,false,8: Mass destruction.,8: Destroy all Warrior monsters on the field.,
+100463008,Warrior's Devotion,1,9a 9b,false,false,false,9a: Protects a monster from card effects. | 9b: Protects a monster from battle destruction.,"9a: If a Warrior monster(s) you control would be destroyed by battle or card effect, you can banish this card from your GY instead | 9b: If a Warrior monster(s) you control would be destroyed by battle or card effect, you can banish this card from your GY instead",v3.1 run: classified by hand against the current card text.
 85066822,Water Dragon,1,7b,false,false,false,7b: Special Summons monsters from the GY.,7b: in your GY; Special Summon them,
 7133305,Water of Life,1,7b,false,false,false,7b: Special Summons a monster from the GY.,7b: Target 1 monster in your GY; Special Summon that target,
 23068051,Waterfall of Dragon Souls,1,5,false,false,false,5: Draws cards.,5: draw cards equal to the number of monsters you sent to the GY +1,
@@ -4326,7 +4364,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 28929131,"Zaphion, the Timelord",1,5 8 9a 9b,false,false,false,9a: Cannot be destroyed by card effects. | 9b: Cannot be destroyed by battle. | 8: Returns all opponent Spells and Traps to the Deck. | 5: Draws a card.,9a: Cannot be destroyed by battle or card effects | 9b: Cannot be destroyed by battle or card effects | 8: Shuffle all Spells and Traps your opponent controls into the Deck | 5: You can draw 1 card,
 35561352,Zefra Divine Strike,1,10,false,false,false,10: Negates an activation.,10: negate the activation,
 74854609,Zekt Conversion,1,7a,false,false,false,7a: Takes control of an opponent's monster.,7a: Take control of the equipped monster,
-12555008,Zenet Cataract,1,10,false,true,false,10: Negates monster effects.,10: negate the first activated monster effect,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+12555008,Zenet Cataract,1,10,false,false,false,10: Negates.,10: negate the first monster effect activated in each of those zones that resolves this turn,v3.1 run: classified by hand against the current card text.
 72278590,Zenet Per Akh,1,7c,false,false,false,7c: Extra Deck summon without materials.,7c: Special Summon 1 non-Effect Fusion Monster from your Extra Deck,
 48940617,Zenet Thunderfall,1,10,false,false,false,10: Negates Spell/Trap activation.,10: Negate the activation,
 47095439,Zenetnakht Sphinx,1,7b 9a,false,false,false,9a: Unaffected protection. | 7b: Revives from GY.,9a: is unaffected by your opponent's activated effects | 7b: Special Summon 1 Normal Monster from your GY,
@@ -4337,6 +4375,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 38363525,Zombie Necronize,1,7a,false,false,false,7a: takes control of an opponent's monster,7a: take control of it until the End Phase,
 19942835,Zombie Reborn,1,7b,false,false,false,7b: Special Summons from either GY.,7b: Special Summon the targeted monster to your field,
 81616639,Zombina,1,7b,false,false,false,7b: Special Summons a monster from the GY.,"7b: monster in your GY, except",
+52915304,Zombyra,1,10,true,false,false,10: Negates.,10: its effects are negated,"v3.1 run: classified by hand against the current card text. It negates the monster it is equipped to, which can be the opponent's."
 36099130,"Zoroa, the Magistus of Flame",1,7b,false,false,false,7b: Can Special Summon from the GY.,7b: Special Summon 1 Level 4 Spellcaster monster from your hand or GY,
 32281491,ZS - Ouroboros Sage,1,6b 7b,false,false,false,7b: Revives a monster from the GY. | 6b: Doubles ATK (ruling 23).,"7b: Special Summon 1 non-LIGHT ""Number"" monster from your GY | 6b: double the attacking monster's ATK",
 51865604,ZS - Vanish Sage,1,5 7b,false,false,false,5: Draws a card. | 7b: Special Summons from banishment.,5: You can draw 1 card | 7b: target 1 of those banished monsters; Special Summon that target,
@@ -4658,7 +4697,7 @@ id,name,maxCopies,rules,unsure,quoteMissing,overridden,reasons,quotes,note
 61283655,Trickstar Candina,2,3.2,false,false,false,3.2: Punishes opponent's activations; on an attackable monster.,"3.2: Each time your opponent activates a Spell/Trap Card, inflict 200 damage to them",
 35199656,Trickstar Lycoris,2,3.2,false,false,false,3.2: Continuous punishment of opponent's actions on an attackable monster (ruling 4).,"3.2: Each time a card(s) is added to your opponent's hand, inflict 200 damage to them for each",
 91505214,Trickstar Narkissus,2,3.2,false,false,false,3.2: Lasting punishment of opponent's effect activations on an attackable monster.,"3.2: Each time your opponent activates a monster effect in their hand or GY, inflict 200 damage to them",
-33700664,Trirealm Rift Territory - Valvols,2,3.2,false,false,false,3.2: Lock depending on a monster the opponent can attack (ruling 11).,3.2: your opponent cannot activate cards or effects during your turn,v3.1 run: the card text changed in the catalog after this was classified; the classification was carried forward without re-reading it.
+33700664,Trirealm Rift Territory - Valvols,2,3.2,false,false,false,"3.2: A lasting lock on the opponent that depends on a monster, which the opponent can get rid of by attacking it.",3.2: your opponent cannot activate cards or effects during your turn,v3.1 run: classified by hand against the current card text.
 61159609,Trismagistus,2,9b,false,false,false,9b: battle destruction protection,"9b: would be destroyed by battle each turn, it is not destroyed",
 6142213,Turbo Rocket,2,9b,false,false,false,9b: Battle protection.,"9b: While attacking, this card cannot be destroyed by battle",
 56421754,U.A. Mighty Slugger,2,3.2,false,false,false,3.2: Situational monster floodgate.,"3.2: If this card attacks, your opponent cannot activate cards or effects",
