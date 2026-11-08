@@ -49,7 +49,9 @@ const NORMAL_SUBTYPE = 'Normal'
 // Filter values stay English (the APIs filter on them); labels follow the card language (ADR 0015).
 const kindItems = computed(() => CARD_KINDS.map(value => ({ label: t(`card.kind.${value}`), value })))
 const typeItems = computed(() => cardValueOptions('type', props.facets.types))
-const attributeItems = computed(() => cardValueOptions('attribute', props.facets.attributes))
+// Each attribute carries its symbol (tester feedback, round 11).
+const attributeItems = computed(() => cardValueOptions('attribute', props.facets.attributes)
+  .map(item => ({ ...item, icon: attributeIcon(item.value) })))
 const levelItems = computed(() => props.facets.levels.map(value => ({ label: t('card.levelFilterOption', { value }), value })))
 
 /**

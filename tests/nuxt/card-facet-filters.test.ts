@@ -89,6 +89,37 @@ describe('CardFacetFilters', () => {
 })
 
 // Tester feedback: the menus were all about monsters. With the kind picked they follow it.
+// Tester feedback, round 11: "Füg bei den Attributen auch die Symbole hinzu."
+describe('CardFacetFilters, the attributes', () => {
+  it('shows a symbol next to every attribute', async () => {
+    const component = await mountSuspended(CardFacetFilters, {
+      props: {
+        facets: { types: [], attributes: ['DARK', 'DIVINE', 'EARTH', 'FIRE', 'LIGHT', 'WATER', 'WIND'], races: [], levels: [] },
+        type: [],
+        attribute: [],
+        race: [],
+        level: [],
+      },
+    })
+    const menus = component.findAllComponents(USelectMenu) as unknown as VueWrapper[]
+    const items = menus
+      .map(menu => menu.props() as { placeholder?: string, items: Array<{ value: string, label: string, icon?: string }> })
+      .find(candidate => candidate.placeholder === 'Attribut')!.items
+
+    expect(Object.fromEntries(items.map(item => [item.value, item.icon]))).toEqual({
+      DARK: 'i-lucide-moon',
+      DIVINE: 'i-lucide-sparkles',
+      EARTH: 'i-lucide-mountain',
+      FIRE: 'i-lucide-flame',
+      LIGHT: 'i-lucide-sun',
+      WATER: 'i-lucide-droplet',
+      WIND: 'i-lucide-wind',
+    })
+    // The label and the order stay those of the card language: ERDE, FEUER, FINSTERNIS, ...
+    expect(items.map(item => item.label)).toEqual(['ERDE', 'FEUER', 'FINSTERNIS', 'GÖTTLICH', 'LICHT', 'WASSER', 'WIND'])
+  })
+})
+
 describe('CardFacetFilters following the kind', () => {
   const allFacets = {
     types: ['Effect Monster', 'Spell Card', 'Trap Card'],

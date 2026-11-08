@@ -61,7 +61,7 @@
       },
       "board": {
         "tableTitle": "Tabelle",
-        "tableHelp": "Sortiert nach Punkten. Bei gleichen Punkten entscheidet zuerst der direkte Vergleich (wer das Match gegen den Punktgleichen gewonnen hat), dann die Differenz aus gewonnenen und verlorenen Partien, dann die Zahl der gewonnenen Partien. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
+        "tableHelp": "Sortiert nach Punkten. Bei gleichen Punkten entscheidet zuerst die Differenz aus gewonnenen und verlorenen Partien (ein 2:0 ist mehr wert als ein 2:1), dann der direkte Vergleich (wer das Match gegen den Punktgleichen gewonnen hat). Mehr gewonnene Partien allein sind nicht besser. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
         "columns": {
           "place": "Platz",
           "player": "Spieler",
@@ -74,9 +74,11 @@
           "games": "Partien",
           "gamesHelp": "Gewonnene : verlorene Partien (eine einzelne Partie zählt als 1:0)",
           "diff": "Diff.",
-          "diffHelp": "Gewonnene minus verlorene Partien. Bei gleichen Punkten und gleichem direktem Vergleich entscheidet die bessere Differenz, danach die Zahl der gewonnenen Partien.",
+          "diffHelp": "Gewonnene minus verlorene Partien. Bei gleichen Punkten entscheidet die bessere Differenz, danach der direkte Vergleich. Wer öfter 2:0 gewinnt, steht weiter oben.",
           "matchdays": "Spieltage",
-          "matchdaysHelp": "Spieltage, an denen der Spieler schon gespielt hat"
+          "matchdaysHelp": "Spieltage, an denen der Spieler schon gespielt hat",
+          "losses": "Niederlagen",
+          "lossesHelp": "Verlorene Matches"
         },
         "atTable": "Tisch {number}",
         "inQueue": "Wartet · Nr. {position}",

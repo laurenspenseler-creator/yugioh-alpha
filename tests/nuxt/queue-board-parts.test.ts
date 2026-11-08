@@ -94,6 +94,7 @@ function row(patch: Partial<QueueTableRowDto>): QueueTableRowDto {
     name: 'Anna',
     place: 1,
     wins: 1,
+    losses: 0,
     points: 3,
     played: 1,
     matchdays: 1,
@@ -153,7 +154,7 @@ describe('the standings table of a duel tournament', () => {
 
   it('puts every number under its own heading', async () => {
     const detail = tournament('rounds')
-    detail.queue!.table = [row({ participantId: 'pa', name: 'Anna', place: 4, wins: 7, points: 21, played: 9, matchdays: 6, open: 5, gamesWon: 15, gamesLost: 8 })]
+    detail.queue!.table = [row({ participantId: 'pa', name: 'Anna', place: 4, wins: 7, losses: 2, points: 21, played: 9, matchdays: 6, open: 5, gamesWon: 15, gamesLost: 8 })]
     const component = await mountSuspended(QueueTable, { props: { tournament: detail } })
 
     const headings = component.findAll('thead th').map(heading => heading.text())
@@ -161,17 +162,19 @@ describe('the standings table of a duel tournament', () => {
     const under = (heading: string) => cells[headings.indexOf(heading)]
     expect(under('Spieltage')).toBe('6')
     expect(under('Siege')).toBe('7')
+    // Tester feedback, round 11: the lost matches next to the wins.
+    expect(under('Niederlagen')).toBe('2')
     expect(under('Punkte')).toBe('21')
     expect(under('Matches')).toBe('9')
     expect(under('Partien')).toBe('15:8')
     expect(under('Diff.')).toBe('+7')
   })
 
-  it('has the Spieltage right before the wins and no "Offen" column any more', async () => {
+  it('has the Spieltage right before the wins, the losses right after them and no "Offen" column any more', async () => {
     const component = await mountSuspended(QueueTable, { props: { tournament: tournament('rounds') } })
 
     const headings = component.findAll('thead th').map(heading => heading.text())
-    expect(headings.slice(0, 4)).toEqual(['#', 'Spieler', 'Spieltage', 'Siege'])
+    expect(headings.slice(0, 5)).toEqual(['#', 'Spieler', 'Spieltage', 'Siege', 'Niederlagen'])
     expect(headings).not.toContain('Offen')
   })
 

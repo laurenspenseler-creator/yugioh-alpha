@@ -55,9 +55,36 @@ describe('computeTable', () => {
     ])
   })
 
-  it('breaks the tie that is left by the difference of the games, then by the games won', () => {
-    // 'match' scoring, so everybody with one win has 3 points. p5 beat p2 (direct comparison puts p5 first); p2 and p1 are
-    // level on the difference (+1), p2 has won more games (3 against 2) and is ahead of the better seed p1.
+  // Tester feedback, round 11: "Hg hat häufig 2:0 gewonnen, das wird nicht gewürdigt. Leute mit einer höheren
+  // Plus-Differenz sollten oben sein." The difference of the games comes before the direct comparison.
+  it('puts the better difference before the direct comparison: who often wins 2:0 is ahead of one who beat them 2:1', () => {
+    // 'match' scoring: p1, p2 and p3 all have 6 points (two wins each). p1 beat p3 directly, but only 2:1; p3 won 2:0 twice
+    // and has the best difference (games 5:2, +3 against +2 for p1 and p2). Before the direct comparison counted, p1 led.
+    const state: DuelsState = {
+      players: players(6),
+      duels: [
+        done('p1', 'p3', 'p1', { gamesA: 2, gamesB: 1 }),
+        done('p1', 'p4', 'p1', { gamesA: 2, gamesB: 1 }),
+        done('p3', 'p5', 'p3', { gamesA: 2, gamesB: 0 }),
+        done('p3', 'p6', 'p3', { gamesA: 2, gamesB: 0 }),
+        done('p2', 'p4', 'p2', { gamesA: 2, gamesB: 1 }),
+        done('p2', 'p5', 'p2', { gamesA: 2, gamesB: 1 }),
+      ],
+    }
+    const table = computeTable(state, 'match')
+
+    expect(table.slice(0, 3).map(row => [row.playerId, row.points, row.gamesWon - row.gamesLost, row.place])).toEqual([
+      ['p3', 6, 3, 1],
+      ['p1', 6, 2, 2],
+      ['p2', 6, 2, 2],
+    ])
+    // p1 and p2 never met: they share the second place.
+    expect(table.slice(1, 3).every(row => row.tied)).toBe(true)
+  })
+
+  it('settles what the difference leaves level by the direct comparison', () => {
+    // 'match' scoring: p1 won 2:1, p5 beat p2 2:1 and p2 won 2:0 against p4: all three have 3 points and +1. Only the
+    // direct comparison among them decides: p5 beat p2, p1 met neither, so p1 and p2 share the second place.
     const state: DuelsState = {
       players: players(5),
       duels: [
@@ -68,15 +95,33 @@ describe('computeTable', () => {
     }
     const table = computeTable(state, 'match')
 
-    expect(table.map(row => row.playerId)).toEqual(['p5', 'p2', 'p1', 'p3', 'p4'])
-    // p3 lost 1:2 and p4 lost 0:2: the better difference is ahead.
-    expect(table.map(row => row.tied)).toEqual([false, false, false, false, false])
+    expect(table[0]).toMatchObject({ playerId: 'p5', place: 1, tied: false })
+    expect(table.slice(1, 3).map(row => [row.playerId, row.place, row.tied])).toEqual([['p1', 2, true], ['p2', 2, true]])
   })
 
-  it('looks only at the duels among the players level on points: p2 has the best difference but beat nobody of the group', () => {
-    // 'match' scoring: p1, p2, p3 and p4 all have 3 points. p3 beat p1, p1 beat p4, p4 beat p3 (each one win inside the
-    // group), p2 only beat p5, who is not in the group. The direct comparison comes before the difference, so p2 (+1)
-    // is behind the three that are level among each other, who share the first place.
+  it('does not rank by the games won: more of them is not better', () => {
+    // 'match' scoring, p1 won 2:1 (2 games won) and p3 won a single game 1:0 (1 game won): both +1 and 3 points, and they
+    // never met. The games won used to put p1 first; now they share the place.
+    const state: DuelsState = {
+      players: players(5),
+      duels: [done('p1', 'p4', 'p1', { gamesA: 2, gamesB: 1 }), done('p3', 'p5', 'p3')],
+    }
+    const table = computeTable(state, 'match')
+
+    expect(table.slice(0, 2).map(row => [row.playerId, row.gamesWon, row.place, row.tied])).toEqual([['p1', 2, 1, true], ['p3', 1, 1, true]])
+  })
+
+  it('counts the duels lost', () => {
+    const state: DuelsState = { players: players(3), duels: [done('p1', 'p2', 'p1'), done('p1', 'p3', 'p3'), done('p2', 'p3', 'p3')] }
+    const table = computeTable(state)
+
+    expect(Object.fromEntries(table.map(row => [row.playerId, [row.wins, row.losses, row.played]]))).toEqual({ p1: [1, 1, 2], p2: [0, 2, 2], p3: [2, 0, 2] })
+  })
+
+  it('looks only at the duels among the players level on points and difference', () => {
+    // 'match' scoring: p1, p2, p3 and p4 all have 3 points. p3 beat p1, p1 beat p4, p4 beat p3 (single games, 1:0 each),
+    // p2 only beat p5, who is not in the group. p2 has the best difference (+1) and is first; the other three are level on
+    // the difference (0) and on the direct comparison (a circle) and share the second place.
     const state: DuelsState = {
       players: players(5),
       duels: [done('p3', 'p1', 'p3'), done('p1', 'p4', 'p1'), done('p2', 'p5', 'p2'), done('p4', 'p3', 'p4')],
@@ -84,13 +129,13 @@ describe('computeTable', () => {
     const table = computeTable(state, 'match')
 
     expect(table.map(row => [row.playerId, row.points, row.place])).toEqual([
-      ['p1', 3, 1],
-      ['p3', 3, 1],
-      ['p4', 3, 1],
-      ['p2', 3, 4],
+      ['p2', 3, 1],
+      ['p1', 3, 2],
+      ['p3', 3, 2],
+      ['p4', 3, 2],
       ['p5', 0, 5],
     ])
-    expect(table.slice(0, 3).every(row => row.tied)).toBe(true)
+    expect(table.slice(1, 4).every(row => row.tied)).toBe(true)
   })
 
   it('leaves a tie of two that split a rematch 1:1 as a shared place', () => {

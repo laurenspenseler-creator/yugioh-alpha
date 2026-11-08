@@ -329,7 +329,7 @@ const typeItems = computed(() => [
 ])
 const attributeItems = computed(() => [
   { label: t('decks.editor.addPanel.allAttributes'), value: ALL_ATTRIBUTES },
-  ...cardValueOptions('attribute', facets.value?.attributes ?? []),
+  ...cardValueOptions('attribute', facets.value?.attributes ?? []).map(item => ({ ...item, icon: attributeIcon(item.value) })),
 ])
 
 const kindSelection = computed({

@@ -471,6 +471,7 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     name: nameOf.get(tableRow.playerId) ?? '',
     place: tableRow.place,
     wins: tableRow.wins,
+    losses: tableRow.losses,
     points: tableRow.points,
     played: tableRow.played,
     matchdays: tableRow.matchdays,

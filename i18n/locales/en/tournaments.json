@@ -61,7 +61,7 @@
       },
       "board": {
         "tableTitle": "Standings",
-        "tableHelp": "Sorted by points. Ties are broken first by the direct comparison (who won the match against the player level on points), then by the difference between games won and lost, then by the games won. Whoever left is grey and at the end without a place.",
+        "tableHelp": "Sorted by points. Ties are broken first by the difference between games won and lost (a 2:0 is worth more than a 2:1), then by the direct comparison (who won the match against the player level on points). More games won alone are not better. Whoever left is grey and at the end without a place.",
         "columns": {
           "place": "Place",
           "player": "Player",
@@ -74,9 +74,11 @@
           "games": "Games",
           "gamesHelp": "Games won : lost (a single game counts as 1:0)",
           "diff": "Diff.",
-          "diffHelp": "Games won minus games lost. With equal points and an equal direct comparison the better difference decides, then the games won.",
+          "diffHelp": "Games won minus games lost. With equal points the better difference decides, then the direct comparison. Whoever wins 2:0 more often is placed higher.",
           "matchdays": "Matchdays",
-          "matchdaysHelp": "Matchdays the player has already played on"
+          "matchdaysHelp": "Matchdays the player has already played on",
+          "losses": "Losses",
+          "lossesHelp": "Matches lost"
         },
         "atTable": "Table {number}",
         "inQueue": "Waiting · No. {position}",

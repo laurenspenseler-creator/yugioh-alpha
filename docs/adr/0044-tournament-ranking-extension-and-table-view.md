@@ -132,9 +132,29 @@ showing. A card facet filter without a kind menu (the format editor) is unchange
   the registration phase, like the scoring); the panel sends `formatId` only when it was changed, and `null` for "Ohne
   Format". A format that is set but not in the list (not the organizer's to assign any more) stays visible in the select.
 
+## Addendum: the same day, fourth look (feedback "Hg hat häufig 2"): the order of the table
+
+* **The difference comes before the direct comparison.** "Hg hat häufig 2:0 gewonnen, das wird nicht gewürdigt. Leute mit
+  einer höheren Plus-Differenz sollten oben sein." Three players on 12 points had hg (games 9:4, +5) behind two players
+  with +2, because the direct comparison put them first. The ladder is now: points, then the difference of the games,
+  then, among the players still level, the direct comparison (`shared/tournament-table.ts`). The direct comparison
+  looks only at the duels among the players that are level on points *and* difference.
+* **The games won are no tiebreak any more.** "Es ist besser, immer 2:0 zu gewinnen als 2:1. Also mehr gewonnene Duelle
+  ist nicht besser." A 2:1 wins one more game than a 2:0 and is the worse win. What is level after the three steps is a
+  tie (a shared place, and for first place the deciding duel).
+* **A column "Niederlagen"** (the matches lost) next to "Siege". The tester asked to add "gewonnene Duelle und Niederlagen"
+  to the table; the games won and lost were already in "Partien", the wins in "Siege", so the missing one is the
+  losses. It comes with the DTO (`QueueTableRowDto.losses`) and is hidden on a phone like the other detail columns.
+* **Symbols for the attributes** ("Füg bei den Attributen auch die Symbole hinzu"): DARK moon, DIVINE sparkles, EARTH
+  mountain, FIRE flame, LIGHT sun, WATER droplet, WIND wind, in the attribute menu of the inventory, the catalog, the
+  format editor and the deck editor's add panel (`app/utils/attribute-icons.ts`; the icon set has no emblems of the
+  game, these are the closest symbols).
+* The league table of the older, classic tournaments (`shared/tournament-standings.ts`) keeps its own tiebreaks; no new
+  tournament is made with it.
+
 ## Consequences
 
-* `QueueTableRowDto` loses `buchholz` and gains `gamesWon`, `gamesLost`, `matchdays`; `QueueDetail` gains `canExtend`.
+* `QueueTableRowDto` loses `buchholz` and gains `gamesWon`, `gamesLost`, `matchdays`, `losses`; `QueueDetail` gains `canExtend`.
   No migration: everything is computed from the duels.
 * Tournaments that exist are ranked by the new ladder from now on (their data does not change).
 * Not built: reopening a tournament that was saved and ended; adding a Spieltag while duels are open; a count per

@@ -261,6 +261,8 @@ export interface QueueTableRowDto {
   matchdays: number
   /** Duels still to play. */
   open: number
+  /** Duels lost. */
+  losses: number
   /** The games won and lost in all duels (a single game counts as 1:0); their difference breaks a tie on points. */
   gamesWon: number
   gamesLost: number

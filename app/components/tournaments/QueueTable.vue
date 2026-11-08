@@ -164,6 +164,12 @@ const remaining = computed(() => {
               {{ t('tournaments.queue.board.columns.wins') }}
             </th>
             <th
+              class="hidden w-20 px-1 py-1 text-right font-medium sm:table-cell"
+              :title="t('tournaments.queue.board.columns.lossesHelp')"
+            >
+              {{ t('tournaments.queue.board.columns.losses') }}
+            </th>
+            <th
               class="w-12 px-1 py-1 text-right font-medium"
               :title="t('tournaments.queue.board.columns.pointsHelp')"
             >
@@ -238,6 +244,12 @@ const remaining = computed(() => {
             </td>
             <td class="font-numeric px-1 py-1.5 text-right tabular-nums">
               {{ row.wins }}
+            </td>
+            <td
+              class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell"
+              data-testid="queue-table-losses"
+            >
+              {{ row.losses }}
             </td>
             <td
               class="font-numeric px-1 py-1.5 text-right tabular-nums"
