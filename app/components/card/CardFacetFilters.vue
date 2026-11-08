@@ -65,19 +65,24 @@ const scope = computed<'plain' | 'monster' | 'spellTrap' | 'mixed'>(() => {
   return spellTrap === picked.length ? 'spellTrap' : 'mixed'
 })
 
-/** The race values to offer: the monsters' races, the subtypes of the picked Spells and Traps, or all of them. */
+/**
+ * The race values to offer: the monsters' races, the subtypes of the picked Spells and Traps, or all of them. The
+ * subtypes are the game's own list, always whole (tester feedback: "Spielfeld" and "Ritual" were missing because the
+ * inventory only knew the ones the player happened to own), so they do not depend on the facets.
+ */
 const raceValues = computed(() => {
   const all = props.facets.races
   if (scope.value === 'spellTrap') {
-    const wanted = spellTrapRaces(kind.value ?? [])
-    return all.filter(value => wanted.includes(value))
+    return spellTrapRaces(kind.value ?? [])
   }
   if (scope.value === 'monster') {
     return all.filter(value => !SPELL_TRAP_RACES.includes(value))
   }
   return all
 })
-const raceItems = computed(() => cardValueOptions('race', [...new Set([...raceValues.value, ...race.value])]))
+// Each subtype carries the symbol of the card frame (infinity, plus, lightning, ...), the Normal one has none.
+const raceItems = computed(() => cardValueOptions('race', [...new Set([...raceValues.value, ...race.value])])
+  .map(item => ({ ...item, icon: spellTrapIcon(item.value) })))
 
 const raceLabel = computed(() => {
   if (scope.value === 'spellTrap') {

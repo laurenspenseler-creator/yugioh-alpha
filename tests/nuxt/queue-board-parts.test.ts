@@ -96,6 +96,7 @@ function row(patch: Partial<QueueTableRowDto>): QueueTableRowDto {
     wins: 1,
     points: 3,
     played: 1,
+    matchdays: 1,
     open: 2,
     gamesWon: 1,
     gamesLost: 0,
@@ -145,23 +146,33 @@ describe('the standings table of a duel tournament', () => {
     const component = await mountSuspended(QueueTable, { props: { tournament: tournament('queue') } })
 
     const decks = component.findAll('[data-testid="queue-table-decks"]').map(cell => cell.text())
-    expect(decks).toEqual(['Dunkler Magier, Chaos', '–'])
+    // Separated by a slash and centred in their column (tester feedback, round 9).
+    expect(decks).toEqual(['Dunkler Magier / Chaos', '–'])
+    expect(component.find('[data-testid="queue-table-decks"]').classes()).toContain('text-center')
   })
 
   it('puts every number under its own heading', async () => {
     const detail = tournament('rounds')
-    detail.queue!.table = [row({ participantId: 'pa', name: 'Anna', place: 4, wins: 7, points: 21, played: 9, open: 5, gamesWon: 15, gamesLost: 8 })]
+    detail.queue!.table = [row({ participantId: 'pa', name: 'Anna', place: 4, wins: 7, points: 21, played: 9, matchdays: 6, open: 5, gamesWon: 15, gamesLost: 8 })]
     const component = await mountSuspended(QueueTable, { props: { tournament: detail } })
 
     const headings = component.findAll('thead th').map(heading => heading.text())
     const cells = component.findAll('tbody tr')[0]!.findAll('td').map(cell => cell.text())
     const under = (heading: string) => cells[headings.indexOf(heading)]
+    expect(under('Spieltage')).toBe('6')
     expect(under('Siege')).toBe('7')
     expect(under('Punkte')).toBe('21')
-    expect(under('Duelle')).toBe('9')
-    expect(under('Offen')).toBe('5')
+    expect(under('Matches')).toBe('9')
     expect(under('Partien')).toBe('15:8')
     expect(under('Diff.')).toBe('+7')
+  })
+
+  it('has the Spieltage right before the wins and no "Offen" column any more', async () => {
+    const component = await mountSuspended(QueueTable, { props: { tournament: tournament('rounds') } })
+
+    const headings = component.findAll('thead th').map(heading => heading.text())
+    expect(headings.slice(0, 4)).toEqual(['#', 'Spieler', 'Spieltage', 'Siege'])
+    expect(headings).not.toContain('Offen')
   })
 
   it('shows a negative difference with its minus and a level one as 0', async () => {

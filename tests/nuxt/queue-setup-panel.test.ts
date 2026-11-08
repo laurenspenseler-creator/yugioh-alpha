@@ -38,7 +38,7 @@ describe('the settings of a duel tournament', () => {
     vi.stubGlobal('$fetch', fetchSpy)
     const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament() } })
 
-    await component.find('input[aria-label="Minuten pro Duell"]').setValue('20')
+    await component.find('input[aria-label="Minuten pro Match"]').setValue('20')
     await component.find('input[aria-label="Tische"]').setValue('3')
     await findButton(component, 'Einstellungen speichern').trigger('click')
     await flushPromises()
@@ -56,7 +56,7 @@ describe('the settings of a duel tournament', () => {
   it('still shows the estimate while a number is typed in the fields', async () => {
     const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament() } })
 
-    await component.find('input[aria-label="Minuten pro Duell"]').setValue('20')
+    await component.find('input[aria-label="Minuten pro Match"]').setValue('20')
     await flushPromises()
 
     expect(component.find('[data-testid="queue-estimate"]').exists()).toBe(true)
@@ -67,9 +67,9 @@ describe('the settings of a duel tournament', () => {
   it('asks for the rounds as a whole number typed too (the wish in hours as well)', async () => {
     const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament() } })
 
-    await component.find('input[aria-label="Duelle pro Spieler"]').setValue('4')
+    await component.find('input[aria-label="Matches pro Spieler"]').setValue('4')
     await component.find('input[aria-label="Gewünschte Gesamtdauer (Stunden)"]').setValue('2')
-    await findButton(component, 'Duellzahl vorschlagen').trigger('click')
+    await findButton(component, 'Matchzahl vorschlagen').trigger('click')
     await flushPromises()
 
     expect(component.text()).toContain('Vorschlag:')
@@ -83,7 +83,7 @@ describe('the settings of a duel tournament', () => {
     expect(component.find('input[aria-label="Tische"]').exists()).toBe(false)
     expect(component.find('[aria-label="Turnierart"]').exists()).toBe(false)
     expect(component.find('[aria-label="Punktevergabe"]').exists()).toBe(true)
-    expect(component.find('[aria-label="Ein Duell ist"]').exists()).toBe(true)
+    expect(component.find('[aria-label="Ein Match ist"]').exists()).toBe(true)
     expect(component.text()).toContain('Best of 3')
     expect(component.text()).toContain('Klassisch (3 · 0)')
 
@@ -105,10 +105,10 @@ describe('the settings of a duel tournament', () => {
     const single = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 1, scoring: 'games' }) } })
     const best = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ bestOf: 3, scoring: 'games' }) } })
 
-    expect(single.text()).toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte, eine Niederlage 0')
+    expect(single.text()).toContain('Bei Einzelmatches gibt ein Sieg 3 Punkte, eine Niederlage 0')
     expect(single.find('button[aria-label="Punktevergabe"]').attributes('disabled')).toBeDefined()
     expect(single.find('button[aria-label="Punktevergabe"]').text()).toContain('Klassisch (3 · 0)')
-    expect(best.text()).not.toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte')
+    expect(best.text()).not.toContain('Bei Einzelmatches gibt ein Sieg 3 Punkte')
     expect(best.find('button[aria-label="Punktevergabe"]').attributes('disabled')).toBeUndefined()
     expect(best.find('button[aria-label="Punktevergabe"]').text()).toContain('Nach Spielen')
   })

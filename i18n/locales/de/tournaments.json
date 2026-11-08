@@ -14,7 +14,7 @@
         },
         "queue": {
           "label": "Mit Tischen und Warteschlange",
-          "description": "Der Plan steht von Anfang an. Sobald ein Tisch frei wird, startet das nächste Duell – niemand wartet auf eine ganze Runde."
+          "description": "Der Plan steht von Anfang an. Sobald ein Tisch frei wird, startet das nächste Match – niemand wartet auf eine ganze Runde."
         }
       },
       "mode": {
@@ -36,36 +36,35 @@
       "setup": {
         "title": "Einstellungen",
         "editHint": "Du kannst das ändern, solange das Turnier noch nicht gestartet ist. Der Plan wird erst beim Start ausgelost.",
-        "rounds": "Duelle pro Spieler",
-        "roundsHint": "Eine gerade Zahl, höchstens Spielerzahl minus 1. Ein Duell ist eine einzelne Partie ohne Unentschieden.",
+        "rounds": "Matches pro Spieler",
+        "roundsHint": "Eine gerade Zahl, höchstens Spielerzahl minus 1. Ein Match ist eine Begegnung zweier Spieler ohne Unentschieden; bei Best of 3 besteht es aus mehreren Partien.",
         "roundsAuto": "Automatisch",
         "roundsRoundRobin": "Bei „Jeder gegen jeden“ ergibt sich die Zahl aus der Spielerzahl: jeder gegen jeden einmal.",
         "prelaunch": "Vorlauf: Runde 1 und 2 vorab auslosen",
         "prelaunchHint": "Die ersten beiden Runden stehen schon beim Start fest, jede weitere wird gepaart, sobald die vorletzte fertig ist.",
         "tables": "Tische",
-        "duelMinutes": "Minuten pro Duell",
+        "duelMinutes": "Minuten pro Match",
         "wishedHours": "Gewünschte Gesamtdauer (Stunden)",
-        "suggest": "Duellzahl vorschlagen",
-        "suggested": "Vorschlag: {rounds} Duelle pro Spieler",
+        "suggest": "Matchzahl vorschlagen",
+        "suggested": "Vorschlag: {rounds} Matches pro Spieler",
         "estimate": "Geschätzte Dauer",
         "estimateValue": "ca. {hours} Std. {minutes} Min.",
         "estimateNeedsPlayers": "Die Dauer lässt sich schätzen, sobald mindestens zwei Spieler eingetragen sind.",
-        "perPlayer": "{count} Duelle pro Spieler, {total} Duelle insgesamt",
+        "perPlayer": "{count} Matches pro Spieler, {total} Matches insgesamt",
         "compare": "Dauer der Modi bei {count} Spielern",
         "save": "Einstellungen speichern",
         "saveFailed": "Die Einstellungen konnten nicht gespeichert werden.",
-        "summary": "{mode} · {tables} Tische · {minutes} Min. pro Duell",
-        "summaryRounds": "{mode} · Spieltage · {minutes} Min. pro Duell"
+        "summary": "{mode} · {tables} Tische · {minutes} Min. pro Match",
+        "summaryRounds": "{mode} · Spieltage · {minutes} Min. pro Match"
       },
       "board": {
         "tableTitle": "Tabelle",
-        "tableHelp": "Sortiert nach Punkten. Bei gleichen Punkten entscheidet zuerst der direkte Vergleich (wer das Duell gegen den Punktgleichen gewonnen hat), dann die Differenz aus gewonnenen und verlorenen Partien, dann die Zahl der gewonnenen Partien. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
+        "tableHelp": "Sortiert nach Punkten. Bei gleichen Punkten entscheidet zuerst der direkte Vergleich (wer das Match gegen den Punktgleichen gewonnen hat), dann die Differenz aus gewonnenen und verlorenen Partien, dann die Zahl der gewonnenen Partien. Wer ausgeschieden ist, steht grau und ohne Platz am Ende.",
         "columns": {
           "place": "Platz",
           "player": "Spieler",
           "wins": "Siege",
-          "played": "Duelle",
-          "open": "Offen",
+          "played": "Matches",
           "now": "Jetzt",
           "decks": "Decks",
           "points": "Punkte",
@@ -73,17 +72,19 @@
           "games": "Partien",
           "gamesHelp": "Gewonnene : verlorene Partien (eine einzelne Partie zählt als 1:0)",
           "diff": "Diff.",
-          "diffHelp": "Gewonnene minus verlorene Partien. Bei gleichen Punkten und gleichem direktem Vergleich entscheidet die bessere Differenz, danach die Zahl der gewonnenen Partien."
+          "diffHelp": "Gewonnene minus verlorene Partien. Bei gleichen Punkten und gleichem direktem Vergleich entscheidet die bessere Differenz, danach die Zahl der gewonnenen Partien.",
+          "matchdays": "Spieltage",
+          "matchdaysHelp": "Spieltage, an denen der Spieler schon gespielt hat"
         },
         "atTable": "Tisch {number}",
         "inQueue": "Wartet · Nr. {position}",
         "tied": "gleichauf",
         "dropped": "ausgeschieden",
         "disqualified": "disqualifiziert",
-        "progress": "{done} von {total} Duellen gespielt",
+        "progress": "{done} von {total} Matches gespielt",
         "remaining": "Noch etwa {hours} Std. {minutes} Min.",
         "tablesTitle": "Tische",
-        "tablesHelp": "Sobald ein Tisch frei wird, startet automatisch das nächste Duell. Es beginnen zuerst die Spieler mit den meisten offenen Duellen, bei Gleichstand wer am längsten wartet.",
+        "tablesHelp": "Sobald ein Tisch frei wird, startet automatisch das nächste Match. Es beginnen zuerst die Spieler mit den meisten offenen Matches, bei Gleichstand wer am längsten wartet.",
         "tableFree": "Tisch {number}: frei",
         "tableDuel": "Tisch {number}",
         "vs": "gegen",
@@ -92,7 +93,7 @@
         "setWinner": "{name} hat gewonnen",
         "correct": "Ergebnis ändern",
         "nextTitle": "Als Nächstes",
-        "nextEmpty": "Kein Duell wartet.",
+        "nextEmpty": "Kein Match wartet.",
         "queueNumber": "Nr. {number}",
         "scheduleTitle": "Plan",
         "scheduleHelp": "Der Plan steht von Anfang an. Die Spieltage sind nur eine Anzeige: gespielt wird, sobald ein Tisch und beide Spieler frei sind.",
@@ -107,9 +108,9 @@
           "void": "Gestrichen"
         },
         "kind": {
-          "makeup": "Nachholduell",
+          "makeup": "Nachholmatch",
           "rematch": "Wiederholung",
-          "decider": "Entscheidungsduell"
+          "decider": "Entscheidungsmatch"
         },
         "resultFailed": "Das Ergebnis konnte nicht gespeichert werden.",
         "setWinnerScore": "{name} gewinnt {own}:{other}",
@@ -117,7 +118,7 @@
         "hideTable": "Tabelle ausblenden",
         "playing": "Spielt",
         "matchdaysTitle": "Spieltage",
-        "scheduleHelpRounds": "Alle Duelle eines Spieltags laufen nebeneinander. Der nächste Spieltag beginnt, sobald das letzte Duell des aktuellen fertig ist.",
+        "scheduleHelpRounds": "Alle Matches eines Spieltags laufen nebeneinander. Der nächste Spieltag beginnt, sobald das letzte Match des aktuellen fertig ist.",
         "pinTable": "Tabelle anheften",
         "unpinTable": "Tabelle lösen",
         "pinTableHelp": "Die Tabelle bleibt oben stehen, wenn du scrollst.",
@@ -125,20 +126,20 @@
         "tableScrolls": "Die Tabelle scrollt: weitere Spieler stehen weiter oben oder unten. Mit „Tabelle lösen“ siehst du alle auf einmal."
       },
       "rematch": {
-        "title": "Wiederholungsduell nötig",
-        "text": "{a} und {b} haben schon gegeneinander gespielt, es gibt für den Ausgleich aber keinen anderen Gegner. Soll das Duell trotzdem angesetzt werden?",
-        "confirm": "Duell ansetzen",
-        "failed": "Das Duell konnte nicht angesetzt werden."
+        "title": "Wiederholungsmatch nötig",
+        "text": "{a} und {b} haben schon gegeneinander gespielt, es gibt für den Ausgleich aber keinen anderen Gegner. Soll das Match trotzdem angesetzt werden?",
+        "confirm": "Match ansetzen",
+        "failed": "Das Match konnte nicht angesetzt werden."
       },
       "decider": {
         "title": "Gleichstand auf Platz 1",
-        "text": "{names} liegen gleichauf. Ein Entscheidungsduell klärt den ersten Platz.",
-        "schedule": "Entscheidungsduell ansetzen",
-        "failed": "Das Entscheidungsduell konnte nicht angesetzt werden."
+        "text": "{names} liegen gleichauf. Ein Entscheidungsmatch klärt den ersten Platz.",
+        "schedule": "Entscheidungsmatch ansetzen",
+        "failed": "Das Entscheidungsmatch konnte nicht angesetzt werden."
       },
       "recompute": {
         "button": "Paarungen neu berechnen",
-        "hint": "Nur Paarungen, die noch nicht gestartet sind, werden nach dem aktuellen Tabellenstand neu gelost. Gespielte und laufende Duelle bleiben.",
+        "hint": "Nur Paarungen, die noch nicht gestartet sind, werden nach dem aktuellen Tabellenstand neu gelost. Gespielte und laufende Matches bleiben.",
         "previewTitle": "Das würde sich ändern",
         "round": "Runde {number}",
         "apply": "Übernehmen",
@@ -148,7 +149,7 @@
       },
       "undecided": {
         "title": "Entscheidung offen",
-        "text": "{names} ist ausgeschieden. Bis du entschieden hast, warten die offenen Duelle.",
+        "text": "{names} ist ausgeschieden. Bis du entschieden hast, warten die offenen Matches.",
         "decide": "Jetzt entscheiden"
       },
       "leave": {
@@ -156,18 +157,18 @@
         "decideMenu": "Entscheidung treffen …",
         "title": "{name} scheidet aus",
         "decideTitle": "Entscheidung für {name}",
-        "intro": "Was soll mit den Duellen von {name} passieren? In der Tabelle bleibt {name} grau und ohne Platz stehen und sieht das eigene Ergebnis weiterhin.",
+        "intro": "Was soll mit den Matches von {name} passieren? In der Tabelle bleibt {name} grau und ohne Platz stehen und sieht das eigene Ergebnis weiterhin.",
         "optionA": {
           "label": "A · Als wäre die Person nie dabei gewesen",
-          "description": "Alle Duelle werden gestrichen, auch die gespielten. Wer gegen die Person gespielt hat oder spielen sollte, bekommt ein Ersatzduell."
+          "description": "Alle Matches werden gestrichen, auch die gespielten. Wer gegen die Person gespielt hat oder spielen sollte, bekommt ein Ersatzmatch."
         },
         "optionB": {
-          "label": "B · Gespielte Duelle bleiben",
-          "description": "Nur die offenen Duelle werden gestrichen. Wer noch ein offenes Duell gegen die Person hatte, bekommt ein Ersatzduell."
+          "label": "B · Gespielte Matches bleiben",
+          "description": "Nur die offenen Matches werden gestrichen. Wer noch ein offenes Match gegen die Person hatte, bekommt ein Ersatzmatch."
         },
-        "unavailable": "Geht bei diesem Stand nicht auf: Danach hätten nicht mehr alle gleich viele Duelle.",
+        "unavailable": "Geht bei diesem Stand nicht auf: Danach hätten nicht mehr alle gleich viele Matches.",
         "later": "Später entscheiden",
-        "laterHint": "Die Duelle der Person warten, bis du entschieden hast.",
+        "laterHint": "Die Matches der Person warten, bis du entschieden hast.",
         "inDuel": "Die Person spielt gerade. Trage zuerst das Ergebnis ein.",
         "submit": "Ausscheiden lassen",
         "submitDecide": "Entscheiden",
@@ -177,31 +178,31 @@
       "disqualify": {
         "menu": "Disqualifizieren …",
         "title": "{name} disqualifizieren?",
-        "description": "{name} verschwindet ganz aus der Tabelle, alle Duelle werden gestrichen, als wäre die Person nie dabei gewesen. Das lässt sich nicht rückgängig machen.",
+        "description": "{name} verschwindet ganz aus der Tabelle, alle Matches werden gestrichen, als wäre die Person nie dabei gewesen. Das lässt sich nicht rückgängig machen.",
         "failed": "Die Disqualifikation konnte nicht gespeichert werden."
       },
       "finish": {
         "save": "Turnier speichern & beenden",
         "title": "Turnier speichern und beenden?",
-        "description": "Alles, was gespielt wurde, bleibt als Ergebnis stehen. Duelle, die noch offen sind, werden nicht mehr gespielt."
+        "description": "Alles, was gespielt wurde, bleibt als Ergebnis stehen. Matches, die noch offen sind, werden nicht mehr gespielt."
       },
       "help": {
         "title": "So funktioniert das",
-        "point1": "Ein Duell ist eine einzelne Partie. Es gibt kein Unentschieden und kein Zeitlimit – eingetragen wird nur, wer gewonnen hat.",
-        "point2": "Alle Spieler enden mit gleich vielen Duellen. Das Turnier läuft, bis jeder seine Duelle gespielt hat.",
-        "point3": "Sobald ein Tisch frei wird, startet das nächste mögliche Duell. Wer am Tisch sitzt, steht unter „Jetzt“; wer wartet, sieht seine Nummer in der Warteschlange.",
-        "point4": "Fällt jemand aus, rechnet die App die Duelle so um, dass wieder alle gleich viele haben.",
-        "rounds1": "Gespielt wird Spieltag für Spieltag: Alle Duelle eines Tages laufen nebeneinander, der nächste Tag beginnt, wenn das letzte fertig ist."
+        "point1": "Ein Match ist eine Begegnung zweier Spieler, bei Best of 3 aus bis zu drei Partien. Es gibt kein Unentschieden und kein Zeitlimit – eingetragen wird nur, wer gewonnen hat.",
+        "point2": "Alle Spieler enden mit gleich vielen Matches. Das Turnier läuft, bis jeder seine Matches gespielt hat.",
+        "point3": "Sobald ein Tisch frei wird, startet das nächste mögliche Match. Wer am Tisch sitzt, steht unter „Jetzt“; wer wartet, sieht seine Nummer in der Warteschlange.",
+        "point4": "Fällt jemand aus, rechnet die App die Matches so um, dass wieder alle gleich viele haben.",
+        "rounds1": "Gespielt wird Spieltag für Spieltag: Alle Matches eines Tages laufen nebeneinander, der nächste Tag beginnt, wenn das letzte fertig ist."
       },
       "flow": {
         "label": "Turnierart",
         "queue": {
           "label": "Mit Tischen und Warteschlange",
-          "description": "Der Plan steht von Anfang an. Sobald ein Tisch frei wird, startet das nächste Duell – niemand wartet auf eine ganze Runde."
+          "description": "Der Plan steht von Anfang an. Sobald ein Tisch frei wird, startet das nächste Match – niemand wartet auf eine ganze Runde."
         },
         "rounds": {
           "label": "Mit Runden (Spieltage)",
-          "description": "Spieltag für Spieltag: Alle Duelle eines Spieltags laufen nebeneinander, der nächste beginnt, wenn das letzte Duell fertig ist. Keine Tische, keine Warteschlange."
+          "description": "Spieltag für Spieltag: Alle Matches eines Spieltags laufen nebeneinander, der nächste beginnt, wenn das letzte Match fertig ist. Keine Tische, keine Warteschlange."
         },
         "classic": {
           "label": "Klassisch (Runden mit Punkten)",
@@ -210,17 +211,17 @@
       },
       "bestOf": {
         "1": {
-          "label": "Einzelduell (eine Partie)",
+          "label": "Einzelmatch (eine Partie)",
           "description": "Eine Partie entscheidet, eingetragen wird nur, wer gewonnen hat."
         },
         "3": {
           "label": "Best of 3",
           "short": "Best of 3",
-          "description": "Wer zuerst zwei Partien gewinnt. Du trägst das Ergebnis als 2:0 oder 2:1 ein; die Minuten pro Duell gelten für das ganze Match."
+          "description": "Wer zuerst zwei Partien gewinnt. Du trägst das Ergebnis als 2:0 oder 2:1 ein; die Minuten pro Match gelten für alle Partien zusammen."
         },
-        "label": "Ein Duell ist"
+        "label": "Ein Match ist"
       },
-      "scoringSingleHint": "Bei Einzelduellen gibt ein Sieg 3 Punkte, eine Niederlage 0. Die Wertung nach Spielen (3 · 2 · 1 · 0) gibt es nur bei Best of 3.",
+      "scoringSingleHint": "Bei Einzelmatches gibt ein Sieg 3 Punkte, eine Niederlage 0. Die Wertung nach Spielen (3 · 2 · 1 · 0) gibt es nur bei Best of 3.",
       "extend": {
         "label": "Weiteren Spieltag spielen",
         "title": "Einen weiteren Spieltag spielen?",
@@ -308,7 +309,21 @@
       "showInvited": "Eingeladene Turniere ansehen",
       "participantCount": "{count} Teilnehmer | {count} Teilnehmer",
       "roundProgress": "Runde {current}/{planned}",
-      "organizedBy": "Von {name}"
+      "organizedBy": "Von {name}",
+      "menu": {
+        "label": "Optionen",
+        "rename": "Umbenennen",
+        "delete": "Löschen"
+      },
+      "rename": {
+        "title": "Turnier umbenennen",
+        "name": "Name",
+        "nameAriaLabel": "Name des Turniers"
+      },
+      "errors": {
+        "renameFailed": "Das Turnier konnte nicht umbenannt werden.",
+        "deleteFailed": "Das Turnier konnte nicht gelöscht werden."
+      }
     },
     "new": {
       "title": "Neues Turnier",

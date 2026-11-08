@@ -3,7 +3,7 @@ import type { QueueSetupDto } from '~~/shared/tournaments'
 type Translate = (key: string, named?: Record<string, unknown>) => string
 
 /**
- * The settings of a duel-queue tournament in one line: "Schweizer System · 4 Tische · 30 Min. pro Duell"; played in
+ * The settings of a duel-queue tournament in one line: "Schweizer System · 4 Tische · 30 Min. pro Match"; played in
  * Spieltage it says so instead of the tables (nobody waits for one), and a best-of-3 tournament ends with "Best of 3".
  */
 export function queueSummary(t: Translate, setup: QueueSetupDto): string {

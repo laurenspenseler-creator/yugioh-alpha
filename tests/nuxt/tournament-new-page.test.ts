@@ -73,7 +73,7 @@ describe('the new tournament form', () => {
     await nextTick()
 
     expect(component.find('[aria-label="Modus"]').exists()).toBe(true)
-    expect(component.find('[aria-label="Ein Duell ist"]').exists()).toBe(true)
+    expect(component.find('[aria-label="Ein Match ist"]').exists()).toBe(true)
     expect(component.find('[aria-label="Punktevergabe"]').exists()).toBe(true)
     expect(component.text()).toContain('Vorlauf')
     expect(component.find('[aria-label="Turnierart"]').exists()).toBe(false)
@@ -92,7 +92,7 @@ describe('the new tournament form', () => {
     expect(formOf(component).bestOf).toBe(1)
     expect(scoring().attributes('disabled')).toBeDefined()
     expect(scoring().text()).toContain('Klassisch (3 · 0)')
-    expect(component.text()).toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte, eine Niederlage 0')
+    expect(component.text()).toContain('Bei Einzelmatches gibt ein Sieg 3 Punkte, eine Niederlage 0')
 
     formOf(component).name = 'Freitag'
     await component.find('form').trigger('submit')
@@ -105,7 +105,7 @@ describe('the new tournament form', () => {
     expect(formOf(component).scoring).toBe('games')
     expect(scoring().attributes('disabled')).toBeUndefined()
     expect(scoring().text()).toContain('Nach Spielen')
-    expect(component.text()).not.toContain('Bei Einzelduellen gibt ein Sieg 3 Punkte')
+    expect(component.text()).not.toContain('Bei Einzelmatches gibt ein Sieg 3 Punkte')
   })
 
   it('sends the decks written in brackets behind a name as part of the line, and counts one player per line', async () => {

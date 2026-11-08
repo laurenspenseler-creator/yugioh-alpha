@@ -915,8 +915,14 @@ describe('finishing a tournament', () => {
     // registration-phase fallback the call site passes in.
     expect(() => addParticipant(db, 'user-a', id, validateParticipantInput({ name: 'Zu spät' })))
       .toThrow(expect.objectContaining({ statusCode: 409, data: { code: 'tournament_finished' } }))
-    expect(() => updateTournament(db, 'user-a', id, { name: 'x' }))
+    // The settings are history ...
+    expect(() => updateTournament(db, 'user-a', id, { scoring: 'match' }))
       .toThrow(expect.objectContaining({ statusCode: 409, data: { code: 'tournament_finished' } }))
+    expect(() => updateTournament(db, 'user-a', id, { name: 'x', plannedRounds: 5 }))
+      .toThrow(expect.objectContaining({ statusCode: 409, data: { code: 'tournament_finished' } }))
+    // ... the name is a label ("Umbenennen" in the tournament list works for a finished tournament too).
+    expect(updateTournament(db, 'user-a', id, { name: 'Neuer Name' }).name).toBe('Neuer Name')
+    expect(JSON.stringify(getTournamentDetail(db, 'user-a', id).standings)).toBe(standingsBefore)
   })
 
   it('still allows deletion once finished, cascading to participants/rounds/matches', () => {

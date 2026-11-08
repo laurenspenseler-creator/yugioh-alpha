@@ -18,7 +18,7 @@ const live = computed(() => props.tournament.status === 'running')
 const byRound = computed(() => queue.value.flow === 'rounds')
 
 /** The decks each player plays (ADR 0039), by name; shown next to the player so everybody knows what they face. */
-const decksOf = computed(() => new Map(props.tournament.participants.map(participant => [participant.id, participant.decks.map(deck => deck.name).join(', ')])))
+const decksOf = computed(() => new Map(props.tournament.participants.map(participant => [participant.id, participant.decks.map(deck => deck.name).join(' / ')])))
 
 // The table can be folded away (it takes a lot of room on a small screen) and it can be pinned, i.e. follow the
 // reader down the page, or be released and scroll away with the rest. Both choices are kept in this browser.
@@ -152,6 +152,12 @@ const remaining = computed(() => {
               {{ t('tournaments.queue.board.columns.player') }}
             </th>
             <th
+              class="hidden w-14 px-1 py-1 text-right font-medium sm:table-cell"
+              :title="t('tournaments.queue.board.columns.matchdaysHelp')"
+            >
+              {{ t('tournaments.queue.board.columns.matchdays') }}
+            </th>
+            <th
               class="w-10 px-1 py-1 text-right font-medium"
               :title="t('tournaments.queue.board.columns.wins')"
             >
@@ -170,12 +176,6 @@ const remaining = computed(() => {
               {{ t('tournaments.queue.board.columns.played') }}
             </th>
             <th
-              class="hidden w-12 px-1 py-1 text-right font-medium sm:table-cell"
-              :title="t('tournaments.queue.board.columns.open')"
-            >
-              {{ t('tournaments.queue.board.columns.open') }}
-            </th>
-            <th
               class="hidden w-16 px-1 py-1 text-right font-medium sm:table-cell"
               :title="t('tournaments.queue.board.columns.gamesHelp')"
             >
@@ -187,7 +187,7 @@ const remaining = computed(() => {
             >
               {{ t('tournaments.queue.board.columns.diff') }}
             </th>
-            <th class="hidden px-2 py-1 font-medium md:table-cell">
+            <th class="hidden px-2 py-1 text-center font-medium md:table-cell">
               {{ t('tournaments.queue.board.columns.decks') }}
             </th>
             <th
@@ -230,6 +230,12 @@ const remaining = computed(() => {
                 :label="t('tournaments.queue.board.tied')"
               />
             </td>
+            <td
+              class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell"
+              data-testid="queue-table-matchdays"
+            >
+              {{ row.matchdays }}
+            </td>
             <td class="font-numeric px-1 py-1.5 text-right tabular-nums">
               {{ row.wins }}
             </td>
@@ -243,16 +249,13 @@ const remaining = computed(() => {
               {{ row.played }}
             </td>
             <td class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell">
-              {{ row.left ? '–' : row.open }}
-            </td>
-            <td class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell">
               {{ row.gamesWon }}:{{ row.gamesLost }}
             </td>
             <td class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell">
               {{ difference(row.gamesWon, row.gamesLost) }}
             </td>
             <td
-              class="hidden max-w-56 truncate px-2 py-1.5 text-xs font-normal text-toned md:table-cell"
+              class="hidden max-w-56 truncate px-2 py-1.5 text-center text-xs font-normal text-toned md:table-cell"
               :title="decksOf.get(row.participantId) || undefined"
               data-testid="queue-table-decks"
             >

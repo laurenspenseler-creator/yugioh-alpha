@@ -473,6 +473,7 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     wins: tableRow.wins,
     points: tableRow.points,
     played: tableRow.played,
+    matchdays: tableRow.matchdays,
     open: tableRow.left ? 0 : openDuelsOf(state, tableRow.playerId).filter(duel => isLive(state, duel)).length,
     gamesWon: tableRow.gamesWon,
     gamesLost: tableRow.gamesLost,

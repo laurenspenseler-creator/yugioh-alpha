@@ -127,6 +127,34 @@ describe('CardFacetFilters following the kind', () => {
     expect(valuesOf(component, 'Zauberart')).toEqual(['Continuous', 'Equip', 'Field', 'Normal', 'Quick-Play', 'Ritual'])
   })
 
+  // Tester feedback, round 9: "Spielfeld" and "Ritual" were missing from the inventory's Zauberart menu because the
+  // facets only hold what the player owns. The subtypes are the game's own list, whatever the facets say.
+  it('offers every subtype of a Spell or Trap, also the ones that the facets (the cards one owns) do not have', async () => {
+    const owned = { types: ['Spell Card'], attributes: [], races: ['Dragon', 'Normal', 'Quick-Play', 'Continuous', 'Equip'], levels: [] }
+    const spells = await mountKinds(['spell'], { facets: owned })
+    const traps = await mountKinds(['trap'], { facets: owned })
+
+    expect(valuesOf(spells, 'Zauberart')).toEqual(['Continuous', 'Equip', 'Field', 'Normal', 'Quick-Play', 'Ritual'])
+    expect(valuesOf(traps, 'Fallenart')).toEqual(['Continuous', 'Counter', 'Normal'])
+  })
+
+  it('shows the symbol of the card frame next to each subtype, and none for Normal', async () => {
+    const component = await mountKinds(['spell', 'trap'])
+    const menus = component.findAllComponents(USelectMenu) as unknown as VueWrapper[]
+    const items = menus
+      .map(menu => menu.props() as { placeholder?: string, items: Array<{ value: string, label: string, icon?: string }> })
+      .find(candidate => candidate.placeholder === 'Zauber-/Fallenart')!.items
+    const iconOf = (value: string) => items.find(item => item.value === value)!.icon
+
+    expect(iconOf('Continuous')).toBe('i-lucide-infinity')
+    expect(iconOf('Equip')).toBe('i-lucide-plus')
+    expect(iconOf('Field')).toBe('i-lucide-compass')
+    expect(iconOf('Quick-Play')).toBe('i-lucide-zap')
+    expect(iconOf('Ritual')).toBe('i-lucide-flame')
+    expect(iconOf('Counter')).toBe('i-lucide-corner-down-left')
+    expect(iconOf('Normal')).toBeUndefined()
+  })
+
   it('offers Traps theirs, and both together the lot', async () => {
     const traps = await mountKinds(['trap'])
     const both = await mountKinds(['spell', 'trap'])

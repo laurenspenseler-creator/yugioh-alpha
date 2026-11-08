@@ -1,14 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { enableAutoUnmount } from '@vue/test-utils'
+import { DOMWrapper, enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
+import { UDropdownMenu } from '#components'
 import TournamentsPage from '~/pages/tournaments/index.vue'
 import type { TournamentListItem, TournamentListResponse } from '~~/shared/tournaments'
 import { setTestLocale } from './fixtures/locale'
-
-afterEach(() => setTestLocale('de'))
-
-// mountSuspended never unmounts; a later locale switch would re-render every earlier mount (#104).
-enableAutoUnmount(afterEach)
 
 const state = vi.hoisted(() => ({
   list: { items: [] as TournamentListItem[], total: 0, page: 1, pageSize: 20 } as TournamentListResponse,
@@ -19,7 +15,27 @@ const state = vi.hoisted(() => ({
   // the page's reactive filter state after the fact.
   lastQueryRef: undefined as { value: Record<string, unknown> } | undefined,
   otherQueryRef: undefined as { value: Record<string, unknown> } | undefined,
+  refresh: vi.fn(),
+  refreshOther: vi.fn(),
 }))
+
+const confirmSpy = vi.hoisted(() => vi.fn(async (_options: unknown) => true))
+mockNuxtImport('useConfirm', () => () => ({ confirm: confirmSpy }))
+
+afterEach(async () => {
+  // The rename dialog teleports its content to <body>.
+  document.body.innerHTML = ''
+  vi.unstubAllGlobals()
+  confirmSpy.mockReset()
+  confirmSpy.mockResolvedValue(true)
+  state.refresh.mockClear()
+  state.refreshOther.mockClear()
+  await setTestLocale('de')
+})
+
+// mountSuspended never unmounts; a later locale switch would re-render every earlier mount (#104). Registered after the
+// clean-up above, so it runs before it (afterEach hooks run in reverse order) and unmounts into a body that is still there.
+enableAutoUnmount(afterEach)
 
 mockNuxtImport('useFetch', () => {
   return (url: string | (() => string), options?: { query?: { value: Record<string, unknown> } }) => {
@@ -30,10 +46,10 @@ mockNuxtImport('useFetch', () => {
       // the main list fetch so tests can control each independently.
       if (query?.value?.pageSize === 1) {
         state.otherQueryRef = query
-        return { data: ref(state.otherList), pending: ref(false), refresh: vi.fn() }
+        return { data: ref(state.otherList), pending: ref(false), refresh: state.refreshOther }
       }
       state.lastQueryRef = query
-      return { data: ref(state.list), pending: ref(false), refresh: vi.fn() }
+      return { data: ref(state.list), pending: ref(false), refresh: state.refresh }
     }
     return { data: ref(null), pending: ref(false), refresh: vi.fn() }
   }
@@ -214,6 +230,146 @@ describe('tournaments page', () => {
     expect(text).toContain('Round 0/3')
     expect(text).not.toContain('Turniere')
     expect(text).not.toContain('Teilnehmer')
+  })
+
+  describe('the options of a tournament card', () => {
+    type MenuItem = { label: string, icon?: string, color?: string, onSelect: () => void }
+
+    function menuOf(component: Awaited<ReturnType<typeof mountSuspended>>, index = 0): MenuItem[] {
+      const menus = component.findAllComponents(UDropdownMenu) as unknown as Array<{ props: (key: string) => unknown }>
+      return (menus[index]!.props('items') as MenuItem[][]).flat()
+    }
+
+    it('puts three dots in the upper right corner of every card of the organizer, and none on a participation', async () => {
+      state.list = {
+        items: [item(), item({ id: 'tournament-2', name: 'Fremdes Turnier', role: 'participant', organizerName: 'Bob' })],
+        total: 2,
+        page: 1,
+        pageSize: 20,
+      }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+
+      const component = await mountSuspended(TournamentsPage)
+
+      const buttons = component.findAll('[data-testid="tournament-menu"]')
+      expect(buttons).toHaveLength(1)
+      expect(buttons[0]!.attributes('aria-label')).toBe('Optionen')
+      expect(buttons[0]!.classes()).toEqual(expect.arrayContaining(['absolute', 'right-2', 'top-2']))
+      expect(component.findAll('[data-testid="tournament-card"]')[0]!.classes()).toContain('relative')
+    })
+
+    it('offers renaming and deleting, for a running tournament too', async () => {
+      state.list = { items: [item({ status: 'running' })], total: 1, page: 1, pageSize: 20 }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+
+      const component = await mountSuspended(TournamentsPage)
+      const items = menuOf(component)
+
+      expect(items.map(entry => entry.label)).toEqual(['Umbenennen', 'Löschen'])
+      expect(items[1]!.color).toBe('error')
+    })
+
+    it('renames a tournament in a dialog and reloads the list', async () => {
+      state.list = { items: [item()], total: 1, page: 1, pageSize: 20 }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+      const fetchMock = vi.fn(async () => ({}))
+      vi.stubGlobal('$fetch', fetchMock)
+
+      const component = await mountSuspended(TournamentsPage, { attachTo: document.body })
+      menuOf(component)[0]!.onSelect()
+      await flushPromises()
+
+      const input = new DOMWrapper(document.body).find('input[aria-label="Name des Turniers"]')
+      expect(input.exists()).toBe(true)
+      expect((input.element as HTMLInputElement).value).toBe('Freitagsturnier')
+
+      await input.setValue('Samstagsturnier')
+      await new DOMWrapper(document.body).find('[role="dialog"] form').trigger('submit')
+      await flushPromises()
+
+      expect(fetchMock).toHaveBeenCalledWith('/api/tournaments/tournament-1', { method: 'PATCH', body: { name: 'Samstagsturnier' } })
+      expect(state.refresh).toHaveBeenCalledTimes(1)
+      expect(new DOMWrapper(document.body).find('[role="dialog"]').exists()).toBe(false)
+    })
+
+    it('does not ask the server when the name stays as it is', async () => {
+      state.list = { items: [item()], total: 1, page: 1, pageSize: 20 }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+      const fetchMock = vi.fn(async () => ({}))
+      vi.stubGlobal('$fetch', fetchMock)
+
+      const component = await mountSuspended(TournamentsPage, { attachTo: document.body })
+      menuOf(component)[0]!.onSelect()
+      await flushPromises()
+      await new DOMWrapper(document.body).find('[role="dialog"] form').trigger('submit')
+      await flushPromises()
+
+      expect(fetchMock).not.toHaveBeenCalled()
+    })
+
+    it('shows why a rename failed and keeps the dialog open', async () => {
+      state.list = { items: [item()], total: 1, page: 1, pageSize: 20 }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+      vi.stubGlobal('$fetch', vi.fn(async () => { throw new Error('offline') }))
+
+      const component = await mountSuspended(TournamentsPage, { attachTo: document.body })
+      menuOf(component)[0]!.onSelect()
+      await flushPromises()
+      const body = new DOMWrapper(document.body)
+      await body.find('input[aria-label="Name des Turniers"]').setValue('Neu')
+      await body.find('[role="dialog"] form').trigger('submit')
+      await flushPromises()
+
+      expect(body.find('[role="dialog"]').text()).toContain('Das Turnier konnte nicht umbenannt werden.')
+      expect(state.refresh).not.toHaveBeenCalled()
+    })
+
+    it('deletes a tournament after a confirmation and reloads both counts', async () => {
+      state.list = { items: [item({ status: 'running' })], total: 1, page: 1, pageSize: 20 }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+      const fetchMock = vi.fn(async () => undefined)
+      vi.stubGlobal('$fetch', fetchMock)
+
+      const component = await mountSuspended(TournamentsPage)
+      menuOf(component)[1]!.onSelect()
+      await flushPromises()
+
+      expect(confirmSpy).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Turnier löschen',
+        description: expect.stringContaining('"Freitagsturnier" wirklich löschen?'),
+      }))
+      expect(fetchMock).toHaveBeenCalledWith('/api/tournaments/tournament-1', { method: 'DELETE' })
+      expect(state.refresh).toHaveBeenCalledTimes(1)
+      expect(state.refreshOther).toHaveBeenCalledTimes(1)
+    })
+
+    it('keeps the tournament when the confirmation is declined', async () => {
+      state.list = { items: [item()], total: 1, page: 1, pageSize: 20 }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+      const fetchMock = vi.fn(async () => undefined)
+      vi.stubGlobal('$fetch', fetchMock)
+      confirmSpy.mockResolvedValueOnce(false)
+
+      const component = await mountSuspended(TournamentsPage)
+      menuOf(component)[1]!.onSelect()
+      await flushPromises()
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(state.refresh).not.toHaveBeenCalled()
+    })
+
+    it('says so when deleting fails', async () => {
+      state.list = { items: [item()], total: 1, page: 1, pageSize: 20 }
+      state.otherList = { items: [], total: 0, page: 1, pageSize: 1 }
+      vi.stubGlobal('$fetch', vi.fn(async () => { throw new Error('offline') }))
+
+      const component = await mountSuspended(TournamentsPage)
+      menuOf(component)[1]!.onSelect()
+      await flushPromises()
+
+      expect(component.find('[role="alert"]').text()).toBe('Das Turnier konnte nicht gelöscht werden.')
+      expect(state.refresh).not.toHaveBeenCalled()
+    })
   })
 
   it('renders the English empty state and participation hint', async () => {

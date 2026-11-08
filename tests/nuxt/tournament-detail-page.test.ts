@@ -588,7 +588,7 @@ describe('tournament detail page — a duel tournament that is played out', () =
     expect(fetchSpy).toHaveBeenCalledWith('/api/tournaments/t-1/extend', { method: 'POST' })
     // The page takes over what the server answered: no more button while the new day is played.
     expect(component.find('[data-testid="tournament-extend"]').exists()).toBe(false)
-    expect(component.text()).toContain('16 von 20 Duellen gespielt')
+    expect(component.text()).toContain('16 von 20 Matches gespielt')
   })
 
   it('does not add a day when the question is answered with no', async () => {

@@ -47,6 +47,8 @@ export interface TableRow {
   points: number
   /** Duels played: the table can show unequal numbers during the tournament (pauses, make-up duels to come). */
   played: number
+  /** The Spieltage the player has played on (the days with a done duel of theirs; a make-up duel counts for its day). */
+  matchdays: number
   /** The games won and lost in all duels (a single game counts as 1:0). */
   gamesWon: number
   gamesLost: number
@@ -93,6 +95,7 @@ export function computeTable(state: DuelsState, scoring: PointScoring = 'games')
       wins: own.filter(duel => duel.winner === playerId).length,
       points: own.reduce((sum, duel) => sum + duelPoints(duel, playerId, scoring), 0),
       played: own.length,
+      matchdays: new Set(own.map(duel => duel.round)).size,
       gamesWon,
       gamesLost,
       left: false,

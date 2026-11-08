@@ -257,6 +257,8 @@ export interface QueueTableRowDto {
   /** Points by the scoring of the tournament (3 for a win, with a score of a best-of-3 duel more or less). */
   points: number
   played: number
+  /** The Spieltage the player has played on (shown first in the table). */
+  matchdays: number
   /** Duels still to play. */
   open: number
   /** The games won and lost in all duels (a single game counts as 1:0); their difference breaks a tie on points. */

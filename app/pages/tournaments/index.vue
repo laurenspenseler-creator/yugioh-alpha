@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TOURNAMENT_NAME_MAX_LENGTH } from '~~/shared/tournaments'
 import type { TournamentListItem, TournamentListResponse, TournamentStatus } from '~~/shared/tournaments'
 
 const PAGE_SIZE = 20
@@ -8,6 +9,8 @@ usePageTitle('tournaments.list.title')
 const { t, n } = useI18n()
 const count = useCount()
 const { formatName } = useFormatLabel()
+const apiError = useApiError()
+const { confirm } = useConfirm()
 
 type RoleTab = 'organizer' | 'participant'
 type StatusFilter = 'active' | 'finished'
@@ -33,7 +36,7 @@ const listQuery = computed(() => ({
   pageSize: PAGE_SIZE,
 }))
 
-const { data, pending } = await useFetch<TournamentListResponse>('/api/tournaments', {
+const { data, pending, refresh } = await useFetch<TournamentListResponse>('/api/tournaments', {
   query: listQuery,
   headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
   default: () => ({ items: [], total: 0, page: 1, pageSize: PAGE_SIZE }),
@@ -51,7 +54,7 @@ const otherRoleQuery = computed(() => ({
   pageSize: 1,
 }))
 
-const { data: otherRoleData } = await useFetch<TournamentListResponse>('/api/tournaments', {
+const { data: otherRoleData, refresh: refreshOtherRole } = await useFetch<TournamentListResponse>('/api/tournaments', {
   query: otherRoleQuery,
   headers: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
   default: () => ({ items: [], total: 0, page: 1, pageSize: 1 }),
@@ -111,6 +114,86 @@ const emptyState = computed(() => {
     showButton: key === 'organizerActive',
   }
 })
+
+// --- The three dots of a card: rename and delete (organizer only, tester feedback round 9) ---------------------
+
+const actionError = ref('')
+
+function menuItems(item: TournamentListItem) {
+  return [
+    [{ label: t('tournaments.list.menu.rename'), icon: 'i-lucide-pencil', onSelect: () => openRename(item) }],
+    [{ label: t('tournaments.list.menu.delete'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: () => deleteItem(item) }],
+  ]
+}
+
+const renaming = ref<TournamentListItem | null>(null)
+const renameValue = ref('')
+const renameError = ref('')
+const isRenaming = ref(false)
+const isRenameOpen = computed({
+  get: () => renaming.value !== null,
+  set: (open: boolean) => {
+    if (!open) {
+      renaming.value = null
+    }
+  },
+})
+
+function openRename(item: TournamentListItem) {
+  actionError.value = ''
+  renameError.value = ''
+  renameValue.value = item.name
+  renaming.value = item
+}
+
+async function saveRename() {
+  const item = renaming.value
+  if (!item || isRenaming.value) {
+    return
+  }
+  if (renameValue.value.trim() === item.name) {
+    renaming.value = null
+    return
+  }
+
+  isRenaming.value = true
+  renameError.value = ''
+  try {
+    await $fetch(`/api/tournaments/${item.id}`, { method: 'PATCH', body: { name: renameValue.value } })
+    renaming.value = null
+    await refresh()
+  }
+  catch (error) {
+    renameError.value = apiError(error, 'tournaments.list.errors.renameFailed')
+  }
+  finally {
+    isRenaming.value = false
+  }
+}
+
+async function deleteItem(item: TournamentListItem) {
+  actionError.value = ''
+  const confirmed = await confirm({
+    title: t('tournaments.detail.confirm.delete.title'),
+    description: t('tournaments.detail.confirm.delete.description', { name: item.name }),
+  })
+  if (!confirmed) {
+    return
+  }
+
+  try {
+    await $fetch(`/api/tournaments/${item.id}`, { method: 'DELETE' })
+  }
+  catch (error) {
+    actionError.value = apiError(error, 'tournaments.list.errors.deleteFailed')
+    return
+  }
+  // The last card of a later page is gone: go back one page instead of showing an empty one.
+  if (tournaments.value.length === 1 && page.value > 1) {
+    page.value -= 1
+  }
+  await Promise.all([refresh(), refreshOtherRole()])
+}
 </script>
 
 <template>
@@ -166,6 +249,14 @@ const emptyState = computed(() => {
       </div>
     </div>
 
+    <p
+      v-if="actionError"
+      class="text-sm text-error"
+      role="alert"
+    >
+      {{ actionError }}
+    </p>
+
     <div
       v-if="pending"
       class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
@@ -216,9 +307,29 @@ const emptyState = computed(() => {
       <li
         v-for="item in tournaments"
         :key="item.id"
-        class="panel flex flex-col p-4 transition-[box-shadow,border-color] duration-200 hover:border-primary/40 hover:shadow-lift"
+        class="panel relative flex flex-col p-4 transition-[box-shadow,border-color] duration-200 hover:border-primary/40 hover:shadow-lift"
+        data-testid="tournament-card"
       >
-        <NuxtLink :to="`/tournaments/${item.id}`">
+        <!-- The options sit in the upper right corner of the card, where the name leaves room for them. -->
+        <UDropdownMenu
+          v-if="item.role === 'organizer'"
+          :items="menuItems(item)"
+          :content="{ align: 'end' }"
+        >
+          <UButton
+            icon="i-lucide-ellipsis-vertical"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            class="absolute right-2 top-2"
+            :aria-label="t('tournaments.list.menu.label')"
+            data-testid="tournament-menu"
+          />
+        </UDropdownMenu>
+        <NuxtLink
+          :to="`/tournaments/${item.id}`"
+          :class="item.role === 'organizer' ? 'block pr-8' : ''"
+        >
           <h2 class="truncate text-base font-semibold text-highlighted hover:text-primary">
             {{ item.name }}
           </h2>
@@ -269,5 +380,47 @@ const emptyState = computed(() => {
         :items-per-page="PAGE_SIZE"
       />
     </div>
+
+    <UModal
+      v-model:open="isRenameOpen"
+      :title="t('tournaments.list.rename.title')"
+    >
+      <template #body>
+        <form
+          class="space-y-4"
+          @submit.prevent="saveRename"
+        >
+          <UFormField :label="t('tournaments.list.rename.name')">
+            <UInput
+              v-model="renameValue"
+              class="w-full"
+              :maxlength="TOURNAMENT_NAME_MAX_LENGTH"
+              :aria-label="t('tournaments.list.rename.nameAriaLabel')"
+              autofocus
+            />
+          </UFormField>
+          <p
+            v-if="renameError"
+            class="text-sm text-error"
+          >
+            {{ renameError }}
+          </p>
+          <div class="flex justify-end gap-2">
+            <UButton
+              type="button"
+              color="neutral"
+              variant="ghost"
+              :label="t('common.cancel')"
+              @click="() => { renaming = null }"
+            />
+            <UButton
+              type="submit"
+              :label="t('common.save')"
+              :loading="isRenaming"
+            />
+          </div>
+        </form>
+      </template>
+    </UModal>
   </div>
 </template>

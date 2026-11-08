@@ -1269,7 +1269,20 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
     return getTournamentDetail(db, userId, id)
   }
 
-  if (row.status === 'finished') {
+  // A finished tournament is history, but its name and description are only labels: they can still be corrected (the
+  // tournament list has "Umbenennen" for every tournament of the organizer).
+  const onlyLabels = patch.formatId === undefined
+    && patch.pairingSystem === undefined
+    && patch.scoring === undefined
+    && patch.byeScoring === undefined
+    && patch.plannedRounds === undefined
+    && patch.queueMode === undefined
+    && patch.prelaunch === undefined
+    && patch.flow === undefined
+    && patch.bestOf === undefined
+    && patch.tables === undefined
+    && patch.duelMinutes === undefined
+  if (row.status === 'finished' && !onlyLabels) {
     conflict('tournament_finished', 'Tournament is finished')
   }
 

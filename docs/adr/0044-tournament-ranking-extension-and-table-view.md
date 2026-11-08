@@ -91,10 +91,31 @@ the monsters' races; with a mix of both it offers every value as "Art". Changing
 no longer fit, and a value that is still picked stays visible in its menu, so no filter is ever active without
 showing. A card facet filter without a kind menu (the format editor) is unchanged.
 
+## Addendum: the same evening, after the first look (feedback "ES fehlen zbsp.")
+
+* **Zauberart: all of them, with the card's symbol.** The inventory's facets only hold what the player owns, so a
+  collection without a Field or a Ritual Spell showed neither in "Zauberart". The subtypes of the picked Spells and Traps
+  are now the game's own list (`spellTrapRaces`), whatever the facets say. Each carries the symbol of the card frame:
+  infinity (Permanent), plus (Ausrüstung), compass (Spielfeld), lightning (Schnell), flame (Ritual), the bent arrow
+  (Konter); Normal has none, as on the card (`app/utils/spell-trap-icons.ts`, lucide icons).
+* **Match, not Duell.** "Gibt meines Wissens nach mehr als nur 4 Duelle. Sondern eher 4 Matches." What the schedule counts
+  (4 per player, 10 in all, "6 von 6 gespielt", minutes per ...) is a match: one game, or best of 3. The interface says
+  Match everywhere in the duel tournament (German and English, errors included: Nachholmatch, Entscheidungsmatch,
+  Wiederholungsmatch, "Matches pro Spieler"); the single games stay "Partien". Only the wording changed; keys, DTOs and
+  the code still say duel.
+* **The table.** "Spieltage" is the first number, left of "Siege" (the days the player has played on, `matchdays`: the
+  distinct days of their done duels); it replaces "Offen" (the DTO still carries `open`). The decks are centred and
+  separated by " / ".
+* **Three dots on the tournament cards** (tournament list, organizer only): "Umbenennen" (a dialog, `PATCH
+  /api/tournaments/:id`) and "Löschen" (the same confirmation as on the tournament page, `DELETE`). Delete is offered
+  for a running tournament too: the rule "no delete while running" belongs to the page, where "Turnier speichern &
+  beenden" is the way out; the list is where a test tournament goes. The name and the description of a finished
+  tournament can be changed (they are labels); every other setting still answers `tournament_finished`.
+
 ## Consequences
 
-* `QueueTableRowDto` loses `buchholz` and gains `gamesWon`, `gamesLost`; `QueueDetail` gains `canExtend`. No
-  migration: everything is computed from the duels.
+* `QueueTableRowDto` loses `buchholz` and gains `gamesWon`, `gamesLost`, `matchdays`; `QueueDetail` gains `canExtend`.
+  No migration: everything is computed from the duels.
 * Tournaments that exist are ranked by the new ladder from now on (their data does not change).
 * Not built: reopening a tournament that was saved and ended; adding a Spieltag while duels are open; a count per
   subtype next to the Spell and Trap chips of the inventory.

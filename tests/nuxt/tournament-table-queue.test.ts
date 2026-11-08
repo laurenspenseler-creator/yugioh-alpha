@@ -134,6 +134,22 @@ describe('computeTable', () => {
     expect(table[0]).toMatchObject({ playerId: 'p1', wins: 1, played: 1 })
   })
 
+  it('counts the Spieltage a player has played on: a day once, whatever the number of duels, and only done duels', () => {
+    const state: DuelsState = {
+      players: players(3),
+      duels: [
+        done('p1', 'p2', 'p1', { round: 1 }),
+        done('p1', 'p3', 'p1', { round: 2 }),
+        // A make-up duel carries the day it makes up for: p3 has two duels on day 2.
+        done('p2', 'p3', 'p2', { round: 2, kind: 'makeup' }),
+        duel('p1', 'p2', { round: 3 }),
+      ],
+    }
+    const table = computeTable(state)
+
+    expect(Object.fromEntries(table.map(row => [row.playerId, [row.played, row.matchdays]]))).toEqual({ p1: [2, 2], p2: [2, 2], p3: [2, 1] })
+  })
+
   it('does not count a duel that is not done', () => {
     const state: DuelsState = { players: players(2), duels: [duel('p1', 'p2'), duel('p1', 'p2', { status: 'running' })] }
 
