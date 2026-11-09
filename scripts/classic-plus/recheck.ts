@@ -172,14 +172,18 @@ function merge() {
         continue
       }
       seen.add(card.id)
-      if (overrides[card.id]) {
+      // Not twice: a card that was merged before keeps what it has (a run can be merged again after a fix).
+      if (overrides[card.id] || old.note.includes(MARK)) {
         continue
       }
       const hits: Hit[] = []
       let broken = ''
       for (const hit of result.hits) {
         const rule = String(hit.rule)
-        const quote = longestPiece(card.desc, typeof hit.quote === 'string' ? hit.quote : '')
+        const written = typeof hit.quote === 'string' ? hit.quote : ''
+        // An exact quote is fine however short ("draw 1 card"); a repaired one must still be a piece worth quoting.
+        const exact = written !== '' && card.desc.includes(written)
+        const quote = exact ? written : longestPiece(card.desc, written)
         const traits = Array.isArray(hit.traits) ? hit.traits.map(String) : []
         if (!CLASSIC_PLUS_CLASSIFIER_CODES.includes(rule)) {
           broken = `unknown rule ${rule}`
@@ -187,7 +191,7 @@ function merge() {
         else if (traits.some(trait => !(CLASSIC_PLUS_TRAITS as readonly string[]).includes(trait))) {
           broken = `unknown trait in ${traits.join(',')}`
         }
-        else if (quote.length < 12) {
+        else if (!exact && quote.length < 12) {
           broken = `no quote of the text for rule ${rule}`
         }
         const had = old.hits.some(earlier => earlier.rule === rule)

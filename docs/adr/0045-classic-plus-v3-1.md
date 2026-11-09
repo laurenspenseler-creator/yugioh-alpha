@@ -74,16 +74,21 @@ rulings also hit with rule 6(a)) and Begrenzer-Entferner (the self-destruction o
 the prompt says so now).
 
 The re-check covers the cards the traits can move at all: those whose strictest hit is one of rules 5, 6(b), 7 or 8,
-or that name another card (a chain), 2,913 of 7,445 candidates. It ran in batches of 50 and was applied up to batch 39
-of 58 (1,967 of the 2,913 cards): see "Not built" for the rest. `repeatable` (the frequency modifier) stays as the owner's review
-left it where the rule was already hit: the re-check flipped it for 14 cards and would have banned them; that is not
-part of v3.1. A rule the re-check adds brings its own value.
+or that name another card (a chain), 2,913 of 7,445 candidates. It ran in batches of 50 (58 batches, in two sittings
+because of the plan limit) and all of them are merged: 2,907 cards re-checked, the other 6 no longer move once their
+hits are known. `scripts/classic-plus/recheck.ts` builds the batches (it leaves out a card whose note says it was
+re-checked, so a run can be continued) and merges the results. `repeatable` (the frequency modifier) stays as the owner's
+review left it where the rule was already hit: the re-check flipped it for 14 cards and would have banned them; that is
+not part of v3.1. A rule the re-check adds brings its own value.
 
-What the tiers did to the generated list: 1,136 cards moved from limit 1 to 2 (almost all revival effects of
-monsters, a body), 3 cards from 1 to forbidden (Fire King High Avatar Kirin, Thunder Hand, Trias Hierarchia: hand
-traps by rule 4, which the re-check found), 2 cards from forbidden to 2 (Cynet-Optimierung, Erwachen der heiligen
-Ungeheuer: the lock depends on a monster, rule 3 step 2 instead of step 4, ruling 11); 23 cards got another set of
-rules in all. 497 cards of the whole list are flagged "unsure" (`review.csv`).
+What the tiers did to the generated list: 1,678 cards moved from limit 1 to 2 (almost all revival effects of
+monsters, a body: the list went from 4,041 limited and 341 semi-limited to 2,359 and 2,021), 4 cards from 1 to
+forbidden (Fire King High Avatar Kirin, Thunder Hand, Trias Hierarchia and Mermail Abyssnerei: hand traps by rule 4,
+which the re-check found), 2 cards from forbidden to 2 (Cynet-Optimierung, Erwachen der heiligen Ungeheuer: the lock
+depends on a monster, rule 3 step 2 instead of step 4, ruling 11) and 1 from forbidden to 1 (Doom Kraken: its hand trap
+works only with the named Field Spell Umi, a chain); Destiny HERO - Dasher lost rule 7b (it summons itself from the
+hand, not from the GY). 31 cards got another set of rules in all. 550 cards of the whole list are flagged "unsure"
+(`review.csv`), among them the ones the re-check changed (`CHANGED:` in the note).
 
 ### Regenerating also picked up the catalog
 
@@ -114,9 +119,10 @@ The banlist was last generated on 18 October. Running the pipeline again reads t
 
 ## Not built
 
-* The re-check of batches 40 to 58 (946 of the 2,913 cards the traits can move; the batches are prepared). Until it has
-  run, those cards keep the base limit of their rules, as before. The run was stopped there because of the plan limit
-  of the day.
+* A second opinion on the traits: they are one model's reading of the card text against the block's definitions (16 of the
+  19 known cards matched in the pilot), and 550 cards are flagged "unsure". The cards that were not re-checked are those
+  the traits cannot move (a flat hit of limit 1 or a forbidden one), and new cards after a catalog refresh (they are
+  classified without traits until `recheck.ts` is run again).
 * The text of v3, to calibrate the traits against more cards than the 32 of the block.
 * The block's open questions: whether a third attack is a multiplication in 6(b), the German name of Gravity Bind, the
   name "Anmutige Barmherzigkeit" (also not in the German database), Pinguinsoldat checked against the database, and
