@@ -34,7 +34,14 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
-import { CLASSIC_PLUS_CLASSIFIER_CODES, CLASSIC_PLUS_FORBIDDEN_TYPES, CLASSIC_PLUS_STEPS } from '../../shared/classic-plus.ts'
+import {
+  applicableTraits,
+  CLASSIC_PLUS_CLASSIFIER_CODES,
+  CLASSIC_PLUS_FORBIDDEN_TYPES,
+  CLASSIC_PLUS_STEPS,
+  CLASSIC_PLUS_TRAITS,
+  hitLimit,
+} from '../../shared/classic-plus.ts'
 import type { ClassicPlusBanlist } from '../../shared/classic-plus.ts'
 import type { PoolCard } from './prefilter.ts'
 
@@ -55,6 +62,8 @@ interface Hit {
   quote?: string
   repeatable?: boolean
   reason?: string
+  /** What lifts or lowers the limit of this hit (v3.1, ADR 0045): see `hitLimit` in shared/classic-plus.ts. */
+  traits?: string[]
 }
 
 interface Classification {
@@ -74,6 +83,9 @@ interface Override {
 }
 
 const stepByCode = new Map(CLASSIC_PLUS_STEPS.map(step => [step.code, step]))
+
+/** Traits on a rule they do not belong to (e.g. `body` on rule 10): dropped, and counted for the summary. */
+let ignoredTraits = 0
 
 function readJsonl(path: string): unknown[] {
   return readFileSync(path, 'utf8').split('\n').filter(line => line.trim()).map((line, index) => {
@@ -106,11 +118,20 @@ function parseResult(raw: unknown, card: PoolCard | undefined): Classification |
     if (!isRecord(hit) || typeof hit.rule !== 'string' || !CLASSIC_PLUS_CLASSIFIER_CODES.includes(hit.rule)) {
       return `card ${raw.id}: unknown rule ${isRecord(hit) ? JSON.stringify(hit.rule) : '?'}`
     }
+    const traits = Array.isArray(hit.traits) ? hit.traits.filter((trait): trait is string => typeof trait === 'string') : []
+    const unknownTrait = traits.find(trait => !(CLASSIC_PLUS_TRAITS as readonly string[]).includes(trait))
+    if (unknownTrait) {
+      return `card ${raw.id}: unknown trait ${JSON.stringify(unknownTrait)}`
+    }
+    if (applicableTraits(hit.rule, traits).length < traits.length) {
+      ignoredTraits += 1
+    }
     hits.push({
       rule: hit.rule,
       quote: typeof hit.quote === 'string' ? hit.quote : '',
       repeatable: hit.repeatable === true,
       reason: typeof hit.reason === 'string' ? hit.reason : '',
+      traits: applicableTraits(hit.rule, traits),
     })
   }
   return {
@@ -240,7 +261,10 @@ function main() {
       stepCounts.set(code, (stepCounts.get(code) ?? 0) + 1)
     }
 
-    const maxCopies = override?.maxCopies ?? Math.min(3, ...[...codes].map(code => stepByCode.get(code)!.maxCopies))
+    // Each hit has its step's limit, moved by its traits (v3.1); the two cross-cutting rules forbid outright.
+    const hitLimits = hits.map(hit => hitLimit(hit.rule, stepByCode.get(hit.rule)!.maxCopies, hit.traits ?? []))
+    const crossLimits = ['frequency', 'stacking'].filter(code => codes.has(code)).map(() => 0)
+    const maxCopies = override?.maxCopies ?? Math.min(3, ...hitLimits, ...crossLimits)
     if (maxCopies < 3) {
       listFor[maxCopies]!.push(card.id)
     }
@@ -279,7 +303,7 @@ function main() {
     row.unsure,
     row.quoteMissing,
     row.overridden,
-    row.hits.map(hit => `${hit.rule}${hit.repeatable ? ' (repeatable)' : ''}: ${hit.reason ?? ''}`).join(' | '),
+    row.hits.map(hit => `${hit.rule}${hit.repeatable ? ' (repeatable)' : ''}${hit.traits?.length ? ` [${hit.traits.join('+')}]` : ''}: ${hit.reason ?? ''}`).join(' | '),
     row.hits.map(hit => `${hit.rule}: ${hit.quote ?? ''}`).join(' | '),
     row.note,
   ].map(csvCell).join(','))
@@ -291,6 +315,8 @@ function main() {
   console.log(`  rule 1 cards the type filter misses: ${rule1ByBanlist}; rule 2: ${stepCounts.get('2') ?? 0}`)
   console.log(`  from rules 3–11: forbidden ${byCap(0)}, limited ${byCap(1)}, semi-limited ${byCap(2)}`)
   console.log(`Flagged for review: unsure ${reviewRows.filter(row => row.unsure).length}, quote not found ${reviewRows.filter(row => row.quoteMissing).length}`)
+  const traitCount = (trait: string) => reviewRows.filter(row => row.hits.some(hit => hit.traits?.includes(trait))).length
+  console.log(`Cards with traits (v3.1): ${CLASSIC_PLUS_TRAITS.map(trait => `${trait} ${traitCount(trait)}`).join(', ')}; traits ignored on the wrong rule: ${ignoredTraits}`)
   console.log('Cards per rule step (a card can hit several):')
   for (const step of CLASSIC_PLUS_STEPS) {
     console.log(`  ${step.code.padEnd(10)} ${String(stepCounts.get(step.code) ?? 0).padStart(5)}  (max ${step.maxCopies})  ${step.label}`)

@@ -82,8 +82,9 @@ describe('Classic Plus v3.1 card list', () => {
     expect(limitOf(4538826)).toBe(3)
   })
 
-  it('applies rule 8 to Extra Deck monsters now (Ä1): the exemption is gone', () => {
-    // Fusion Monsters that can remove more than 1 card of the opponent: limited at the least.
+  it('applies rule 8 to Extra Deck monsters now (Ä1): the exemption is gone, and they are no longer unlimited', () => {
+    // Fusion Monsters that can remove more than 1 card of the opponent: restricted at least to 2 (a body lifts rule 8 from 1
+    // to 2, as with Regenbogen-Neos, unless the card has no real answer).
     const fusionWithMassRemoval: Array<[number, string]> = [
       [84433295, 'Quintet Magician'],
       [87751584, 'Gatling Dragon'],
@@ -93,8 +94,15 @@ describe('Classic Plus v3.1 card list', () => {
     ]
 
     for (const [id, name] of fusionWithMassRemoval) {
-      expect(limitOf(id), name).toBeLessThanOrEqual(1)
+      expect(limitOf(id), name).toBeLessThanOrEqual(2)
     }
+  })
+
+  it('has the tiers of Ä2 in the generated list for a card that was re-checked: a body lifts rule 8 to 2', () => {
+    // Elemental HERO Storm Neos destroys all Spells and Traps on the field and is a body the opponent can attack.
+    expect(limitOf(49352945)).toBe(2)
+    // Quintet Magician has a body, but it cannot be destroyed by card effects, which is enough for rule 9(a): limit 1.
+    expect(limitOf(84433295)).toBe(1)
   })
 
   it('forbids Mirror Force Dragon: it destroys all of the opponent\'s cards each time one of yours is targeted (frequency)', () => {

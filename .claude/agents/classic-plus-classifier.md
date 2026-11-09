@@ -78,9 +78,10 @@ effect damage, Spielzug = turn, Hand = hand, Extra Deck = Extra Deck.
 
 Rules 1 and 2 are listed for context only. The tiers of Classic Plus v3.1 (Ä2 to
 Ä4: limit 2 for a body or own costs, back to 1 for no real answer, one step milder
-for a chain of named cards) are not yours to decide: they are applied to the
-named cards by hand (`scripts/classic-plus/overrides.json`, ADR 0045). You only
-record the hits.
+for a chain of named cards) are not decided by you but recorded as `traits` on the
+hits of rules 5, 6(b), 7 and 8, as `scripts/classic-plus/recheck-prompt.md`
+describes (ADR 0045); a script turns hits and traits into limits. A first
+classification of a new card can leave `traits` out, the re-check adds them.
 
 **1 — VERBOTEN.** Synchro-, Xyz-, Pendel- und Linkmonster.
 

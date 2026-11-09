@@ -54,17 +54,36 @@ flagged "unsure" (Sprind der Eisenspurt-Drache, Clown Crew Diabolo, First of the
 Mirror Force Dragon has no once-per-turn limit and can destroy all of the opponent's cards each time one of the
 player's monsters is targeted, so the frequency modifier forbids it.
 
-### Ä2 to Ä4: tiers only for the named cards
+### Ä2 to Ä4: the tiers, as traits on a hit
 
 Ä2 (Limit 2 for an attackable body or own costs, back to 1 when the card has no real answer), Ä3 (a draw card with a
 cost bound to one specific card) and Ä4 (one step milder for a chain of named cards) are judgements about what a card
-does on the field. They are applied to the cards the block names, through their fixed limits, and to nothing else.
-Ä5 (rule 6 split into 6(a) flat and 6(b) with the tiers) matches the steps `6a` and `6b` the app already had.
+does. A hit in `classifications.jsonl` now carries `traits`: `body`, `cost`, `noanswer` (rules 6(b), 7, 8), `bound`
+(rule 5) and `chain` (any rule). `hitLimit` in `shared/classic-plus.ts` turns the step's limit and the traits into the
+limit of the hit (rules 6(b), 7 and 8: `noanswer` keeps 1, else `body` or `cost` gives 2; rule 5: `bound` gives 2;
+`chain` is one step milder, at most 2), and `combine.ts` takes the strictest hit, the frequency modifier and the
+stacking rule still forbidding outright. Ä5 (rule 6 split into 6(a) flat and 6(b) with the tiers) matches the steps
+`6a` and `6b` the app already had. The 32 cards of the block keep their fixed limits whatever the traits say.
 
-All other cards keep the base limit of their rule steps. That is the limit the block calls the "Grundstufe", so the
-generated list is a stricter reading than v3.1 for the cards whose body or costs would lift them to 2: about 3,000
-cards hit rule 5, 6(b), 7 or 8. Applying the tiers to all of them needs the classifier to also report body, costs and
-the "no real answer" traits for those cards, and v3's text to calibrate against; see "Not built".
+The traits are read from the card text by subagents (`scripts/classic-plus/recheck-prompt.md`: the definitions of the
+block, the rules and the owner's rulings, the earlier hits as a starting point). They re-check every hit too: they may
+add or drop a rule when it is clearly wrong, and say so in the note (`CHANGED:`). A pilot of 40 cards, 19 of them
+known from the block, reached the authors' limit for 16; the three misses are cards where the block itself departs
+from its rules (Gehirnkontrolle at 1 although it pays 800 LP, Chaos-Imperatordrache - Gesandter des Endes, which the
+rulings also hit with rule 6(a)) and Begrenzer-Entferner (the self-destruction of the own monsters was not seen as a cost;
+the prompt says so now).
+
+The re-check covers the cards the traits can move at all: those whose strictest hit is one of rules 5, 6(b), 7 or 8,
+or that name another card (a chain), 2,913 of 7,445 candidates. It ran in batches of 50 and was applied up to batch 39
+of 58 (1,967 of the 2,913 cards): see "Not built" for the rest. `repeatable` (the frequency modifier) stays as the owner's review
+left it where the rule was already hit: the re-check flipped it for 14 cards and would have banned them; that is not
+part of v3.1. A rule the re-check adds brings its own value.
+
+What the tiers did to the generated list: 1,136 cards moved from limit 1 to 2 (almost all revival effects of
+monsters, a body), 3 cards from 1 to forbidden (Fire King High Avatar Kirin, Thunder Hand, Trias Hierarchia: hand
+traps by rule 4, which the re-check found), 2 cards from forbidden to 2 (Cynet-Optimierung, Erwachen der heiligen
+Ungeheuer: the lock depends on a monster, rule 3 step 2 instead of step 4, ruling 11); 23 cards got another set of
+rules in all. 497 cards of the whole list are flagged "unsure" (`review.csv`).
 
 ### Regenerating also picked up the catalog
 
@@ -95,7 +114,10 @@ The banlist was last generated on 18 October. Running the pipeline again reads t
 
 ## Not built
 
-* The tiers for the other ~3,000 cards (Ä2 to Ä4), which needs a classifier run with trait output and the text of v3.
+* The re-check of batches 40 to 58 (946 of the 2,913 cards the traits can move; the batches are prepared). Until it has
+  run, those cards keep the base limit of their rules, as before. The run was stopped there because of the plan limit
+  of the day.
+* The text of v3, to calibrate the traits against more cards than the 32 of the block.
 * The block's open questions: whether a third attack is a multiplication in 6(b), the German name of Gravity Bind, the
   name "Anmutige Barmherzigkeit" (also not in the German database), Pinguinsoldat checked against the database, and
   three rules of the June version that v3 no longer holds (receiver monsters, Gemini monsters, the Flip monster rule).

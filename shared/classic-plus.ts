@@ -46,6 +46,55 @@ export const CLASSIC_PLUS_STEPS: ClassicPlusStep[] = [
   { code: 'stacking', maxCopies: 0, label: 'Stacking rule: protection plus multiplied battle damage' },
 ]
 
+/**
+ * What lifts or lowers the limit of one hit (Classic Plus v3.1, ADR 0045). `body`, `cost` and `noanswer` belong to the
+ * rules 6(b), 7 and 8 (the "Stufung", Ä2), `bound` to rule 5 (Ä3), `chain` to any rule (the chain of named cards, Ä4).
+ */
+export const CLASSIC_PLUS_TRAITS = ['body', 'cost', 'noanswer', 'bound', 'chain'] as const
+export type ClassicPlusTrait = typeof CLASSIC_PLUS_TRAITS[number]
+
+/** The rules whose base limit the traits `body`, `cost` and `noanswer` move. */
+export const CLASSIC_PLUS_TIERED_RULES: readonly string[] = ['6b', '7a', '7b', '7c', '7d', '8']
+
+/** The traits that mean something on a hit of `rule`; the others are ignored. */
+export function applicableTraits(rule: string, traits: readonly string[]): ClassicPlusTrait[] {
+  return CLASSIC_PLUS_TRAITS.filter((trait) => {
+    if (!traits.includes(trait)) {
+      return false
+    }
+    if (trait === 'chain') {
+      return true
+    }
+    if (trait === 'bound') {
+      return rule === '5'
+    }
+    return CLASSIC_PLUS_TIERED_RULES.includes(rule)
+  })
+}
+
+/**
+ * The limit of one hit: the step's own limit, moved by the hit's traits. Rules 6(b), 7 and 8 start at 1: `noanswer`
+ * (no real answer) keeps it at 1, else a `body` or `cost` lifts it to 2. Rule 5 is lifted to 2 by `bound`. A `chain`
+ * of named cards then makes it one step milder, at most 2. A step that is not limit 1 (forbidden, or 2 already) is
+ * only moved by `chain`.
+ */
+export function hitLimit(rule: string, stepLimit: 0 | 1 | 2, traits: readonly string[]): 0 | 1 | 2 {
+  const own = applicableTraits(rule, traits)
+  let limit: number = stepLimit
+  if (stepLimit === 1) {
+    if (CLASSIC_PLUS_TIERED_RULES.includes(rule) && !own.includes('noanswer') && (own.includes('body') || own.includes('cost'))) {
+      limit = 2
+    }
+    else if (rule === '5' && own.includes('bound')) {
+      limit = 2
+    }
+  }
+  if (own.includes('chain')) {
+    limit = Math.min(2, limit + 1)
+  }
+  return limit as 0 | 1 | 2
+}
+
 /** Steps the classifier may report (rule 2 and the two cross-cutting rules are applied by script). */
 export const CLASSIC_PLUS_CLASSIFIER_CODES = CLASSIC_PLUS_STEPS
   .map(step => step.code)
