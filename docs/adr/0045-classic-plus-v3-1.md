@@ -114,8 +114,11 @@ The banlist was last generated on 18 October. Running the pipeline again reads t
   joined the handtrap list.
 * The card list is the final word for 32 cards. If the classifier or a ruling later disagrees with it, the card list
   wins until the rule authors change it.
-* The format description in the app (`formats.classic-plus.description`) still holds: it names the rule families, not
-  their numbers.
+* The format description in the app (`formats.classic-plus.description`, and the seed in `server/utils/rule-formats.ts`)
+  names the rule families, not their numbers, and now says "Regelwerk v3.1 (Änderungsblock vom 8. November 2026)".
+* `scripts/classic-plus/review-export.ts` writes `docs/classic-plus-unsichere-karten.csv` for the rule authors: the 564
+  cards a human should look at (the classifier was unsure, or the re-check changed their rules), with the German name and
+  text, the limit now, the rules and traits behind it, the question, and an empty column for their decision.
 
 ## Not built
 

@@ -146,7 +146,7 @@ export const BUILTIN_FORMATS: BuiltinFormatDefinition[] = [
   {
     id: 'classic-plus',
     name: 'Classic Plus',
-    description: 'House format on the 2005 field (no Extra Monster Zones or Pendulum Zones, one shared Field Zone; the first player does not draw): Main Deck 40–50, Extra Deck up to 10, no Side Deck. No Synchro, Xyz, Pendulum or Link; floodgates, hand traps, draw, burn, revival, mass removal, protection and negation are forbidden or limited by the Classic Plus rules. Everything else is playable at 3.',
+    description: 'House format on the 2005 field (no Extra Monster Zones or Pendulum Zones, one shared Field Zone; the first player does not draw): Main Deck 40–50, Extra Deck up to 10, no Side Deck. No Synchro, Xyz, Pendulum or Link; floodgates, hand traps, draw, burn, revival, mass removal, protection and negation are forbidden or limited by the Classic Plus rules. Everything else is playable at 3. Rules as of the v3.1 rulebook (change block of 8 November 2026).',
     // Rule 1 is a card-type filter; rules 2–11 are the generated Classic Plus
     // banlist (ADR 0022). The board rules are only in the description.
     rules: {
