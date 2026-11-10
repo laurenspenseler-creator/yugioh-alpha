@@ -6,7 +6,8 @@
     "search": {
       "placeholder": "Card name (English or German)...",
       "label": "Search cards",
-      "inText": "Also search card text"
+      "inText": "Also search card text",
+      "ownedOnly": "Only search my inventory"
     },
     "filters": {
       "set": "Set",

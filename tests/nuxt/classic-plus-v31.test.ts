@@ -60,6 +60,24 @@ const CARD_LIST: Array<[number, string, Limit]> = [
   [16762927, 'Grabwächters Diener', 0],
 ]
 
+/**
+ * The rule authors' test table (tester feedback, round 12: "Das Format weist noch einige Fehler auf"): seven pairs of
+ * cards, each pair testing one point of the rules, with the limit each card must have. [id, name, limit, id, name, limit,
+ * what it checks]
+ */
+const TEST_TABLE: Array<[number, string, Limit, number, string, Limit, string]> = [
+  [30241314, 'Makrokosmos', 0, 58481572, 'Maskierter HELD Dunkles Gesetz', 2, 'the same redirect effect: a Continuous Trap without a body (step 4) against a monster with a body (step 2)'],
+  [24094653, 'Polymerisation', 3, 48130397, 'Superpolymerisation', 1, 'the same mechanic: the own material does not count, the opponent\'s does'],
+  [20654247, 'Blauäugiger Chaosdrache', 1, 79206925, 'Grabwächters Übernatürlicher', 2, 'both rule 9(a): unconditional against conditional ("as long as Necrovalley is on the field")'],
+  [19523799, 'Ookazi', 1, 83555666, 'Ring der Zerstörung', 3, 'both do damage: primary against a by-product of a destroyed monster'],
+  [87910978, 'Gehirnkontrolle', 1, 64631466, 'Aufgegeben', 3, 'both take a monster: circumventing the price against the full Ritual price'],
+  [57774843, 'Urteilsdrache', 0, 86346643, 'Regenbogen-Neos', 2, 'both mass removal: repeatable in the same turn against a hard "once per turn"'],
+  [63519819, 'Tausendäugiges Opfer', 1, 63176202, 'Großer Shogun Shien', 2, 'both a monster with a lock: the lock makes its own answer worthless against a lock that lets it through'],
+]
+
+/** The card of the test table that needs a fixed limit of its own: no rule step gives the authors' answer. */
+const TEST_TABLE_OVERRIDES = [64631466]
+
 describe('Classic Plus v3.1 card list', () => {
   it.each(CARD_LIST)('%i %s is at limit %i', (id, _name, limit) => {
     expect(limitOf(id)).toBe(limit)
@@ -68,12 +86,11 @@ describe('Classic Plus v3.1 card list', () => {
   it('is the final word: every override with a limit agrees with the generated banlist', () => {
     const withLimit = Object.entries(overrides).filter(([, override]) => 'maxCopies' in override)
 
-    expect(withLimit.length).toBe(CARD_LIST.length)
     for (const [id, override] of withLimit) {
       expect(limitOf(Number(id)), `${id}: ${(override as { note: string }).note}`).toBe((override as { maxCopies: Limit }).maxCopies)
     }
-    // The table above and the overrides are the same list.
-    expect(new Set(CARD_LIST.map(([id]) => String(id)))).toEqual(new Set(withLimit.map(([id]) => id)))
+    // The card list above (and the one card of the test table below) and the overrides are the same list.
+    expect(new Set([...CARD_LIST.map(([id]) => String(id)), ...TEST_TABLE_OVERRIDES.map(String)])).toEqual(new Set(withLimit.map(([id]) => id)))
   })
 
   it('forbids the Pendulum monster "Chaos-Imperator, der Drache des Armageddon" by rule 1 (K1)', () => {
@@ -107,5 +124,56 @@ describe('Classic Plus v3.1 card list', () => {
 
   it('forbids Mirror Force Dragon: it destroys all of the opponent\'s cards each time one of yours is targeted (frequency)', () => {
     expect(limitOf(84687358)).toBe(0)
+  })
+})
+
+describe('Classic Plus: the rule authors\' test table (round 12)', () => {
+  const cards = TEST_TABLE.flatMap(([idA, nameA, limitA, idB, nameB, limitB, checks]) => [
+    [idA, nameA, limitA, checks] as const,
+    [idB, nameB, limitB, checks] as const,
+  ])
+
+  it.each(cards)('%i %s is at limit %i (%s)', (id, _name, limit) => {
+    expect(limitOf(id)).toBe(limit)
+  })
+
+  it('has fixed limits only where no rule step gives the answer', () => {
+    for (const id of TEST_TABLE_OVERRIDES) {
+      expect(overrides[String(id) as keyof typeof overrides], String(id)).toBeDefined()
+    }
+    // Everything else of the table comes out of the rules: Makrokosmos is forbidden by its hit, Superpolymerisation is 1 by its traits.
+    for (const [id] of cards.filter(([id]) => !TEST_TABLE_OVERRIDES.includes(id) && !CARD_LIST.some(([listed]) => listed === id))) {
+      expect(overrides[String(id) as keyof typeof overrides], String(id)).toBeUndefined()
+    }
+  })
+
+  // Row 1, ruling 37: a lasting redirect of the cards that go to the Graveyard restricts moving cards between zones, so it is
+  // a floodgate (rule 3). The same sentence on a card of any kind gets the limit of its step.
+  it('treats the same redirect effect alike on every card that has it', () => {
+    // On a monster the opponent can attack (step 2): 2 copies, as Masked HERO Dark Law.
+    expect(limitOf(61528025), 'Verbanner des Lichts').toBe(2)
+    expect(limitOf(94853057), 'Verbanner des Strahlens').toBe(2)
+    // On a Spell/Trap without a body (step 4): forbidden, as Macro Cosmos; Dimensional Fissure only reaches monsters (step 3).
+    expect(limitOf(66100045), 'Auswanderungsstopp').toBe(0)
+    expect(limitOf(81674782), 'Dimensionsriss').toBe(1)
+    // Not a lasting restriction: one turn only, the controller's own Graveyard only, the battles of one card only.
+    expect(limitOf(31849106), 'Boden einer anderen Dimension').toBe(3)
+    expect(limitOf(6500778), 'Chaos Destillation').toBe(3)
+    expect(limitOf(42233477), 'Kampfwachen-Wut').toBe(3)
+    expect(limitOf(12385638), 'Kozmotrauer').toBe(3)
+  })
+
+  // Row 2, ruling 38: an effect that cannot be responded to has no real answer, so a tiered hit stays at 1.
+  it('keeps an effect that cannot be responded to at 1 where it would be 2 otherwise', () => {
+    for (const [id, name] of [
+      [48130397, 'Superpolymerisation'],
+      [44886582, 'Super-Duper-Polymerisation'],
+      [76647978, 'Ultra-Polymerisation'],
+      [90050480, 'Elementar-HELD Kosmo Neos'],
+    ] as const) {
+      expect(limitOf(id), name).toBe(1)
+    }
+    // The plain Polymerisation has no mass removal at all.
+    expect(limitOf(24094653)).toBe(3)
   })
 })

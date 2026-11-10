@@ -45,7 +45,9 @@ The base limit of the rules 5, 6(b), 7 and 8 is 1. Traits move it, one hit at a 
   cannot be targeted, or is unaffected, with no condition on the text); or its lock makes the answer to it worthless
   (rule 3, check step 2b: dealing with the card does not remove the lock, or the answer triggers the effect);
   or the card brings itself back onto the field (from the GY or the banishment). A revival by *another* card does not count,
-  or every monster would have it.
+  or every monster would have it. Also no real answer (ruling 38): the text says that neither player (or the opponent) can
+  activate cards or effects in response to this card's or this effect's own activation (Super Polymerization). Not enough:
+  only the targeted cards cannot respond, or something that lasts after the activation.
 * **`bound`** (rule 5 only): the draw is paid with a card that is bound to one specific card, not freely chosen. "Send 1
   Monarch Spell/Trap from your hand" is bound; "discard 1 card" is not.
 * **`chain`** (any rule, Bedingungskette): the card's effect only works while a *named* second card is on the field (a

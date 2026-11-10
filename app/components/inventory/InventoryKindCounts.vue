@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * How many copies of each card kind the inventory holds (Normal, Effekt,
+ * How many different cards of each kind the inventory holds (Normal, Effekt,
  * Ritual, Zauber, Falle, Fusion, Synchro, Xyz, Pendel, Link), as chips with the
- * frame's colour dot, in a row of their own under the filters (tester feedback).
- * Every kind has its chip, also with 0 copies, so the row never changes shape; the
+ * frame's colour dot, in a row of their own under the filters (tester feedback;
+ * a card owned three times counts once, not three times).
+ * Every kind has its chip, also with 0 cards, so the row never changes shape; the
  * chips share the whole row evenly and never wrap (on a phone the row scrolls
  * sideways). A chip is also a quick filter: it toggles that "Kartenart" in the
  * filters. "Sonstige" (tokens, skills) has no filter key, so it is a plain label.
@@ -13,7 +14,7 @@ import { INVENTORY_KINDS } from '~~/shared/deck-breakdown'
 import type { InventoryKind } from '~~/shared/deck-breakdown'
 
 const props = defineProps<{
-  /** The kinds with copies; the others are added here with 0. */
+  /** The kinds with cards (different cards, not copies); the others are added here with 0. */
   kinds: Array<{ kind: InventoryKind, count: number }>
   /** The kinds currently selected in the "Kartenart" filter. */
   active: CardKind[]

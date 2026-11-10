@@ -32,14 +32,15 @@ const isPendulum = sql`(case when ${hasKnownFrame} then ${hasPendulumSuffix} els
 /**
  * The WHERE clause of a "Kartenart" filter: the card has any of `kinds`.
  * Unknown keys are ignored; no usable kind means no clause. The outer query
- * must join `catalog_card` unaliased.
+ * must join `catalog_card` unaliased. A Pendulum monster only has the kind
+ * "pendulum", whatever its frame (`shared/card-kind.ts`).
  */
 export function cardKindClause(kinds: readonly string[]): SQL | undefined {
   const valid = [...new Set(kinds.filter(isCardKind))] as CardKind[]
   const frames = valid.filter(kind => kind !== 'pendulum')
   const clauses: SQL[] = []
   if (frames.length > 0) {
-    clauses.push(sql`${frame} in (${sql.join(frames.map(kind => sql`${kind}`), sql`, `)})`)
+    clauses.push(sql`(${frame} in (${sql.join(frames.map(kind => sql`${kind}`), sql`, `)}) and not ${isPendulum})`)
   }
   if (valid.includes('pendulum')) {
     clauses.push(sql`${isPendulum}`)
@@ -48,6 +49,16 @@ export function cardKindClause(kinds: readonly string[]): SQL | undefined {
     return undefined
   }
   return clauses.length === 1 ? clauses[0] : sql`(${sql.join(clauses, sql` or `)})`
+}
+
+/**
+ * The WHERE clause of an "ausschließen" filter: the card has none of `kinds`. A card without a kind (a Skill Card) has
+ * none of them and stays. No usable kind means no clause.
+ */
+export function cardKindExcludeClause(kinds: readonly string[]): SQL | undefined {
+  const clause = cardKindClause(kinds)
+  // The kind clause is NULL for a card without a frame: "not NULL" would drop it, so NULL counts as "no".
+  return clause ? sql`coalesce(${clause}, 0) = 0` : undefined
 }
 
 /** The valid kinds of a raw query value list (CSV already split), in first-seen order. */

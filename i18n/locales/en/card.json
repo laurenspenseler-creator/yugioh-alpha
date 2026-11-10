@@ -37,6 +37,7 @@
       "race": "Monster type",
       "level": "Level/Rank",
       "kind": "Card kind",
+      "excludeKind": "Without card kind",
       "raceSpell": "Spell type",
       "raceTrap": "Trap type",
       "raceSpellTrap": "Spell/Trap type",

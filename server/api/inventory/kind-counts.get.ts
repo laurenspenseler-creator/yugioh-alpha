@@ -5,8 +5,9 @@ import { requireUser } from '../../utils/session'
 
 /**
  * `GET /api/inventory/kind-counts?collectionId=` → `{ kinds: [{ kind, count }], total }`:
- * the copies per card kind (Monster kinds, Zauber, Falle …) of the whole
- * inventory, of one collection, or of the copies without a collection.
+ * the different cards per card kind (Monster kinds, Zauber, Falle …; a card owned
+ * three times counts once) of the whole inventory, of one collection, or of the
+ * copies without a collection.
  */
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)

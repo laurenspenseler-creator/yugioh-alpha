@@ -38,7 +38,8 @@ startup (`server/plugins/migrate.ts`), the same database file.
 - **The card catalog** is not in the installer (it is fetched, ADR 0001). On the
   first run the app offers to load it; the menu "Datei → Kartenkatalog laden /
   aktualisieren" does it any time, through `POST /api/admin/catalog/sync` with the
-  admin token (ADR 0027). It needs internet, like the card images.
+  admin token (ADR 0027). It needs internet; the card images are kept on the PC
+  once they were seen, so they show offline too (ADR 0046).
 - One window per installation (second start focuses the first). Links outside the
   app open in the browser; a same-origin link, such as an opened PDF, gets its
   own window.

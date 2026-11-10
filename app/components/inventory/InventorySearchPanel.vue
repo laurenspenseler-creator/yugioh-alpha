@@ -14,7 +14,7 @@ export interface InventorySearchFilters {
 
 withDefaults(defineProps<{
   facets: CardFacetOptions
-  /** Copies per card kind, shown as chips in a row under the filters; they also toggle the "Kartenart" filter. */
+  /** Different cards per card kind, shown as chips in a row under the filters; they also toggle the "Kartenart" filter. */
   kindCounts?: Array<{ kind: InventoryKind, count: number }>
   /** The sort select; only "Galerie" sorts ("Liste" stays "recently changed first"). */
   showSort?: boolean

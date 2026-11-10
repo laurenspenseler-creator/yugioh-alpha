@@ -5,6 +5,10 @@ import type { TournamentDetail } from '~~/shared/tournaments'
 // The standings of a duel-queue tournament (ADR 0042). It stays fixed at the top of the page while the schedule
 // scrolls under it, so a player who comes late sees where they stand at once. Players who left are grey, last,
 // without a place; their record stays.
+//
+// The columns are the ones the tester asked for (round 12): Spieltage, Punkte, Wins, Defeats and Diff. Wins and Defeats
+// are the duels (single games) won and lost, so Diff is what they leave. A duel in Yu-Gi-Oh is one game, a match is
+// one or three of them.
 
 const props = defineProps<{
   tournament: TournamentDetail
@@ -152,22 +156,10 @@ const remaining = computed(() => {
               {{ t('tournaments.queue.board.columns.player') }}
             </th>
             <th
-              class="hidden w-14 px-1 py-1 text-right font-medium sm:table-cell"
+              class="w-14 px-1 py-1 text-right font-medium"
               :title="t('tournaments.queue.board.columns.matchdaysHelp')"
             >
               {{ t('tournaments.queue.board.columns.matchdays') }}
-            </th>
-            <th
-              class="w-10 px-1 py-1 text-right font-medium"
-              :title="t('tournaments.queue.board.columns.wins')"
-            >
-              {{ t('tournaments.queue.board.columns.wins') }}
-            </th>
-            <th
-              class="hidden w-20 px-1 py-1 text-right font-medium sm:table-cell"
-              :title="t('tournaments.queue.board.columns.lossesHelp')"
-            >
-              {{ t('tournaments.queue.board.columns.losses') }}
             </th>
             <th
               class="w-12 px-1 py-1 text-right font-medium"
@@ -177,18 +169,18 @@ const remaining = computed(() => {
             </th>
             <th
               class="w-12 px-1 py-1 text-right font-medium"
-              :title="t('tournaments.queue.board.columns.played')"
+              :title="t('tournaments.queue.board.columns.gamesWonHelp')"
             >
-              {{ t('tournaments.queue.board.columns.played') }}
+              {{ t('tournaments.queue.board.columns.gamesWon') }}
             </th>
             <th
-              class="hidden w-16 px-1 py-1 text-right font-medium sm:table-cell"
-              :title="t('tournaments.queue.board.columns.gamesHelp')"
+              class="w-16 px-1 py-1 text-right font-medium"
+              :title="t('tournaments.queue.board.columns.gamesLostHelp')"
             >
-              {{ t('tournaments.queue.board.columns.games') }}
+              {{ t('tournaments.queue.board.columns.gamesLost') }}
             </th>
             <th
-              class="hidden w-12 px-1 py-1 text-right font-medium sm:table-cell"
+              class="w-12 px-1 py-1 text-right font-medium"
               :title="t('tournaments.queue.board.columns.diffHelp')"
             >
               {{ t('tournaments.queue.board.columns.diff') }}
@@ -196,9 +188,10 @@ const remaining = computed(() => {
             <th class="hidden px-2 py-1 text-center font-medium md:table-cell">
               {{ t('tournaments.queue.board.columns.decks') }}
             </th>
+            <!-- Five number columns fill a phone; who plays right now is shown by the highlighted row there. -->
             <th
               v-if="live"
-              class="py-1 pl-2 text-right font-medium"
+              class="hidden py-1 pl-2 text-right font-medium sm:table-cell"
             >
               {{ t('tournaments.queue.board.columns.now') }}
             </th>
@@ -237,19 +230,10 @@ const remaining = computed(() => {
               />
             </td>
             <td
-              class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell"
+              class="font-numeric px-1 py-1.5 text-right tabular-nums"
               data-testid="queue-table-matchdays"
             >
               {{ row.matchdays }}
-            </td>
-            <td class="font-numeric px-1 py-1.5 text-right tabular-nums">
-              {{ row.wins }}
-            </td>
-            <td
-              class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell"
-              data-testid="queue-table-losses"
-            >
-              {{ row.losses }}
             </td>
             <td
               class="font-numeric px-1 py-1.5 text-right tabular-nums"
@@ -257,13 +241,22 @@ const remaining = computed(() => {
             >
               {{ row.points }}
             </td>
-            <td class="font-numeric px-1 py-1.5 text-right tabular-nums">
-              {{ row.played }}
+            <td
+              class="font-numeric px-1 py-1.5 text-right tabular-nums"
+              data-testid="queue-table-wins"
+            >
+              {{ row.gamesWon }}
             </td>
-            <td class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell">
-              {{ row.gamesWon }}:{{ row.gamesLost }}
+            <td
+              class="font-numeric px-1 py-1.5 text-right tabular-nums"
+              data-testid="queue-table-defeats"
+            >
+              {{ row.gamesLost }}
             </td>
-            <td class="font-numeric hidden px-1 py-1.5 text-right tabular-nums sm:table-cell">
+            <td
+              class="font-numeric px-1 py-1.5 text-right tabular-nums"
+              data-testid="queue-table-diff"
+            >
               {{ difference(row.gamesWon, row.gamesLost) }}
             </td>
             <td
@@ -275,7 +268,7 @@ const remaining = computed(() => {
             </td>
             <td
               v-if="live"
-              class="py-1.5 pl-2 text-right"
+              class="hidden py-1.5 pl-2 text-right sm:table-cell"
             >
               <UBadge
                 v-if="row.tableNumber !== null"

@@ -53,3 +53,5 @@ mark the old as superseded.
 | [0043](0043-tournament-spieltage-and-best-of.md) | Spieltage, best of 3 and the players named when a tournament is created | Accepted |
 | [0044](0044-tournament-ranking-extension-and-table-view.md) | The ranking ladder, one more Spieltag, the pinnable table, decks at creation | Accepted |
 | [0045](0045-classic-plus-v3-1.md) | Classic Plus v3.1: the card list and rule 8 for the Extra Deck | Accepted |
+| [0046](0046-card-image-cache.md) | Card images come from the app's own cache on disk | Accepted |
+| [0047](0047-card-kind-filter-leaving-out-and-own-inventory.md) | The kinds divide the cards; leaving kinds out; only my inventory | Accepted |

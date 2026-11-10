@@ -61,6 +61,12 @@ const CANDIDATE_PATTERNS: Record<string, (card: CandidateInput) => boolean> = {
   // 3: a lasting restriction on the opponent (or on both players)
   floodgate: card => (card.isLastingSpellTrap && /\b(?:cannot|can't|must|skip|pay|changed? to|only)\b/i.test(card.desc))
     || (card.isMonster && both(OPPONENT_OR_ALL, /\b(?:cannot|can't|must|skip|changed? to|pay \d+ LP|can only)\b|\bno\b[^.]*\bcan\b/i)(card)),
+  // 3 (ruling 37): a lasting redirect of the cards that go to a Graveyard, back to the Deck or to the hand ("any card sent
+  // to the Graveyard is banished instead": Macro Cosmos, Dimensional Fissure, Banisher of the Light, Masked HERO Dark Law)
+  redirect: both(
+    /\b(?:banished|shuffled into the Deck|returned to the (?:hand|Deck)|removed from play|banish (?:it|them|that card|those cards)) instead\b/i,
+    /\b(?:any|all|each|every|Spells and Traps|Monster Cards|cards?|monsters?)\b[^.]*\b(?:sent|destroyed|goes?|would be sent|would be returned)\b|\b(?:sent|destroyed)\b[^.]*\b(?:GY|Graveyard)\b/i,
+  ),
   // 4: a monster effect activated from the hand in the opponent's turn
   handTrap: card => card.isMonster
     && /\b(?:from|in) your hand\b|\bdiscard this card\b|\breveal this card\b/i.test(card.desc)

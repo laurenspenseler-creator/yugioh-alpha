@@ -24,7 +24,10 @@ export const DEFAULT_FLOW: QueueFlow = 'queue'
 export type BestOf = 1 | 3
 
 export const BEST_OF_CHOICES = [1, 3] as const
+/** What the API assumes when a request for a tournament says nothing about it (a single game). */
 export const DEFAULT_BEST_OF: BestOf = 1
+/** What the form for a new tournament starts with (tester feedback, round 12: "Stell Best of 3 als Standard ein"). */
+export const NEW_TOURNAMENT_BEST_OF: BestOf = 3
 /** Games a player has to win to take a best-of-3 duel. */
 export const GAMES_TO_WIN_BEST_OF_3 = 2
 

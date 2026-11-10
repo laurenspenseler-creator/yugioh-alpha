@@ -86,6 +86,51 @@ describe('CardFacetFilters', () => {
     expect(component.find('[aria-label="Card kind"]').text()).toContain('Token')
     expect(component.find('[aria-label="Card kind"]').text()).toContain('Spell')
   })
+
+  // Tester feedback, round 12: "Gib mir die Möglichkeit Pendel-Monster etc. (alles) auch rauszufiltern."
+  describe('"Ohne Kartenart"', () => {
+    it('shows the menu only when an exclude-kind model is given, right after "Kartenart"', async () => {
+      const without = await mountSuspended(CardFacetFilters, {
+        props: { facets, kind: [], type: [], attribute: [], race: [], level: [] },
+      })
+      expect(without.find('[aria-label="Ohne Kartenart"]').exists()).toBe(false)
+
+      const component = await mountSuspended(CardFacetFilters, {
+        props: { facets, kind: [], excludeKind: ['pendulum', 'link'], type: [], attribute: [], race: [], level: [] },
+      })
+      const menu = component.find('[aria-label="Ohne Kartenart"]')
+      expect(menu.exists()).toBe(true)
+      expect(menu.text()).toContain('Pendel')
+      expect(menu.text()).toContain('Link')
+      const labels = component.findAll('button[aria-label]').map(button => button.attributes('aria-label'))
+      expect(labels.slice(0, 3)).toEqual(['Kartenart', 'Ohne Kartenart', 'Typ'])
+    })
+
+    it('offers the same kinds as "Kartenart"', async () => {
+      const component = await mountSuspended(CardFacetFilters, {
+        props: { facets, kind: [], excludeKind: [], type: [], attribute: [], race: [], level: [] },
+      })
+      const menus = component.findAllComponents(USelectMenu) as unknown as VueWrapper[]
+      const valuesOf = (placeholder: string) => menus
+        .map(menu => menu.props() as { placeholder?: string, items: Array<{ value: string }> })
+        .find(candidate => candidate.placeholder === placeholder)!.items.map(item => item.value)
+
+      expect(valuesOf('Ohne Kartenart')).toEqual(valuesOf('Kartenart'))
+      expect(valuesOf('Ohne Kartenart')).toContain('pendulum')
+    })
+
+    it('takes a kind out of the other menu when it is picked in one: never wanted and unwanted at once', async () => {
+      const component = await mountSuspended(CardFacetFilters, {
+        props: { facets, kind: ['effect'], excludeKind: ['pendulum', 'link'], type: [], attribute: [], race: [], level: [] },
+      })
+
+      await component.setProps({ kind: ['effect', 'pendulum'] })
+      expect(component.emitted('update:excludeKind')?.at(-1)).toEqual([['link']])
+
+      await component.setProps({ excludeKind: ['link', 'effect'] })
+      expect(component.emitted('update:kind')?.at(-1)).toEqual([['pendulum']])
+    })
+  })
 })
 
 // Tester feedback: the menus were all about monsters. With the kind picked they follow it.

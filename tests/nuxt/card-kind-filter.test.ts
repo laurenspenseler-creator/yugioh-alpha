@@ -80,7 +80,7 @@ beforeAll(() => {
     desc: `${name} text`,
     syncedAt,
   }))).run()
-  db.insert(schema.user).values({ id: 'u1', name: 'U', email: 'u@example.com', emailVerified: false, createdAt: syncedAt, updatedAt: syncedAt }).run()
+  db.insert(schema.user).values(['u1', 'u2'].map(id => ({ id, name: id, email: `${id}@example.com`, emailVerified: false, createdAt: syncedAt, updatedAt: syncedAt }))).run()
   db.insert(schema.ownedCard).values(CARDS.map((_, index) => ({
     id: `oc-${index + 1}`,
     userId: 'u1',
@@ -89,13 +89,23 @@ beforeAll(() => {
     createdAt: syncedAt,
     updatedAt: syncedAt,
   }))).run()
+  // u2 owns just an Effect Monster (three copies) and a Link Monster.
+  db.insert(schema.ownedCard).values(['Effect', 'Link'].map(name => ({
+    id: `oc2-${name}`,
+    userId: 'u2',
+    catalogCardId: CARDS.findIndex(card => card[0] === name) + 1,
+    quantity: 3,
+    createdAt: syncedAt,
+    updatedAt: syncedAt,
+  }))).run()
 })
 
 describe('cardKinds', () => {
-  it('splits a Pendulum frame into its base kind and "pendulum"', () => {
-    expect(cardKinds({ type: 'Pendulum Effect Monster', frameType: 'effect_pendulum' })).toEqual(['effect', 'pendulum'])
+  it('gives a Pendulum monster the kind "pendulum" only, whatever its frame', () => {
+    expect(cardKinds({ type: 'Pendulum Effect Monster', frameType: 'effect_pendulum' })).toEqual(['pendulum'])
     expect(cardKinds({ type: 'Flip Effect Monster', frameType: 'effect' })).toEqual(['effect'])
-    expect(cardKinds({ type: 'Pendulum Normal Monster' })).toEqual(['normal', 'pendulum'])
+    expect(cardKinds({ type: 'Pendulum Normal Monster' })).toEqual(['pendulum'])
+    expect(cardKinds({ type: 'XYZ Pendulum Effect Monster', frameType: 'xyz_pendulum' })).toEqual(['pendulum'])
   })
 
   it('has no kind for a Skill Card or a card without a type', () => {
@@ -117,16 +127,25 @@ describe('parseCardListQuery / parseInventorySearchQuery: kind', () => {
   it('builds a condition even for unknown kinds only (they are ignored)', () => {
     expect(buildCardListWhere(parseCardListQuery({ kind: 'nope' }))).toBeDefined()
   })
+
+  it('reads the kinds to leave out (excludeKind) and the "only my inventory" flag of the catalog', () => {
+    expect(parseCardListQuery({ excludeKind: 'pendulum,bogus,link' }).excludeKinds).toEqual(['pendulum', 'link'])
+    expect(parseCardListQuery({ excludeKind: ['pendulum', 'pendulum'] }).excludeKinds).toEqual(['pendulum'])
+    expect(parseCardListQuery({}).excludeKinds).toEqual([])
+    expect(parseCardListQuery({ owned: '1' }).owned).toBe(true)
+    expect(parseCardListQuery({ owned: '0' }).owned).toBe(false)
+    expect(parseCardListQuery({}).owned).toBe(false)
+  })
 })
 
 describe('the SQL "Kartenart" filter', () => {
-  it('"Effekt" includes Flip, Tuner, Spirit, Toon, Union and Gemini effect monsters', async () => {
+  it('"Effekt" includes Flip, Tuner, Spirit, Toon, Union and Gemini effect monsters, but no Pendulum monster', async () => {
     const effect = await catalogNames({ kind: 'effect' })
-    for (const name of ['Effect', 'Flip', 'Tuner', 'Spirit', 'Toon', 'Union', 'Gemini', 'Pendulum Effect', 'Flip (no frame)', 'Toon (no frame)']) {
+    for (const name of ['Effect', 'Flip', 'Tuner', 'Spirit', 'Toon', 'Union', 'Gemini', 'Flip (no frame)', 'Toon (no frame)']) {
       expect(effect, name).toContain(name)
     }
-    // Not the other frames, not Spell/Trap, not a Ritual Effect Monster.
-    for (const name of ['Normal', 'Ritual Effect', 'Fusion', 'Spell', 'Trap', 'Token', 'Skill', 'Link']) {
+    // Not the other frames, not Spell/Trap, not a Ritual Effect Monster, not a Pendulum Effect Monster (tester feedback round 12).
+    for (const name of ['Normal', 'Ritual Effect', 'Fusion', 'Spell', 'Trap', 'Token', 'Skill', 'Link', 'Pendulum Effect', 'Pendulum Flip', 'Pendulum Effect (no frame)']) {
       expect(effect, name).not.toContain(name)
     }
   })
@@ -139,7 +158,7 @@ describe('the SQL "Kartenart" filter', () => {
     expect(await catalogNames({ kind: 'ritual', type: 'Ritual Effect Monster' })).toEqual(['Ritual Effect', 'Ritual Effect (no frame)'])
   })
 
-  it('"Pendel" is the Pendulum half of any frame', async () => {
+  it('"Pendel" is every Pendulum monster, of any frame', async () => {
     expect(await catalogNames({ kind: 'pendulum' })).toEqual([
       'Fusion Pendulum (no frame)',
       'Pendulum Effect',
@@ -152,8 +171,10 @@ describe('the SQL "Kartenart" filter', () => {
     ])
   })
 
-  it('a Pendulum Fusion Monster is "Fusion" and "Pendel" at once', async () => {
-    expect(await catalogNames({ kind: 'fusion' })).toEqual(['Fusion', 'Fusion Pendulum (no frame)', 'Pendulum Fusion'])
+  it('a Pendulum Fusion Monster is "Pendel", not "Fusion" (and a Pendulum Xyz Monster not "Xyz")', async () => {
+    expect(await catalogNames({ kind: 'fusion' })).toEqual(['Fusion'])
+    expect(await catalogNames({ kind: 'xyz' })).toEqual(['XYZ'])
+    expect(await catalogNames({ kind: 'normal' })).toEqual(['Normal', 'Normal (no frame)', 'Normal Tuner'])
   })
 
   it('selecting several kinds matches any of them', async () => {
@@ -178,8 +199,8 @@ describe('the SQL "Kartenart" filter', () => {
     expect(expected.length).toBeGreaterThan(0)
   })
 
-  it('every card has at most one frame kind', async () => {
-    const all = await Promise.all(CARD_KINDS.filter(kind => kind !== 'pendulum').map(kind => catalogNames({ kind })))
+  it('every card has at most one kind: the kinds divide the cards', async () => {
+    const all = await Promise.all(CARD_KINDS.map(kind => catalogNames({ kind })))
     const seen = new Set<string>()
     for (const names of all) {
       for (const name of names) {
@@ -187,6 +208,76 @@ describe('the SQL "Kartenart" filter', () => {
         seen.add(name)
       }
     }
+    // Everything but the Skill Cards is in one of them.
+    expect(seen.size).toBe(CARDS.length - 2)
+  })
+})
+
+describe('the SQL "Ohne Kartenart" filter (excludeKind)', () => {
+  const allNames = CARDS.map(([name]) => name).sort()
+
+  it('leaves out Pendulum monsters of every frame, and keeps everything else', async () => {
+    const names = await catalogNames({ excludeKind: 'pendulum' })
+    const pendulum = await catalogNames({ kind: 'pendulum' })
+    expect(names).toEqual(allNames.filter(name => !pendulum.includes(name)))
+    expect(names).toContain('Effect')
+    expect(names).toContain('XYZ')
+  })
+
+  it('combines with a kind: effect monsters without the Pendulum ones are just the plain "Effekt"', async () => {
+    expect(await catalogNames({ kind: 'effect', excludeKind: 'pendulum' })).toEqual(await catalogNames({ kind: 'effect' }))
+    // Both Effekt and Pendel wanted, Pendel unwanted: only what is left of Effekt.
+    expect(await catalogNames({ kind: 'effect,pendulum', excludeKind: 'pendulum' })).toEqual(await catalogNames({ kind: 'effect' }))
+  })
+
+  it('leaves out several kinds at once', async () => {
+    const names = await catalogNames({ excludeKind: 'effect,link,pendulum' })
+    for (const name of ['Effect', 'Flip', 'Link', 'Link (no frame)', 'Pendulum Effect', 'XYZ Pendulum']) {
+      expect(names, name).not.toContain(name)
+    }
+    for (const name of ['Normal', 'Ritual Effect', 'Fusion', 'XYZ', 'Spell', 'Trap', 'Token']) {
+      expect(names, name).toContain(name)
+    }
+  })
+
+  it('keeps a card without a kind (a Skill Card), whatever is left out', async () => {
+    const names = await catalogNames({ excludeKind: CARD_KINDS.join(',') })
+    expect(names).toEqual(['Skill', 'Skill (no frame)'])
+  })
+
+  it.each(CARD_KINDS)('"%s" left out agrees with cardKinds() for every card', async (kind: CardKind) => {
+    const expected = CARDS
+      .filter(([, type, frameType]) => !cardKinds({ type, frameType }).includes(kind))
+      .map(([name]) => name)
+      .sort()
+    expect(await catalogNames({ excludeKind: kind })).toEqual(expected)
+  })
+
+  it('ignores unknown kinds', async () => {
+    expect(await catalogNames({ excludeKind: 'bogus' })).toEqual(allNames)
+  })
+})
+
+describe('the catalog filter "only my inventory" (owned)', () => {
+  const ownedNames = async (query: Record<string, string>, userId?: string) =>
+    namesOf((await searchCatalog(db, parseCardListQuery({ pageSize: '60', ...query }), 'en', userId)).items)
+
+  it('shows only the cards of the user, each once however many copies they have', async () => {
+    expect(await ownedNames({ owned: '1' }, 'u2')).toEqual(['Effect', 'Link'])
+    expect((await ownedNames({ owned: '1' }, 'u1')).length).toBe(CARDS.length)
+  })
+
+  it('does not look at anyone else\'s inventory', async () => {
+    expect(await ownedNames({ owned: '1' }, 'nobody')).toEqual([])
+    // No user to ask for: nothing is owned.
+    expect(await ownedNames({ owned: '1' })).toEqual([])
+  })
+
+  it('is off by default and combines with the other filters', async () => {
+    expect((await ownedNames({}, 'u2')).length).toBe(CARDS.length)
+    expect(await ownedNames({ owned: '1', kind: 'link' }, 'u2')).toEqual(['Link'])
+    expect(await ownedNames({ owned: '1', kind: 'ritual' }, 'u2')).toEqual([])
+    expect(await ownedNames({ owned: '1', excludeKind: 'link' }, 'u2')).toEqual(['Effect'])
   })
 })
 

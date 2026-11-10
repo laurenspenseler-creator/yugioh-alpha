@@ -115,6 +115,9 @@ grow this already-large change. The schema is intentionally additive here:
 a `local_path` column can be added later without touching existing data, so
 a follow-up bean can add the proxy without reopening this schema decision.
 
+*Done in [ADR 0046](0046-card-image-cache.md): a cache on disk behind
+`/api/card-images/…`, without a schema change; the pages ask it for the scans.*
+
 ### Migration
 
 The new tables are added to the existing `server/db/schema.ts` (single

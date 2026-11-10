@@ -6,7 +6,8 @@
     "search": {
       "placeholder": "Kartenname (deutsch oder englisch)...",
       "label": "Karten suchen",
-      "inText": "Auch im Kartentext suchen"
+      "inText": "Auch im Kartentext suchen",
+      "ownedOnly": "Nur in meinem Inventar suchen"
     },
     "filters": {
       "set": "Set",

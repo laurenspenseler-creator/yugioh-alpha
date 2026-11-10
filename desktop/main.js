@@ -126,6 +126,8 @@ function startServer(port) {
       // with the code, so a stranger in the same Wi-Fi can't register.
       NUXT_INVITE_CODE: config.phoneAccess ? config.inviteCode : '',
       NUXT_TRUST_LOCAL_NETWORK: config.phoneAccess ? 'true' : 'false',
+      // Fetch the images of the player's own cards in the background, so they are there without internet (ADR 0046).
+      NUXT_CARD_IMAGE_WARMUP: '1',
     },
   })
   serverProcess.stdout.pipe(log)

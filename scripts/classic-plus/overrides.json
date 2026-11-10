@@ -226,6 +226,11 @@
     "maxCopies": 1,
     "note": "v3.1 card list: Tausendäugiges Opfer (K4). Check step 2b of rule 3 already said limit 1 → 1."
   },
+  "64631466": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 test table (round 12): Aufgegeben stays unlimited. Brain Control gets a monster for 800 LP (price circumvention, 1); Relinquished is a Ritual Monster that pays the full Ritual price, so its equip effect is no rule 7(a)."
+  },
   "70000776": {
     "hits": [
       {

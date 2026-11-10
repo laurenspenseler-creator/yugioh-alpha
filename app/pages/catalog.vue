@@ -51,6 +51,9 @@ const router = useRouter()
 const searchInput = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const debouncedSearch = ref(searchInput.value)
 const kind = ref<CardKind[]>(queryList(route.query.kind).filter(isCardKind))
+// "Ohne Kartenart" and "Nur in meinem Inventar suchen" (tester feedback, round 12); both live in the URL like the rest.
+const excludeKind = ref<CardKind[]>(queryList(route.query.excludeKind).filter(isCardKind))
+const owned = ref(route.query.owned === '1')
 const type = ref<string[]>(queryList(route.query.type))
 const attribute = ref<string[]>(queryList(route.query.attribute))
 const race = ref<string[]>(queryList(route.query.race))
@@ -72,7 +75,7 @@ watch(searchInput, (value) => {
 })
 
 const filtersActive = computed(() =>
-  Boolean(debouncedSearch.value.trim() || kind.value.length || type.value.length || attribute.value.length || race.value.length || level.value.length || setId.value),
+  Boolean(debouncedSearch.value.trim() || kind.value.length || excludeKind.value.length || owned.value || type.value.length || attribute.value.length || race.value.length || level.value.length || setId.value),
 )
 
 const cardQuery = computed(() => ({
@@ -80,6 +83,8 @@ const cardQuery = computed(() => ({
   // Only with a search text: ticking the box on an empty search changes nothing, so it doesn't refetch.
   inText: inText.value && debouncedSearch.value.trim() ? 1 : undefined,
   kind: csv(kind.value),
+  excludeKind: csv(excludeKind.value),
+  owned: owned.value ? 1 : undefined,
   type: csv(type.value),
   attribute: csv(attribute.value),
   race: csv(race.value),
@@ -146,17 +151,19 @@ watch(pending, (value) => {
   }
 })
 
-watch([kind, type, attribute, race, level, setId, sort, debouncedSearch, inText], () => {
+watch([kind, excludeKind, owned, type, attribute, race, level, setId, sort, debouncedSearch, inText], () => {
   page.value = 1
 }, { deep: true })
 
-watch([debouncedSearch, inText, kind, type, attribute, race, level, setId, sort, page], async () => {
+watch([debouncedSearch, inText, kind, excludeKind, owned, type, attribute, race, level, setId, sort, page], async () => {
   await router.replace({
     query: {
       ...route.query,
       q: debouncedSearch.value.trim() || undefined,
       inText: inText.value ? '1' : undefined,
+      owned: owned.value ? '1' : undefined,
       kind: csv(kind.value),
+      excludeKind: csv(excludeKind.value),
       type: csv(type.value),
       attribute: csv(attribute.value),
       race: csv(race.value),
@@ -207,7 +214,9 @@ function resetFilters() {
   searchInput.value = ''
   debouncedSearch.value = ''
   inText.value = false
+  owned.value = false
   kind.value = []
+  excludeKind.value = []
   type.value = []
   attribute.value = []
   race.value = []
@@ -264,14 +273,23 @@ async function onAddedToInventory() {
           :aria-label="t('catalog.search.label')"
           class="w-full"
         />
-        <UCheckbox
-          v-model="inText"
-          :label="t('catalog.search.inText')"
-        />
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <UCheckbox
+            v-model="inText"
+            :label="t('catalog.search.inText')"
+          />
+          <UCheckbox
+            v-model="owned"
+            :label="t('catalog.search.ownedOnly')"
+            data-testid="catalog-owned-only"
+          />
+        </div>
 
-        <div class="grid grid-cols-2 gap-3 lg:grid-cols-[repeat(6,minmax(0,1fr))_auto]">
+        <!-- Seven menus and the reset button: two rows of four until there is room for one row (the sidebar takes a part of the width). -->
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(7,minmax(0,1fr))_auto]">
           <CardFacetFilters
             v-model:kind="kind"
+            v-model:exclude-kind="excludeKind"
             v-model:type="type"
             v-model:attribute="attribute"
             v-model:race="race"

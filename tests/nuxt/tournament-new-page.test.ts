@@ -82,14 +82,36 @@ describe('the new tournament form', () => {
     expect(component.text()).not.toContain('Warteschlange')
   })
 
+  // Tester feedback, round 12: "Stell Best of 3 als Standard ein."
+  it('starts with best of 3, and with the scoring by games that goes with it', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ id: 't-9' }))
+    vi.stubGlobal('$fetch', fetchSpy)
+    const component = await mountSuspended(NewTournamentPage)
+
+    expect(formOf(component).bestOf).toBe(3)
+    expect(component.find('button[aria-label="Ein Match ist"]').text()).toContain('Best of 3')
+    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Nach Spielen')
+
+    formOf(component).name = 'Freitag'
+    await component.find('form').trigger('submit')
+    await flushPromises()
+    expect(fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments')![1]).toMatchObject({ body: { bestOf: 3, scoring: 'games' } })
+  })
+
   it('does not mix single duels with the scoring by games: it shows the classic scoring there, disabled, and sends that', async () => {
     const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ id: 't-9' }))
     vi.stubGlobal('$fetch', fetchSpy)
     const component = await mountSuspended(NewTournamentPage)
     const scoring = () => component.find('button[aria-label="Punktevergabe"]')
 
-    // Single duels are the default: nothing to tell apart by games, so 3 and 0.
-    expect(formOf(component).bestOf).toBe(1)
+    // Best of 3 is the default: the scoring by games can be chosen.
+    expect(formOf(component).bestOf).toBe(3)
+    expect(scoring().attributes('disabled')).toBeUndefined()
+    expect(component.text()).not.toContain('Bei Einzelmatches gibt ein Sieg 3 Punkte')
+
+    // A single game has nothing to tell apart by games, so 3 and 0.
+    formOf(component).bestOf = 1
+    await nextTick()
     expect(scoring().attributes('disabled')).toBeDefined()
     expect(scoring().text()).toContain('Klassisch (3 · 0)')
     expect(component.text()).toContain('Bei Einzelmatches gibt ein Sieg 3 Punkte, eine Niederlage 0')
@@ -99,13 +121,12 @@ describe('the new tournament form', () => {
     await flushPromises()
     expect(fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments')![1]).toMatchObject({ body: { bestOf: 1, scoring: 'match' } })
 
-    // Best of 3: the scoring by games is the default again and can be chosen.
+    // Best of 3 again: the scoring by games is the choice again.
     formOf(component).bestOf = 3
     await nextTick()
     expect(formOf(component).scoring).toBe('games')
     expect(scoring().attributes('disabled')).toBeUndefined()
     expect(scoring().text()).toContain('Nach Spielen')
-    expect(component.text()).not.toContain('Bei Einzelmatches gibt ein Sieg 3 Punkte')
   })
 
   it('sends the decks written in brackets behind a name as part of the line, and counts one player per line', async () => {

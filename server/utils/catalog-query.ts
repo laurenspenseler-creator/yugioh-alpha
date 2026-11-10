@@ -1,7 +1,7 @@
 import { and, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
-import { catalogCard, catalogPrinting } from '../db/schema'
+import { catalogCard, catalogPrinting, ownedCard } from '../db/schema'
 import { activeCatalogCard, cardNameMatches, cardTextMatches } from './card-name-search'
-import { cardKindClause, parseCardKinds } from './card-kind-sql'
+import { cardKindClause, cardKindExcludeClause, parseCardKinds } from './card-kind-sql'
 import { parseQueryFlag } from './query-flag'
 import type { CardKind } from '../../shared/card-kind'
 
@@ -12,6 +12,10 @@ export interface CardListQuery {
   inText: boolean
   // The grouped "Kartenart" filter (shared/card-kind.ts), next to the exact `types`.
   kinds: CardKind[]
+  // The kinds the cards must NOT have ("Kartenart ausschließen", tester feedback round 12).
+  excludeKinds: CardKind[]
+  // Only cards the user owns ("nur mein Inventar"); needs the user's id in `buildCardListWhere`.
+  owned: boolean
   types: string[]
   attributes: string[]
   races: string[]
@@ -56,6 +60,8 @@ export function parseCardListQuery(rawQuery: RawCardListQuery): CardListQuery {
     q: (getFirst(rawQuery.q) ?? '').trim(),
     inText: parseQueryFlag(rawQuery.inText),
     kinds: parseCardKinds(getValues(rawQuery.kind)),
+    excludeKinds: parseCardKinds(getValues(rawQuery.excludeKind)),
+    owned: parseQueryFlag(rawQuery.owned),
     types: getValues(rawQuery.type),
     attributes: getValues(rawQuery.attribute),
     races: getValues(rawQuery.race),
@@ -69,9 +75,23 @@ export function parseCardListQuery(rawQuery: RawCardListQuery): CardListQuery {
   }
 }
 
-export function buildCardListWhere(filters: CardListQuery): SQL {
+/**
+ * The WHERE condition of the catalog list. `userId` is whose inventory "nur mein Inventar" (`filters.owned`) looks at; a
+ * list asked for owned cards without a user finds nothing, since nobody owns them.
+ */
+export function buildCardListWhere(filters: CardListQuery, userId?: string): SQL {
   // Catalog-wide: retired cards never show up (ADR 0019).
   const conditions: SQL[] = [activeCatalogCard()]
+
+  if (filters.owned) {
+    conditions.push(userId
+      ? sql`exists (
+        select 1 from ${ownedCard}
+        where ${eq(ownedCard.catalogCardId, catalogCard.id)}
+          and ${eq(ownedCard.userId, userId)}
+      )`
+      : sql`0 = 1`)
+  }
 
   if (filters.q) {
     // Bilingual: English and German names (and texts with `inText`), ADR 0015.
@@ -86,6 +106,11 @@ export function buildCardListWhere(filters: CardListQuery): SQL {
   const kindClause = cardKindClause(filters.kinds)
   if (kindClause) {
     conditions.push(kindClause)
+  }
+
+  const excludeKindClause = cardKindExcludeClause(filters.excludeKinds)
+  if (excludeKindClause) {
+    conditions.push(excludeKindClause)
   }
 
   if (filters.types.length > 0) {

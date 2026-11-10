@@ -167,6 +167,9 @@ auferlegt, zählt nicht. Die Battle Phase steht bewusst nicht in dieser Liste.
   stop at the first hit, and do not resolve precedence between rules.
 - Rule 3 is about Continuous effects only. A one-shot "your opponent cannot …
   this turn" from an activated effect is not a floodgate.
+- A lasting redirect of the cards that go to a Graveyard ("any card sent to the
+  Graveyard is banished instead") is a floodgate too (owner ruling 37); go
+  through the check steps like for any other lock.
 - Rule 8 is about potential: "destroy up to 2", "destroy all", "banish cards
   equal to …" count; exactly "1 card" does not, unless the effect can
   resolve more than once per activation.

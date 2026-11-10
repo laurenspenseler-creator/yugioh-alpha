@@ -2,8 +2,8 @@
 /**
  * The one way to render a card scan: a 59:86 box (the real card aspect) with
  * the whole card visible (`object-contain`), lazy + async decoding, and a
- * consistent "no image" placeholder — also used when the hotlinked image
- * fails to load.
+ * consistent "no image" placeholder — also used when the image fails to
+ * load (the scans come from the app's own image cache, `cardImageSrc`).
  *
  * - Fixed sizes (`xs`–`lg`) prefer the small scan; `full` fills its container,
  *   prefers the large scan and offers the small one via `srcset` (pass
@@ -66,20 +66,37 @@ const WIDTH_CLASSES: Record<CardThumbSize, string> = {
 
 const isFull = computed(() => props.size === 'full')
 
+// A scan the app has not got (offline, never seen before) is not worth the card back while the small one of the same
+// card is there: the large one falls back to it before the placeholder shows.
+const largeFailed = ref(false)
+
+// The scans come from the app's own image cache (ADR 0046), so they are there without internet once they were seen.
+const small = computed(() => cardImageSrc(props.src))
+const large = computed(() => cardImageSrc(props.srcLarge))
+
 const imageSrc = computed(() => (isFull.value
-  ? props.srcLarge ?? props.src
-  : props.src ?? props.srcLarge))
+  ? (largeFailed.value ? small.value : large.value ?? small.value)
+  : small.value ?? large.value))
 
 // Small (168px) and full (421px) scans of the same artwork — only worth it
 // when the thumbnail scales with its container.
-const imageSrcset = computed(() => (isFull.value && props.src && props.srcLarge
-  ? `${props.src} 168w, ${props.srcLarge} 421w`
+const imageSrcset = computed(() => (isFull.value && !largeFailed.value && small.value && large.value
+  ? `${small.value} 168w, ${large.value} 421w`
   : undefined))
 
 const failed = ref(false)
-watch(imageSrc, () => {
+watch(() => [props.src, props.srcLarge], () => {
   failed.value = false
+  largeFailed.value = false
 })
+
+function onImageError() {
+  if (isFull.value && !largeFailed.value && small.value && large.value) {
+    largeFailed.value = true
+    return
+  }
+  failed.value = true
+}
 
 const showImage = computed(() => Boolean(imageSrc.value) && !failed.value)
 const canEnlarge = computed(() => props.enlargeable && showImage.value)
@@ -130,7 +147,7 @@ function onClick() {
         :loading="loading"
         decoding="async"
         class="h-full w-full object-contain"
-        @error="failed = true"
+        @error="onImageError"
       >
       <div
         v-else
@@ -162,7 +179,7 @@ function onClick() {
       v-if="everOpened"
       v-model:open="isOpen"
       :title="alt"
-      :src="srcLarge ?? src"
+      :src="large ?? small"
       :no-image-label="resolvedNoImageLabel"
     />
   </div>

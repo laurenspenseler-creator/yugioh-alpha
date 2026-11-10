@@ -10,6 +10,9 @@ import type { CardKind } from '~~/shared/card-kind'
  * - Multi-select; an empty array means "no filter".
  * - "Kartenart" (`kind`) is the grouped filter by frame, "Typ" the exact type
  *   line below it (shared/card-kind.ts); leave out `v-model:kind` to hide it.
+ * - "Ohne Kartenart" (`exclude-kind`, tester feedback round 12) is the same list the other way round: the cards must not
+ *   be of these kinds (no Pendulum, no Link, ...). Leave out `v-model:exclude-kind` to hide it. A kind is in one of the
+ *   two menus at a time: picking it in one takes it out of the other.
  * - With a `kind` the menus follow it (tester feedback: too much monster, too little Spell and Trap): when only Spell
  *   and/or Trap are picked, Typ, Attribut and Stufe (which mean nothing for them) give way to one menu with the
  *   subtypes (Normal, Schnell, Permanent, Ausrüstung, Spielfeld, Ritual, Konter); otherwise "Monsterart" lists only the
@@ -35,6 +38,7 @@ const props = withDefaults(defineProps<{
 }>(), { menuClass: 'w-full min-w-0', disabled: false })
 
 const kind = defineModel<CardKind[]>('kind')
+const excludeKind = defineModel<CardKind[]>('excludeKind')
 const type = defineModel<string[]>('type', { required: true })
 const attribute = defineModel<string[]>('attribute', { required: true })
 const race = defineModel<string[]>('race', { required: true })
@@ -105,6 +109,18 @@ const showType = computed(() => scope.value !== 'spellTrap' || type.value.length
 const showAttribute = computed(() => scope.value !== 'spellTrap' || attribute.value.length > 0)
 const showLevel = computed(() => level.value !== undefined && (scope.value !== 'spellTrap' || level.value.length > 0))
 
+// A kind is wanted or unwanted, never both: the menu that was touched last wins.
+watch(() => kind.value && [...kind.value], (picked) => {
+  if (picked && excludeKind.value?.some(value => picked.includes(value))) {
+    excludeKind.value = excludeKind.value.filter(value => !picked.includes(value))
+  }
+})
+watch(() => excludeKind.value && [...excludeKind.value], (picked) => {
+  if (picked && kind.value?.some(value => picked.includes(value))) {
+    kind.value = kind.value.filter(value => !picked.includes(value))
+  }
+})
+
 // Changing the kinds takes along what no longer fits: the monster menus are emptied for Spells and Traps, and the
 // values of the other group (a subtype, or a monster race) are dropped from the race menu.
 watch(() => kind.value && [...kind.value], () => {
@@ -135,6 +151,17 @@ watch(() => kind.value && [...kind.value], () => {
     :disabled="disabled"
     :placeholder="t('card.field.kind')"
     :aria-label="t('card.field.kind')"
+    :class="menuClass"
+  />
+  <USelectMenu
+    v-if="excludeKind !== undefined"
+    v-model="excludeKind"
+    multiple
+    value-key="value"
+    :items="kindItems"
+    :disabled="disabled"
+    :placeholder="t('card.field.excludeKind')"
+    :aria-label="t('card.field.excludeKind')"
     :class="menuClass"
   />
   <USelectMenu

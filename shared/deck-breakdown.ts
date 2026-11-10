@@ -39,10 +39,10 @@ export function deckKindBreakdown(rows: ReadonlyArray<DeckBreakdownRow>): Array<
 
 /**
  * The inventory's chips: the deck kinds plus "Pendel" between Xyz and Link
- * (tester feedback, round 2). Pendulum is the second half of a frame, so a
- * Pendulum Effect Monster is counted under "Effekt" and under "Pendel" – the
- * same as the "Kartenart" filter the chip toggles, so the number on a chip is
- * the number of copies the list shows after a click.
+ * (tester feedback, round 2). A Pendulum monster counts under "Pendel" only, not
+ * under its frame as well (round 12: "Effekt" means plain Effect Monsters) – the
+ * same as the "Kartenart" filter the chip toggles (`cardKinds`), so the number
+ * on a chip is the number the list shows after a click, and the chips add up.
  */
 export type InventoryKind = DeckCardKind | 'pendulum'
 
@@ -55,8 +55,9 @@ export type InventoryKind = DeckCardKind | 'pendulum'
 export const INVENTORY_KINDS = ['normal', 'effect', 'ritual', 'spell', 'trap', 'fusion', 'synchro', 'xyz', 'pendulum', 'link'] as const satisfies readonly InventoryKind[]
 
 export function inventoryKindBreakdown(rows: ReadonlyArray<DeckBreakdownRow>): Array<{ kind: InventoryKind, count: number }> {
-  const kinds: Array<{ kind: InventoryKind, count: number }> = deckKindBreakdown(rows)
-  const pendulum = rows.reduce((sum, row) => (cardFrame(row)?.pendulum ? sum + row.quantity : sum), 0)
+  const isPendulum = (row: DeckBreakdownRow) => Boolean(cardFrame(row)?.pendulum)
+  const kinds: Array<{ kind: InventoryKind, count: number }> = deckKindBreakdown(rows.filter(row => !isPendulum(row)))
+  const pendulum = rows.reduce((sum, row) => (isPendulum(row) ? sum + row.quantity : sum), 0)
   if (pendulum === 0) {
     return kinds
   }

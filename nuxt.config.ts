@@ -77,6 +77,9 @@ export default defineNuxtConfig({
     // phone reaching the desktop app (ADR 0036). Off on a public host.
     // Overridable via NUXT_TRUST_LOCAL_NETWORK.
     trustLocalNetwork: false,
+    // '1' (via NUXT_CARD_IMAGE_WARMUP) fetches the images of the cards in the players' inventories, decks and wish
+    // lists in the background after the start, so they show without internet (ADR 0046). The desktop app sets it.
+    cardImageWarmup: '',
     // Set to '1' (via NUXT_E2E_SEED_CATALOG) to upsert the small, deterministic
     // E2E catalog fixture after migrations. Never enabled in normal runs —
     // see server/plugins/migrate.ts and server/db/fixtures/catalog-fixture.ts.

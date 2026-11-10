@@ -9,7 +9,7 @@ import {
 import type { ScoringSystem, TournamentDetail } from '~~/shared/tournaments'
 import {
   BEST_OF_CHOICES,
-  DEFAULT_BEST_OF,
+  NEW_TOURNAMENT_BEST_OF,
   QUEUE_MODES,
 } from '~~/shared/tournament-modes'
 import type { BestOf, QueueMode } from '~~/shared/tournament-modes'
@@ -56,7 +56,7 @@ const form = reactive({
   formatId: NO_FORMAT,
   mode: 'round_robin' as QueueMode,
   prelaunch: false,
-  bestOf: DEFAULT_BEST_OF as BestOf,
+  bestOf: NEW_TOURNAMENT_BEST_OF as BestOf,
   scoring: 'games' as ScoringSystem,
   includeSelf: true,
   participantsText: '',

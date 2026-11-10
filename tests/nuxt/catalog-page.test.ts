@@ -284,6 +284,54 @@ describe('catalog page', () => {
     expect(component.find('[role="checkbox"]').attributes('aria-checked')).toBe('false')
   })
 
+  // Tester feedback, round 12: "Gib mir da auch die Möglichkeit, nur in meinem Inventar zu suchen."
+  it('has "Nur in meinem Inventar suchen": the URL has it, the query sends it, reset clears it', async () => {
+    const component = await mountPage()
+    const route = useRouter().currentRoute
+    const checkboxes = () => component.findAll('[role="checkbox"]')
+    expect(component.text()).toContain('Nur in meinem Inventar suchen')
+    expect(lastQuery('/api/catalog/cards').owned).toBeUndefined()
+
+    await checkboxes()[1]!.trigger('click')
+    await vi.waitFor(() => {
+      expect(route.value.query.owned).toBe('1')
+    })
+    expect(lastQuery('/api/catalog/cards')).toMatchObject({ owned: 1, page: 1 })
+    // The text search checkbox is its own.
+    expect(route.value.query.inText).toBeUndefined()
+
+    const reset = component.findAll('button').find(btn => btn.text() === 'Zurücksetzen')
+    await reset!.trigger('click')
+    await vi.waitFor(() => {
+      expect(route.value.query.owned).toBeUndefined()
+    })
+    expect(lastQuery('/api/catalog/cards').owned).toBeUndefined()
+    expect(checkboxes()[1]!.attributes('aria-checked')).toBe('false')
+  })
+
+  it('reads "Nur in meinem Inventar suchen" and the kinds to leave out from a deep link', async () => {
+    const component = await mountPage({ route: '/catalog?owned=1&kind=effect&excludeKind=pendulum,link' })
+
+    expect(lastQuery('/api/catalog/cards')).toMatchObject({ owned: 1, kind: 'effect', excludeKind: 'pendulum,link' })
+    expect(component.findAll('[role="checkbox"]')[1]!.attributes('aria-checked')).toBe('true')
+    const menu = component.find('[aria-label="Ohne Kartenart"]')
+    expect(menu.exists()).toBe(true)
+    expect(menu.text()).toContain('Pendel')
+    expect(menu.text()).toContain('Link')
+  })
+
+  it('writes the kinds to leave out as a comma list and goes back to page 1', async () => {
+    const component = await mountPage({ route: '/catalog?page=3' })
+    const route = useRouter().currentRoute
+
+    component.findComponent(CardFacetFilters).vm.$emit('update:excludeKind', ['pendulum', 'token'])
+    await vi.waitFor(() => {
+      expect(route.value.query.excludeKind).toBe('pendulum,token')
+    })
+    expect(route.value.query.page).toBeUndefined()
+    expect(lastQuery('/api/catalog/cards')).toMatchObject({ excludeKind: 'pendulum,token', page: 1 })
+  })
+
   it('opens the add-to-inventory modal pre-filled with the clicked card (#6)', async () => {
     const component = await mountPage()
 

@@ -118,3 +118,22 @@ batch.
     counts** for rule 11.
 36. **A trigger without a limit, or "once per battle", that can activate more
     than once in the same turn is repeatable.**
+
+## Third round (the rule authors' test table, tester feedback round 12)
+
+37. **A lasting redirect of the cards that go to a Graveyard is a floodgate**
+    (rule 3: it restricts moving cards between zones), whether it says "banished
+    instead" or "shuffled into the Deck instead", and also when it reaches both
+    players. Go through the check steps: a monster with such an effect is step 2
+    (the opponent gets rid of it by attacking), one that only reaches a printed
+    property of the cards (monsters, Spells and Traps) is step 3, a Spell or Trap
+    without a body is step 4 (Macro Cosmos is forbidden, Masked HERO Dark Law is 2).
+    Not a floodgate: a redirect that lasts this turn only (ruling 9), one that only
+    reaches the controller's own Graveyard, and one that only reaches the cards
+    destroyed by battle with one card or one archetype of the controller (the
+    result of their own battles).
+38. **An effect that cannot be responded to has no real answer** (trait
+    `noanswer`, so a tiered hit stays at 1): "Neither player can activate cards or
+    effects in response to this card's (this effect's) activation". Not enough:
+    only the targeted cards cannot respond, or a state that lasts after the
+    activation ("cannot activate its effects").

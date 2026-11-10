@@ -152,6 +152,19 @@ showing. A card facet filter without a kind menu (the format editor) is unchange
 * The league table of the older, classic tournaments (`shared/tournament-standings.ts`) keeps its own tiebreaks; no new
   tournament is made with it.
 
+## Addendum: the next day (feedback "Ich habe 4 Ritual Karten 3 mal macht 12")
+
+* **The table has five columns of numbers: Spieltage, Punkte, Wins, Defeats, Diff.** "Ich brauche nur Spieltage, Punkte,
+  gewonnene Duelle (Wins), verlorene Duelle (Defeats) und Differenz." In Yu-Gi-Oh a duel is one game and a match is one or
+  three of them, so Wins and Defeats are the games won and lost (`gamesWon`, `gamesLost`; a single game counts as 1:0),
+  and Diff is what they leave, the number the ranking uses. This replaces the reading of the last addendum, where
+  "Niederlagen" was the matches lost: the columns "Siege", "Niederlagen", "Matches" and "Partien" are gone, and the five
+  are shown on a phone too. `QueueTableRowDto.losses` is still sent and no longer shown.
+* **A new tournament starts as best of 3** ("Stell Best of 3 als Standard ein"): `NEW_TOURNAMENT_BEST_OF` in
+  `shared/tournament-modes.ts` is what the form starts with, and with it the scoring by games. `DEFAULT_BEST_OF` stays a
+  single game: that is what the API assumes when a request says nothing, and a request that leaves out `bestOf` must not
+  suddenly need the games of every duel.
+
 ## Consequences
 
 * `QueueTableRowDto` loses `buchholz` and gains `gamesWon`, `gamesLost`, `matchdays`, `losses`; `QueueDetail` gains `canExtend`.

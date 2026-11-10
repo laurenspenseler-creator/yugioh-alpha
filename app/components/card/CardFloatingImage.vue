@@ -32,7 +32,9 @@ watch(() => props.src, () => {
   failed.value = false
 })
 
-const showImage = computed(() => Boolean(props.src) && !failed.value)
+// From the app's own image cache, so a scan seen once is there without internet too (ADR 0046).
+const imageSrc = computed(() => cardImageSrc(props.src))
+const showImage = computed(() => Boolean(imageSrc.value) && !failed.value)
 const resolvedNoImageLabel = computed(() => props.noImageLabel ?? t('card.noImage'))
 
 const { style: tiltStyle, onMove: onTiltMove, onLeave: onTiltLeave } = useCardTilt()
@@ -50,7 +52,7 @@ const { style: tiltStyle, onMove: onTiltMove, onLeave: onTiltLeave } = useCardTi
       class="foil relative overflow-hidden rounded-[4.5%/3.1%]"
     >
       <img
-        :src="src ?? undefined"
+        :src="imageSrc"
         :alt="alt"
         decoding="async"
         class="block aspect-[59/86] h-auto w-full object-contain"

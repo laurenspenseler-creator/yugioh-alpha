@@ -1,4 +1,4 @@
-// The chips beside the inventory's filters: copies per card kind, per scope.
+// The chips beside the inventory's filters: different cards per card kind (not copies), per scope.
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
@@ -59,31 +59,44 @@ describe('loadInventoryKindCounts', () => {
     ]).run()
   })
 
-  it('counts the copies of the whole inventory per kind, in chip order, with Pendel between Xyz and Link', () => {
+  it('counts the different cards of the whole inventory per kind, not their copies, in chip order, with Pendel between Xyz and Link', () => {
     const result = loadInventoryKindCounts(db, 'user-a')
 
+    // Kuriboh x3 and Cyber Dragon x2 are 2 cards of "Effekt"; Raigeki x4 is 1 Zauber; the two Pendulum monsters (an Effect and
+    // an Xyz one) are 2 cards of "Pendel" and not also of "Effekt" and "Xyz".
     expect(result.kinds).toEqual([
       { kind: 'normal', count: 1 },
-      { kind: 'effect', count: 7 },
-      { kind: 'spell', count: 4 },
-      { kind: 'trap', count: 2 },
+      { kind: 'effect', count: 2 },
+      { kind: 'spell', count: 1 },
+      { kind: 'trap', count: 1 },
       { kind: 'fusion', count: 1 },
-      { kind: 'xyz', count: 1 },
-      { kind: 'pendulum', count: 3 },
+      { kind: 'pendulum', count: 2 },
       { kind: 'other', count: 1 },
     ])
-    // Every copy once: the 3 Pendulum copies are already in "Effekt" and "Xyz".
-    expect(result.total).toBe(17)
+    // Every card once: the chips add up.
+    expect(result.total).toBe(9)
+  })
+
+  it('counts a card held in several stacks once per scope', () => {
+    const stack = (id: string, collectionId: string | null) => ({
+      id, userId: 'user-a', catalogCardId: 1, quantity: 5, collectionId, createdAt: now, updatedAt: now,
+    })
+    db.insert(schema.ownedCard).values([stack('o10', null), stack('o11', 'box-1')]).run()
+
+    // Kuriboh is in Box 1 (x3 and x5) and loose (x5), Cyber Dragon is loose: 2 cards of "Effekt" in the whole inventory.
+    expect(loadInventoryKindCounts(db, 'user-a').kinds).toContainEqual({ kind: 'effect', count: 2 })
+    expect(loadInventoryKindCounts(db, 'user-a', 'box-1').kinds).toContainEqual({ kind: 'effect', count: 1 })
+    expect(loadInventoryKindCounts(db, 'user-a', UNASSIGNED_COLLECTION_ID).kinds).toContainEqual({ kind: 'effect', count: 2 })
   })
 
   it('scopes to one collection and to the copies without one', () => {
     expect(loadInventoryKindCounts(db, 'user-a', 'box-1')).toEqual({
-      kinds: [{ kind: 'normal', count: 1 }, { kind: 'effect', count: 3 }, { kind: 'trap', count: 2 }, { kind: 'xyz', count: 1 }, { kind: 'pendulum', count: 1 }],
-      total: 7,
+      kinds: [{ kind: 'normal', count: 1 }, { kind: 'effect', count: 1 }, { kind: 'trap', count: 1 }, { kind: 'pendulum', count: 1 }],
+      total: 4,
     })
     expect(loadInventoryKindCounts(db, 'user-a', UNASSIGNED_COLLECTION_ID)).toEqual({
-      kinds: [{ kind: 'effect', count: 4 }, { kind: 'spell', count: 4 }, { kind: 'fusion', count: 1 }, { kind: 'pendulum', count: 2 }, { kind: 'other', count: 1 }],
-      total: 10,
+      kinds: [{ kind: 'effect', count: 1 }, { kind: 'spell', count: 1 }, { kind: 'fusion', count: 1 }, { kind: 'pendulum', count: 1 }, { kind: 'other', count: 1 }],
+      total: 5,
     })
   })
 
@@ -103,8 +116,9 @@ describe('inventoryKindBreakdown', () => {
     const link = { type: 'Link Monster', frameType: 'link', quantity: 1 }
     const xyz = { type: 'XYZ Monster', frameType: 'xyz', quantity: 4 }
 
-    expect(inventoryKindBreakdown([link, xyz, pendulum]).map(entry => entry.kind)).toEqual(['normal', 'xyz', 'pendulum', 'link'])
+    // A Pendulum Normal Monster is "Pendel" only: no "Normal" chip for it.
+    expect(inventoryKindBreakdown([link, xyz, pendulum]).map(entry => entry.kind)).toEqual(['xyz', 'pendulum', 'link'])
     expect(inventoryKindBreakdown([link, xyz]).map(entry => entry.kind)).toEqual(['xyz', 'link'])
-    expect(inventoryKindBreakdown([pendulum])).toEqual([{ kind: 'normal', count: 2 }, { kind: 'pendulum', count: 2 }])
+    expect(inventoryKindBreakdown([pendulum])).toEqual([{ kind: 'pendulum', count: 2 }])
   })
 })

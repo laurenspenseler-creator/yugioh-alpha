@@ -161,21 +161,25 @@ describe('the standings table of a duel tournament', () => {
     const cells = component.findAll('tbody tr')[0]!.findAll('td').map(cell => cell.text())
     const under = (heading: string) => cells[headings.indexOf(heading)]
     expect(under('Spieltage')).toBe('6')
-    expect(under('Siege')).toBe('7')
-    // Tester feedback, round 11: the lost matches next to the wins.
-    expect(under('Niederlagen')).toBe('2')
     expect(under('Punkte')).toBe('21')
-    expect(under('Matches')).toBe('9')
-    expect(under('Partien')).toBe('15:8')
+    // Tester feedback, round 12: Wins and Defeats are the duels (games) won and lost, not the matches.
+    expect(under('Wins')).toBe('15')
+    expect(under('Defeats')).toBe('8')
     expect(under('Diff.')).toBe('+7')
   })
 
-  it('has the Spieltage right before the wins, the losses right after them and no "Offen" column any more', async () => {
+  // Tester feedback, round 12: "Ich brauche nur Spieltage, Punkte, gewonnene Duelle (Wins), verlorene Duelle (Defeats) und Differenz."
+  it('has just the Spieltage, the points, the wins, the defeats and the difference, in that order, after the player', async () => {
     const component = await mountSuspended(QueueTable, { props: { tournament: tournament('rounds') } })
 
     const headings = component.findAll('thead th').map(heading => heading.text())
-    expect(headings.slice(0, 5)).toEqual(['#', 'Spieler', 'Spieltage', 'Siege', 'Niederlagen'])
-    expect(headings).not.toContain('Offen')
+    expect(headings.slice(0, 7)).toEqual(['#', 'Spieler', 'Spieltage', 'Punkte', 'Wins', 'Defeats', 'Diff.'])
+    for (const gone of ['Siege', 'Niederlagen', 'Matches', 'Partien', 'Offen']) {
+      expect(headings).not.toContain(gone)
+    }
+    // Nothing of it is hidden on a phone.
+    const classes = component.findAll('thead th').slice(2, 7).map(heading => heading.classes().join(' '))
+    expect(classes.every(value => !value.includes('hidden'))).toBe(true)
   })
 
   it('shows a negative difference with its minus and a level one as 0', async () => {

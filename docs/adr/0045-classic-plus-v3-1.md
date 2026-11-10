@@ -105,6 +105,33 @@ The banlist was last generated on 18 October. Running the pipeline again reads t
   draw) are marked "repeatable", which the frequency modifier turns into a ban; 13 of the hand-classified cards are
   flagged "unsure" for review (`review.csv`).
 
+### The test table (tester feedback, round 12)
+
+The rule authors tested the format with seven pairs of cards, each pair checking one point of the rules, with the limit each
+card must have (`tests/nuxt/classic-plus-v31.test.ts`, "the rule authors' test table"). Eleven of the fourteen already
+matched; three did not, and each pointed at a class of cards, not only at itself:
+
+* **Macro Cosmos was unlimited; it is forbidden** (row 1: the same redirect effect as Masked HERO Dark Law, a Continuous Trap
+  without a body, step 4, against a monster with a body, step 2). No candidate pattern looked for "banished instead", so no
+  such card was classified. Owner ruling 37: a lasting redirect of the cards that go to a Graveyard is a floodgate, to be
+  judged by the check steps of rule 3; the prefilter has the pattern `redirect` now, and the 12 cards it found that were not
+  classified were read by hand. Two more with the very sentence of Macro Cosmos or Dark Law are limited to 2 (Banisher of
+  the Light, Banisher of the Radiance), General Wayne of the Ice Barrier, Valkyrie Erda and Grave Protector are 2 (a monster,
+  step 2), Dimensional Fissure and Degenerate Circuit are 1 (they reach only monsters, step 3), and Transmigration Break
+  is forbidden (a Continuous Trap, step 4); the six where the reading was a close call are flagged "unsure" for the review
+  table. Not floodgates: one turn only (Different Dimension Ground), the controller's own Graveyard (Chaos Distill), the
+  battles of one card or archetype (Battleguard Rage, Kozmourning).
+* **Super Polymerization was 2; it is 1** (row 2). Its mass removal is the opponent's monsters as material (ruling 28), and
+  "neither player can activate cards or effects in response" leaves no real answer to it: the trait `noanswer`, which brings
+  a tiered hit back to 1. Ruling 38 defines it that way for the re-check, and the same sentence now gives `noanswer` to Super
+  Duper Polymerization, Ultra Polymerization, Elemental HERO Cosmo Neos, Elemental Saga Doriado and Odd-Eyes Gravity Dragon
+  (all of them 2 before, 1 now).
+* **Relinquished was limited to 1; it is unlimited** (row 5: Brain Control gets a monster for 800 LP, Relinquished pays the
+  full Ritual price). Its three hits (7(a), 9(b) and 6(a)) all contradict the authors' answer, so it is a fixed limit
+  (`overrides.json`, 33 now), like the card list. The question this leaves open: Reshef the Dark Being and Relinquished the
+  Wicked Eye of Illusion are Ritual Monsters with a rule 7(a) hit as well; whether the full Ritual price lifts rule 7(a) for
+  every Ritual Monster is for the authors to say, and nothing else was changed on a guess.
+
 ## Consequences
 
 * 44 cards moved in the banlist for v3.1 (the card list and rule 8 for Extra Deck monsters: 1 from forbidden to

@@ -129,4 +129,61 @@ describe('CardThumb', () => {
     expect(component.find('button').exists()).toBe(false)
     expect(component.find('[aria-label="Zoom"]').exists()).toBe(false)
   })
+
+  // Tester feedback, round 12: "Die Kartenbilder scheinen nur bei Internetverbindung verfügbar zu sein." The scans of
+  // YGOPRODeck load through the app's own image cache, which keeps them on the disk (ADR 0046).
+  describe('with the scans of YGOPRODeck', () => {
+    const REMOTE_SMALL = 'https://images.ygoprodeck.com/images/cards_small/46986414.jpg'
+    const REMOTE_LARGE = 'https://images.ygoprodeck.com/images/cards/46986414.jpg'
+    const LOCAL_SMALL = '/api/card-images/cards_small/46986414.jpg'
+    const LOCAL_LARGE = '/api/card-images/cards/46986414.jpg'
+
+    it('loads them from the app\'s own image cache', async () => {
+      const thumb = await mountSuspended(CardThumb, { props: { alt: 'Dark Magician', src: REMOTE_SMALL, srcLarge: REMOTE_LARGE } })
+      expect(thumb.find('img').attributes('src')).toBe(LOCAL_SMALL)
+
+      const full = await mountSuspended(CardThumb, { props: { alt: 'Dark Magician', src: REMOTE_SMALL, srcLarge: REMOTE_LARGE, size: 'full' } })
+      expect(full.find('img').attributes('src')).toBe(LOCAL_LARGE)
+      expect(full.find('img').attributes('srcset')).toBe(`${LOCAL_SMALL} 168w, ${LOCAL_LARGE} 421w`)
+    })
+
+    it('shows the small scan when the large one is not there (offline, never seen), and the card back only after that', async () => {
+      const component = await mountSuspended(CardThumb, {
+        props: { alt: 'Dark Magician', src: REMOTE_SMALL, srcLarge: REMOTE_LARGE, size: 'full' },
+      })
+
+      await component.find('img').trigger('error')
+      expect(component.find('img').attributes('src')).toBe(LOCAL_SMALL)
+      expect(component.find('img').attributes('srcset')).toBeUndefined()
+
+      await component.find('img').trigger('error')
+      expect(component.find('img').exists()).toBe(false)
+      expect(component.find('[role="img"]').exists()).toBe(true)
+    })
+
+    it('tries the large scan again for another card', async () => {
+      const component = await mountSuspended(CardThumb, {
+        props: { alt: 'Dark Magician', src: REMOTE_SMALL, srcLarge: REMOTE_LARGE, size: 'full' },
+      })
+      await component.find('img').trigger('error')
+      expect(component.find('img').attributes('src')).toBe(LOCAL_SMALL)
+
+      await component.setProps({
+        src: 'https://images.ygoprodeck.com/images/cards_small/89631139.jpg',
+        srcLarge: 'https://images.ygoprodeck.com/images/cards/89631139.jpg',
+      })
+      expect(component.find('img').attributes('src')).toBe('/api/card-images/cards/89631139.jpg')
+    })
+
+    it('opens the enlarged scan from the cache too', async () => {
+      const component = await mountSuspended(CardThumb, {
+        props: { alt: 'Dark Magician', src: REMOTE_SMALL, srcLarge: REMOTE_LARGE, enlargeable: true },
+      })
+      await component.find('button').trigger('click')
+
+      await vi.waitFor(() => {
+        expect(body().find(`[role="dialog"] .foil img[src="${LOCAL_LARGE}"]`).exists()).toBe(true)
+      })
+    })
+  })
 })

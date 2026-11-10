@@ -30,10 +30,11 @@ export interface CatalogCardSummary {
 
 /**
  * One page of catalog cards. `cardLocale` is the card language the names are
- * shown in (ADR 0015): "by name" sorts by the German name in `de`.
+ * shown in (ADR 0015): "by name" sorts by the German name in `de`. `userId` is
+ * whose inventory the "nur mein Inventar" filter (`filters.owned`) looks at.
  */
-export async function searchCatalog(db: Db, filters: CardListQuery, cardLocale: AppLocale = 'en') {
-  const where = buildCardListWhere(filters)
+export async function searchCatalog(db: Db, filters: CardListQuery, cardLocale: AppLocale = 'en', userId?: string) {
+  const where = buildCardListWhere(filters, userId)
   const offset = (filters.page - 1) * filters.pageSize
   const nameKey = cardSortKey(cardLocale)
   const orderBy = filters.sort === '-name'

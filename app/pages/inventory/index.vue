@@ -415,7 +415,7 @@ function openAdd(card: CatalogCard) {
   isEntryOpen.value = true
 }
 
-// Copies per card kind for the chips beside the filters; scoped like the page
+// Different cards per card kind (not copies: a card owned three times counts once) for the chips beside the filters; scoped like the page
 // (all cards, one collection, or the copies without one).
 const { data: kindCountsData, refresh: refreshKindCounts } = await useFetch<{ kinds: Array<{ kind: InventoryKind, count: number }>, total: number }>('/api/inventory/kind-counts', {
   query: computed(() => ({ collectionId: collectionId.value || undefined })),

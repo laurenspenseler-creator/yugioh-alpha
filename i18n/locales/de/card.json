@@ -37,6 +37,7 @@
       "race": "Monsterart",
       "level": "Stufe/Rang",
       "kind": "Kartenart",
+      "excludeKind": "Ohne Kartenart",
       "raceSpell": "Zauberart",
       "raceTrap": "Fallenart",
       "raceSpellTrap": "Zauber-/Fallenart",
