@@ -101,6 +101,12 @@
       },
       "countIn": "Anzahl im {section}",
       "emptySection": "Noch keine Karten im {section}.",
+      "sort": {
+        "label": "Sortierung nach Erscheinungsdatum",
+        "default": "Standard",
+        "newest": "Neueste zuerst",
+        "oldest": "Älteste zuerst"
+      },
       "cover": {
         "chosen": "Titelkarte",
         "auto": "Titelkarte (automatisch)",

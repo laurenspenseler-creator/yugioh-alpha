@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DOMWrapper as BodyWrapper, enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import type { DOMWrapper } from '@vue/test-utils'
 import type { Ref } from 'vue'
@@ -28,6 +28,7 @@ interface DeckCardRow {
   usedInDeck: number
   shortfall: number
   nameDe?: string | null
+  tcgDate?: string | null
   retired?: boolean
 }
 
@@ -185,6 +186,78 @@ describe('deck editor', () => {
     // No entry point into the assistant (ADR 0021).
     expect(component.find('a[href^="/assistant"]').exists()).toBe(false)
     expect(text).not.toContain('Mit KI')
+  })
+
+  // Tester feedback, round 13: "kannst du bei Decks die Option hinzufügen, die Karten nach Erscheinungsdatum zu sortieren".
+  describe('the sort by release date', () => {
+    const dated = (name: string, id: number, tcgDate: string | null, overrides: Partial<DeckCardRow> = {}) =>
+      row({ name, catalogCardId: id, section: 'main', tcgDate, ...overrides })
+
+    function mainDeck() {
+      state.source = { items: [], total: 0 }
+      // The server sends the usual order: monsters, then spells, each by name.
+      state.deck = deckDetail({
+        main: [
+          dated('Decode Talker', 1, '2017-07-21', { type: 'Effect Monster', frameType: 'effect' }),
+          dated('Kuriboh', 2, '2002-06-26', { type: 'Effect Monster', frameType: 'effect' }),
+          dated('Old OCG Card', 3, null, { type: 'Effect Monster', frameType: 'effect' }),
+          dated('Pot of Greed', 4, '2002-03-08', { type: 'Spell Card', frameType: 'spell' }),
+        ],
+      })
+    }
+
+    const mainNames = (component: Awaited<ReturnType<typeof mountSuspended>>) =>
+      component.findAll('li .stretched-link').map((link: { text: () => string }) => link.text())
+
+    beforeEach(() => {
+      localStorage.removeItem('ygo-deck-sort')
+    })
+
+    it('offers the usual order, the newest first and the oldest first, and starts with the usual one', async () => {
+      mainDeck()
+      const component = await mountSuspended(DeckEditorPage)
+      const select = selectWithOption(component.findAllComponents(USelect), 'newest')!
+
+      expect(optionLabels(select)).toEqual(['Standard', 'Neueste zuerst', 'Älteste zuerst'])
+      expect(select.props('modelValue')).toBe('default')
+      expect(component.text()).toContain('Sortierung nach Erscheinungsdatum')
+      expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Old OCG Card', 'Pot of Greed'])
+    })
+
+    it('lists the cards by release date and puts a card without a date last', async () => {
+      mainDeck()
+      const component = await mountSuspended(DeckEditorPage)
+      const select = selectWithOption(component.findAllComponents(USelect), 'newest')!
+
+      await select.setValue('newest')
+      expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Pot of Greed', 'Old OCG Card'])
+
+      await select.setValue('oldest')
+      expect(mainNames(component)).toEqual(['Pot of Greed', 'Kuriboh', 'Decode Talker', 'Old OCG Card'])
+
+      await select.setValue('default')
+      expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Old OCG Card', 'Pot of Greed'])
+    })
+
+    it('remembers the choice in this browser', async () => {
+      mainDeck()
+      const first = await mountSuspended(DeckEditorPage)
+      await selectWithOption(first.findAllComponents(USelect), 'newest')!.setValue('oldest')
+      expect(localStorage.getItem('ygo-deck-sort')).toBe('oldest')
+      first.unmount()
+
+      const second = await mountSuspended(DeckEditorPage)
+      await flushPromises()
+      expect(selectWithOption(second.findAllComponents(USelect), 'newest')!.props('modelValue')).toBe('oldest')
+      expect(mainNames(second)).toEqual(['Pot of Greed', 'Kuriboh', 'Decode Talker', 'Old OCG Card'])
+    })
+
+    it('ignores a value in the storage that is not a choice', async () => {
+      localStorage.setItem('ygo-deck-sort', 'sideways')
+      mainDeck()
+      const component = await mountSuspended(DeckEditorPage)
+      expect(selectWithOption(component.findAllComponents(USelect), 'newest')!.props('modelValue')).toBe('default')
+    })
   })
 
   it('marks an undersized and an oversized section', async () => {

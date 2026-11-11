@@ -101,6 +101,12 @@
       },
       "countIn": "Count in the {section}",
       "emptySection": "No cards in the {section} yet.",
+      "sort": {
+        "label": "Sort by release date",
+        "default": "Default",
+        "newest": "Newest first",
+        "oldest": "Oldest first"
+      },
       "cover": {
         "chosen": "Cover card",
         "auto": "Cover card (automatic)",

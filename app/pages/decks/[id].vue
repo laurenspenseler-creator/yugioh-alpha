@@ -13,7 +13,8 @@ import { cardFrame } from '~~/shared/card-frame'
 import { CARD_KINDS } from '~~/shared/card-kind'
 import { UNASSIGNED_COLLECTION_ID } from '~~/shared/inventory'
 import { deckBreakdownGroups } from '~~/shared/deck-breakdown'
-import { compareDeckRows } from '~~/shared/deck-order'
+import { compareDeckRowsBy, DECK_SORTS, isDeckSort } from '~~/shared/deck-order'
+import type { DeckSort } from '~~/shared/deck-order'
 import type { CardDetailPreview } from '~/utils/card-detail'
 import { deckCountState, deckMeterFill } from '~/utils/deck-meter'
 
@@ -30,6 +31,8 @@ interface DeckCardRow {
   atk: number | null
   def: number | null
   imageSmall: string | null
+  /** The day the card first came out in the TCG; read null-safely, older fixtures lack it. */
+  tcgDate?: string | null
   section: DeckSection
   quantity: number
   owned: number
@@ -584,6 +587,8 @@ function optimisticRow(card: OptimisticCard, section: DeckSection, quantity: num
     atk: card.atk ?? null,
     def: card.def ?? null,
     imageSmall: card.imageSmall ?? null,
+    // The cards of the add panel carry no date; the server's answer has it a moment later.
+    tcgDate: card.tcgDate ?? known?.tcgDate ?? null,
     section,
     quantity,
     owned: known?.owned ?? card.owned ?? 0,
@@ -594,8 +599,36 @@ function optimisticRow(card: OptimisticCard, section: DeckSection, quantity: num
   }
 }
 
+// How the cards of a section are listed (tester feedback, round 13: "die Karten nach Erscheinungsdatum sortieren"):
+// the usual order, or by the day a card first came out in the TCG. A choice of this browser, kept like the table's.
+const SORT_KEY = 'ygo-deck-sort'
+const deckSort = ref<DeckSort>('default')
+const sortItems = computed(() => DECK_SORTS.map(value => ({ label: t(`decks.editor.sort.${value}`), value })))
+
+onMounted(() => {
+  try {
+    const saved = localStorage.getItem(SORT_KEY)
+    if (isDeckSort(saved)) {
+      deckSort.value = saved
+    }
+  }
+  catch {
+    // Storage can be blocked: the usual order.
+  }
+})
+
+watch(deckSort, (value) => {
+  try {
+    localStorage.setItem(SORT_KEY, value)
+  }
+  catch {
+    // Not remembered, still set for now.
+  }
+})
+
 // The server rows with the asked-for quantities, plus the optimistic rows of
-// cards new to a section, slotted in where the server sorts them. A row at 0
+// cards new to a section, slotted in where the order puts them (the server's
+// own order is the usual one; any other is applied here). A row at 0
 // stays until the queue drains, so its focused stepper isn't removed.
 const sections = computed<Record<DeckSection, DeckCardRow[]>>(() => {
   const pending = pendingQuantities.value
@@ -610,8 +643,11 @@ const sections = computed<Record<DeckSection, DeckCardRow[]>>(() => {
         continue
       }
       const shownRow = { ...row, quantity: pending[quantityKey(row.catalogCardId, section)] ?? row.quantity }
-      const index = rows.findIndex(existing => compareDeckRows(section, shownRow, existing, cardLocale.value) < 0)
+      const index = rows.findIndex(existing => compareDeckRowsBy(deckSort.value, section, shownRow, existing, cardLocale.value) < 0)
       rows.splice(index === -1 ? rows.length : index, 0, shownRow)
+    }
+    if (deckSort.value !== 'default') {
+      rows.sort((a, b) => compareDeckRowsBy(deckSort.value, section, a, b, cardLocale.value))
     }
     shown[section] = rows
   }
@@ -1122,6 +1158,20 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
         <!-- A container, so the rows switch layout by the column's own width:
              beside the add panel at 1024px it is only ~360px wide. -->
         <div class="@container min-w-0 flex-1 space-y-6">
+          <div class="flex @lg:justify-end">
+            <UFormField
+              :label="t('decks.editor.sort.label')"
+              class="w-full @lg:w-auto"
+            >
+              <USelect
+                v-model="deckSort"
+                :items="sortItems"
+                :aria-label="t('decks.editor.sort.label')"
+                class="w-full @lg:w-56"
+                data-testid="deck-sort"
+              />
+            </UFormField>
+          </div>
           <section
             v-for="section in DECK_SECTIONS"
             :key="section"

@@ -31,3 +31,43 @@ export function compareDeckRows(section: DeckSection, a: DeckOrderRow, b: DeckOr
   const byName = compareCardNames(a, b, cardLocale)
   return section === 'main' ? cardCategoryRank(a.type) - cardCategoryRank(b.type) || byName : byName
 }
+
+/**
+ * How the deck editor lists the cards of a section (tester feedback, round 13): the conventional order above, or by the
+ * date the card first came out in the TCG, newest or oldest first.
+ */
+export type DeckSort = 'default' | 'newest' | 'oldest'
+
+export const DECK_SORTS = ['default', 'newest', 'oldest'] as const
+
+export function isDeckSort(value: unknown): value is DeckSort {
+  return typeof value === 'string' && (DECK_SORTS as readonly string[]).includes(value)
+}
+
+export interface DeckDatedRow extends DeckOrderRow {
+  /** `YYYY-MM-DD`, or null when the card has no TCG release date (an OCG-only card). */
+  tcgDate?: string | null
+}
+
+/**
+ * The order of two rows of a section under `sort`. By date, a card without one comes last whichever way it goes, and
+ * cards of the same day (a whole set comes out at once) keep the conventional order among themselves.
+ */
+export function compareDeckRowsBy(sort: DeckSort, section: DeckSection, a: DeckDatedRow, b: DeckDatedRow, cardLocale: AppLocale): number {
+  if (sort === 'default') {
+    return compareDeckRows(section, a, b, cardLocale)
+  }
+  const dateA = a.tcgDate || null
+  const dateB = b.tcgDate || null
+  if (dateA !== dateB) {
+    if (dateA === null) {
+      return 1
+    }
+    if (dateB === null) {
+      return -1
+    }
+    // ISO dates compare as text.
+    return (dateA < dateB ? -1 : 1) * (sort === 'newest' ? -1 : 1)
+  }
+  return compareDeckRows(section, a, b, cardLocale)
+}

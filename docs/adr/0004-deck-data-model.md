@@ -125,3 +125,13 @@ stays derived at read time — no legality column was added.
   re-read after a mutation and counts/warnings can never go stale.
 - A future "build this deck from these exact copies" feature would need an
   additional allocation model; it is explicitly out of scope here.
+
+## Addendum: sorting a deck by release date (tester feedback, round 13)
+
+The deck editor can list the cards of each section by the day they first came out in the TCG, newest or oldest first
+("Sortierung nach Erscheinungsdatum"). A card row carries `tcgDate` (`catalog_card.tcg_date`, `YYYY-MM-DD`, null for a card
+that is OCG only); `compareDeckRowsBy` in `shared/deck-order.ts` sorts by it, puts a card without a date last in both
+directions and keeps the usual order (the Main Deck by monsters, spells, traps, then by name) among cards of the same day,
+which is every card of a set. The server still answers in the usual order; any other order is applied in the editor, so an
+optimistic row slots in the same way. The choice is a per-browser convenience (`localStorage`, `ygo-deck-sort`), not part
+of the deck. The shared (read-only) deck view and the deck export keep the usual order.
