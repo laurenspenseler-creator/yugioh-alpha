@@ -7,6 +7,7 @@ import * as schema from '../../server/db/schema'
 import {
   addParticipant,
   confirmRematch,
+  createEveningDuel,
   createTournament,
   decideParticipantLeave,
   extendTournament,
@@ -14,6 +15,7 @@ import {
   getTournamentDetail,
   leaveParticipant,
   recomputePairings,
+  removeEveningDuel,
   reportDuelResult,
   scheduleDecider,
   startTournament,
@@ -723,5 +725,146 @@ describe('the points of the table', () => {
     expect(updateTournament(db, ORGANIZER, created.id, { scoring: 'games' }).queueSetup).toMatchObject({ scoring: 'games' })
     startTournament(db, ORGANIZER, created.id)
     expect(codeOf(() => updateTournament(db, ORGANIZER, created.id, { scoring: 'match' }))).toBe('tournament_started')
+  })
+})
+
+describe('a Spielabend: duels paired by hand', () => {
+  let db: TestDb
+  beforeEach(() => {
+    db = createTestDb()
+    seedUsers(db)
+  })
+
+  /** A started Spielabend with four players; `ids` are the participants in the order they were added. */
+  function startedEvening(guests = 4) {
+    const created = newQueueTournament(db, { mode: 'free' }, guests)
+    const started = startTournament(db, ORGANIZER, created.id)
+    return { id: created.id, started, ids: started.participants.map(participant => participant.id) }
+  }
+
+  const pair = (id: string, a: string, b: string, bestOf: unknown) =>
+    createEveningDuel(db, ORGANIZER, id, { participantAId: a, participantBId: b, bestOf })
+
+  it('is chosen as a mode, has no plan and starts with no duel at all', () => {
+    const { started } = startedEvening()
+
+    expect(started.queueSetup).toMatchObject({ mode: 'free', flow: 'rounds' })
+    expect(started.status).toBe('running')
+    expect(started.queue!.duels).toEqual([])
+    expect(started.queue!.table).toHaveLength(4)
+    expect(started.queue!.remainingMinutes).toBeNull()
+    expect(started.queue!.canExtend).toBe(false)
+    expect(started.queue!.firstPlaceTie).toEqual([])
+  })
+
+  it('starts a duel at once, a single game or best of 3 as chosen for this one duel, at the lowest free table', () => {
+    const { id, ids } = startedEvening()
+
+    const first = pair(id, ids[0]!, ids[1]!, 3)
+    const second = pair(id, ids[2]!, ids[3]!, 1)
+
+    expect(first.queue!.duels).toHaveLength(1)
+    expect(first.queue!.duels[0]).toMatchObject({ status: 'running', bestOf: 3, tableNumber: 1, participantAId: ids[0], participantBId: ids[1] })
+    expect(second.queue!.duels.map(duel => [duel.bestOf, duel.tableNumber])).toEqual([[3, 1], [1, 2]])
+  })
+
+  it('takes the best-of of the duel when the result is entered: the score for best of 3, none for a single game', () => {
+    const { id, ids } = startedEvening()
+    const bo3 = pair(id, ids[0]!, ids[1]!, 3).queue!.duels[0]!
+    const single = pair(id, ids[2]!, ids[3]!, 1).queue!.duels[1]!
+    const report = (duel: { id: string }, body: Record<string, unknown>) => reportDuelResult(db, ORGANIZER, id, duel.id, body)
+
+    expect(codeOf(() => report(bo3, { winnerParticipantId: ids[0] }))).toBe('invalid_games')
+    expect(codeOf(() => report(bo3, { winnerParticipantId: ids[0], gamesA: 2, gamesB: 2 }))).toBe('invalid_games')
+
+    report(bo3, { winnerParticipantId: ids[1], gamesA: 1, gamesB: 2 })
+    const detail = report(single, { winnerParticipantId: ids[2], gamesA: 2, gamesB: 1 })
+
+    const duels = detail.queue!.duels
+    expect(duels.find(duel => duel.id === bo3.id)).toMatchObject({ status: 'done', winnerParticipantId: ids[1], gamesA: 1, gamesB: 2 })
+    expect(duels.find(duel => duel.id === single.id)).toMatchObject({ status: 'done', winnerParticipantId: ids[2], gamesA: null, gamesB: null })
+  })
+
+  it('scores a best-of-3 duel by games and a single game 3:0, and ranks by the difference of the games', () => {
+    const { id, ids } = startedEvening()
+    const bo3 = pair(id, ids[0]!, ids[1]!, 3).queue!.duels[0]!
+    const single = pair(id, ids[2]!, ids[3]!, 1).queue!.duels[1]!
+    reportDuelResult(db, ORGANIZER, id, bo3.id, { winnerParticipantId: ids[0], gamesA: 2, gamesB: 1 })
+    const detail = reportDuelResult(db, ORGANIZER, id, single.id, { winnerParticipantId: ids[2] })
+
+    const row = (participantId: string) => detail.queue!.table.find(candidate => candidate.participantId === participantId)!
+    expect([row(ids[0]!).points, row(ids[0]!).gamesWon, row(ids[0]!).gamesLost]).toEqual([2, 2, 1])
+    expect([row(ids[1]!).points, row(ids[1]!).gamesWon, row(ids[1]!).gamesLost]).toEqual([1, 1, 2])
+    expect([row(ids[2]!).points, row(ids[2]!).gamesWon, row(ids[2]!).gamesLost]).toEqual([3, 1, 0])
+    expect([row(ids[3]!).points, row(ids[3]!).gamesWon, row(ids[3]!).gamesLost]).toEqual([0, 0, 1])
+    expect(detail.queue!.table[0]!.participantId).toBe(ids[2])
+    expect(detail.queue!.duelsDone).toBe(2)
+  })
+
+  it('refuses a pair that does not work: the same player twice, someone in a duel, a stranger, a best-of that does not exist', () => {
+    const { id, ids } = startedEvening()
+    pair(id, ids[0]!, ids[1]!, 1)
+
+    expect(codeOf(() => pair(id, ids[2]!, ids[2]!, 1))).toBe('invalid_pair')
+    expect(codeOf(() => pair(id, ids[2]!, 'nobody', 1))).toBe('invalid_pair')
+    expect(codeOf(() => pair(id, ids[2]!, undefined as unknown as string, 1))).toBe('invalid_pair')
+    expect(codeOf(() => pair(id, ids[1]!, ids[2]!, 1))).toBe('player_in_duel')
+    expect(codeOf(() => pair(id, ids[2]!, ids[3]!, 2))).toBe('invalid_best_of')
+    expect(codeOf(() => pair(id, ids[2]!, ids[3]!, undefined))).toBe('invalid_best_of')
+  })
+
+  it('lets the same two play again once the duel is in', () => {
+    const { id, ids } = startedEvening()
+    const duel = pair(id, ids[0]!, ids[1]!, 1).queue!.duels[0]!
+    reportDuelResult(db, ORGANIZER, id, duel.id, { winnerParticipantId: ids[0] })
+
+    const detail = pair(id, ids[1]!, ids[0]!, 3)
+
+    expect(detail.queue!.duels).toHaveLength(2)
+    expect(detail.queue!.duels[1]).toMatchObject({ status: 'running', bestOf: 3, tableNumber: 1 })
+  })
+
+  it('takes back a duel that was paired by mistake, and only one that has not been played', () => {
+    const { id, ids } = startedEvening()
+    const wrong = pair(id, ids[0]!, ids[1]!, 3).queue!.duels[0]!
+    const played = pair(id, ids[2]!, ids[3]!, 1).queue!.duels[1]!
+    reportDuelResult(db, ORGANIZER, id, played.id, { winnerParticipantId: ids[2] })
+
+    expect(codeOf(() => removeEveningDuel(db, ORGANIZER, id, played.id))).toBe('duel_not_open')
+    expect(codeOf(() => removeEveningDuel(db, ORGANIZER, id, 'unknown'))).toBe('unknown_duel')
+
+    const detail = removeEveningDuel(db, ORGANIZER, id, wrong.id)
+    expect(detail.queue!.duels.map(duel => duel.id)).toEqual([played.id])
+    // The two are free again, and the table of the removed duel is the next one handed out.
+    expect(pair(id, ids[0]!, ids[3]!, 1).queue!.duels.at(-1)).toMatchObject({ tableNumber: 1 })
+  })
+
+  it('is for the organizer, for a Spielabend that runs, and for a Spielabend only', () => {
+    const created = newQueueTournament(db, { mode: 'free' }, 3)
+    const ids = created.participants.map(participant => participant.id)
+    expect(codeOf(() => pair(created.id, ids[0]!, ids[1]!, 1))).toBe('tournament_not_running')
+
+    startTournament(db, ORGANIZER, created.id)
+    expect(() => createEveningDuel(db, 'user-b', created.id, { participantAId: ids[0], participantBId: ids[1], bestOf: 1 })).toThrow()
+
+    const robin = newQueueTournament(db, { mode: 'round_robin' }, 3)
+    startTournament(db, ORGANIZER, robin.id)
+    const robinIds = robin.participants.map(participant => participant.id)
+    expect(codeOf(() => pair(robin.id, robinIds[0]!, robinIds[1]!, 1))).toBe('not_free_tournament')
+    expect(codeOf(() => removeEveningDuel(db, ORGANIZER, robin.id, 'any'))).toBe('not_free_tournament')
+
+    finishTournament(db, ORGANIZER, created.id)
+    expect(codeOf(() => pair(created.id, ids[0]!, ids[1]!, 1))).toBe('tournament_not_running')
+  })
+
+  it('keeps the settings of the evening: the best-of of the form is only what a new duel starts with', () => {
+    const created = newQueueTournament(db, { mode: 'free', bestOf: 3 }, 2)
+    const started = startTournament(db, ORGANIZER, created.id)
+    const ids = started.participants.map(participant => participant.id)
+
+    const detail = pair(created.id, ids[0]!, ids[1]!, 1)
+
+    expect(detail.queueSetup).toMatchObject({ mode: 'free', bestOf: 3 })
+    expect(detail.queue!.duels[0]).toMatchObject({ bestOf: 1 })
   })
 })

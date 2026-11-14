@@ -1002,6 +1002,22 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
         :title="deck.name"
         :description="deck.description ?? undefined"
       >
+        <!-- The sort by release date sits at the top right, in the free space beside the name and the counts (tester
+             feedback, round 15: "Zieh den blauen Bereich in den roten"). -->
+        <template #actions>
+          <UFormField
+            :label="t('decks.editor.sort.label')"
+            class="w-full sm:w-56"
+          >
+            <USelect
+              v-model="deckSort"
+              :items="sortItems"
+              :aria-label="t('decks.editor.sort.label')"
+              class="w-full"
+              data-testid="deck-sort"
+            />
+          </UFormField>
+        </template>
         <!-- Who can see the deck belongs to the name (tester feedback, round 10: "Setz das Privat dahin"). -->
         <template #titleAside>
           <SharingVisibilityBadge
@@ -1158,20 +1174,6 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
         <!-- A container, so the rows switch layout by the column's own width:
              beside the add panel at 1024px it is only ~360px wide. -->
         <div class="@container min-w-0 flex-1 space-y-6">
-          <div class="flex @lg:justify-end">
-            <UFormField
-              :label="t('decks.editor.sort.label')"
-              class="w-full @lg:w-auto"
-            >
-              <USelect
-                v-model="deckSort"
-                :items="sortItems"
-                :aria-label="t('decks.editor.sort.label')"
-                class="w-full @lg:w-56"
-                data-testid="deck-sort"
-              />
-            </UFormField>
-          </div>
           <section
             v-for="section in DECK_SECTIONS"
             :key="section"

@@ -224,6 +224,20 @@ describe('deck editor', () => {
       expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Old OCG Card', 'Pot of Greed'])
     })
 
+    // Tester feedback, round 15: "Zieh den blauen Bereich in den roten": the select sits top right in the header.
+    it('sits in the header, at the right of the title, not above the sections', async () => {
+      mainDeck()
+      const component = await mountSuspended(DeckEditorPage)
+      const header = component.find('header')
+      const select = header.find('[data-testid="deck-sort"]')
+
+      expect(select.exists()).toBe(true)
+      expect(header.text()).toContain('Sortierung nach Erscheinungsdatum')
+      // In the box of the header's actions, which is pinned to the right.
+      expect(select.element.closest('header > div:last-child')).not.toBeNull()
+      expect(component.findAll('[data-testid="deck-sort"]')).toHaveLength(1)
+    })
+
     it('lists the cards by release date and puts a card without a date last', async () => {
       mainDeck()
       const component = await mountSuspended(DeckEditorPage)

@@ -1,0 +1,1 @@
+ALTER TABLE `tournament_duel` ADD `best_of` integer;

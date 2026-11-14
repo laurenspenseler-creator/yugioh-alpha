@@ -197,9 +197,10 @@ describe('inventory search panel (Galerie)', () => {
 
     // Aggregated result: name, total quantity, and per-collection breakdown.
     expect(text).toContain('Blue-Eyes White Dragon')
-    // No count line above the tiles (owner feedback, #148): the header has the total.
+    // The header has the total of the collection (5 copies); the end of the search row says how many cards the view lists
+    // right now (tester feedback, round 15: "wie viele karten er gerade anzeigt"), here the one card of the result.
     expect(text).toContain('5 Karten')
-    expect(text).not.toContain('1 Karte')
+    expect(component.find('[data-testid="inventory-shown-count"]').text()).toBe('1 Karte')
     expect(text).toContain('×5 ges.')
     expect(text).toContain('Box 1 ×3')
     expect(text).toContain('(keine Sammlung) ×2')

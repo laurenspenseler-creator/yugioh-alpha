@@ -64,7 +64,9 @@ const form = reactive({
 
 // A single game has no score, so there is nothing for the scoring "by games" to tell apart: a win is 3 points, a loss 0
 // (what the classic scoring says). The choice is shown as that and cannot be changed until the duel is best of 3.
-const singleGame = computed(() => form.bestOf === 1)
+// A Spielabend (mode "free") has single games and best-of-3 duels side by side, so the scoring by games stays available there.
+const isFree = computed(() => form.mode === 'free')
+const singleGame = computed(() => form.bestOf === 1 && !isFree.value)
 const effectiveScoring = computed<ScoringSystem>(() => singleGame.value ? 'match' : form.scoring)
 
 // One player per line: a name, or the e-mail address of an account; the decks of a player follow in brackets, so a line
@@ -109,6 +111,7 @@ async function submit() {
         mode: form.mode,
         flow: 'rounds',
         prelaunch: form.mode === 'swiss' && form.prelaunch,
+        // For a Spielabend this is only what a new duel starts with in the form; each duel gets its own.
         bestOf: form.bestOf,
         scoring: effectiveScoring.value,
         includeSelf: form.includeSelf,
@@ -195,7 +198,10 @@ async function submit() {
           :description="t('tournaments.queue.setup.prelaunchHint')"
         />
 
-        <UFormField :label="t('tournaments.queue.bestOf.label')">
+        <UFormField
+          v-if="!isFree"
+          :label="t('tournaments.queue.bestOf.label')"
+        >
           <USelect
             v-model="form.bestOf"
             :items="bestOfItems"
@@ -206,6 +212,14 @@ async function submit() {
             {{ t(`tournaments.queue.bestOf.${form.bestOf}.description`) }}
           </p>
         </UFormField>
+        <!-- A Spielabend (tester feedback, round 15): no plan, the organizer chooses duel by duel. -->
+        <p
+          v-else
+          class="text-xs text-muted"
+          data-testid="free-best-of-hint"
+        >
+          {{ t('tournaments.queue.free.bestOfHint') }}
+        </p>
 
         <UFormField :label="t('tournaments.new.scoring')">
           <USelect

@@ -193,6 +193,25 @@ describe('catalog page', () => {
     expect(component.find('[aria-label="Set"]').exists()).toBe(true)
   })
 
+  // Tester feedback, round 15: the count, Deckthema, Format, the two checkboxes and the sort sit on the line at the bottom of the filter panel.
+  it('has the count, Deckthema, Format, both checkboxes and the sort in one toolbar, the count first', async () => {
+    const component = await mountPage()
+    const toolbar = component.find('[data-testid="catalog-toolbar"]')
+
+    expect(toolbar.exists()).toBe(true)
+    // The number of cards is at the far left, where the Deckthema menu was.
+    expect(toolbar.element.firstElementChild).toBe(toolbar.find('[data-testid="catalog-count"]').element)
+    expect(toolbar.find('[data-testid="catalog-count"]').text()).not.toBe('')
+    expect(toolbar.find('[aria-label="Deckthema"]').exists()).toBe(true)
+    expect(toolbar.find('[aria-label="Format"]').exists()).toBe(true)
+    expect(toolbar.text()).toContain('Auch im Kartentext suchen')
+    expect(toolbar.text()).toContain('Nur in meinem Inventar suchen')
+    expect(toolbar.find('[aria-label="Sortierung"]').exists()).toBe(true)
+    // Nothing of it is left above or below the panel.
+    expect(component.findAll('[aria-label="Sortierung"]')).toHaveLength(1)
+    expect(component.findAll('[data-testid="catalog-count"]')).toHaveLength(1)
+  })
+
   it('shows a Link monster\'s rating on its tile', async () => {
     catalogState.items = [{
       id: 1861629,
@@ -386,7 +405,8 @@ describe('catalog page', () => {
       expect(lastQuery('/api/catalog/cards')).toMatchObject({ formatId: 'edison', legality: 'illegal', archetype: ['Blue-Eyes'] })
       expect(component.find('[aria-label="Format"]').text()).toContain('Edison')
       expect(component.find('[aria-label="Zulässigkeit"]').text()).toContain('Nicht zulässig')
-      expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blue-Eyes')
+      // The filter value is the English name of the archetype, the menu shows it in the card language (round 15).
+      expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blauäugiger')
 
       const reset = component.findAll('button').find(btn => btn.text() === 'Zurücksetzen')
       await reset!.trigger('click')

@@ -130,6 +130,24 @@ describe('CardDetailModal', () => {
     expect(text).toContain('Kontextbereich')
   })
 
+  // Tester feedback, round 15: "dass ich bei den sets in denen sie rausgekommen sind scrollen kann, nicht im ganzen Karten-
+  // anzeige-Fenster, und mach die Fenster deutlich größer."
+  it('is a large window of which only the card text and the list of printings scroll, not the whole window', async () => {
+    const printings = Array.from({ length: 40 }, (_, index) => ({ setCode: `SET-${index}`, setName: `Set ${index}`, rarity: 'Rare', price: null }))
+    await mountModal({ detail: cardDetail({}, { printings }) })
+    await vi.waitFor(() => {
+      expect(dialog().text()).toContain('SET-39')
+    })
+
+    // Wide and tall (it was 3xl before), and the body does not scroll on its own on a desktop.
+    expect(dialog().classes().join(' ')).toContain('sm:max-w-6xl')
+    expect(dialog().classes().join(' ')).toContain('md:h-[min(54rem,calc(100dvh-2rem))]')
+    expect(dialog().find('[data-slot="body"]').classes()).toContain('md:overflow-hidden')
+    // The printings have their own scroll area, the card text too.
+    expect(dialog().find('[data-testid="printings-list"]').classes()).toContain('overflow-y-auto')
+    expect(dialog().find('[data-testid="card-text-section"]').classes().join(' ')).toContain('md:overflow-y-auto')
+  })
+
   it('shows a "?" stat (stored as -1) as "?" and a missing one (a Link\'s DEF) as a dash (#134)', async () => {
     function stat(label: 'ATK' | 'DEF') {
       const term = dialog().findAll('dt').find(dt => dt.text() === label)

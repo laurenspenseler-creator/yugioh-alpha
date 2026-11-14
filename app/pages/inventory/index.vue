@@ -157,6 +157,12 @@ onMounted(() => {
   }
 })
 
+// The order of "Liste" (tester feedback, round 15: "Sortierung von A-Z"): the latest change first as before, or by name. It has
+// its own URL key (`?listSort=`) because "Galerie" keeps its own `?sort=`, like each view keeps its page.
+const LIST_SORTS = ['updated', 'name', '-name'] as const
+type ListSort = typeof LIST_SORTS[number]
+const listSort = ref<ListSort>(LIST_SORTS.find(value => value === route.query.listSort) ?? 'updated')
+
 const SEARCH_SORTS: ReadonlyArray<SearchFilters['sort']> = ['name', '-name', 'quantity', 'newest']
 
 function querySort(value: unknown): SearchFilters['sort'] {
@@ -215,6 +221,7 @@ const listQuery = computed(() => ({
   archetype: filters.value.archetype.length ? filters.value.archetype : undefined,
   formatId: filters.value.formatId || undefined,
   legality: filters.value.formatId ? filters.value.legality : undefined,
+  sort: listSort.value === 'updated' ? undefined : listSort.value,
   page: page.value,
   pageSize,
   collectionId: collectionId.value || undefined,
@@ -306,6 +313,7 @@ watch(
     filters.value.formatId,
     filters.value.legality,
     filters.value.sort,
+    listSort.value,
   ],
   () => {
     page.value = 1
@@ -330,6 +338,7 @@ watch(
     filters.value.formatId,
     filters.value.legality,
     filters.value.sort,
+    listSort.value,
     mode.value,
     page.value,
     filters.value.page,
@@ -348,6 +357,7 @@ watch(
       formatId: filters.value.formatId || undefined,
       legality: filters.value.formatId && filters.value.legality !== DEFAULT_FORMAT_LEGALITY ? filters.value.legality : undefined,
       sort: filters.value.sort === 'name' ? undefined : filters.value.sort,
+      listSort: listSort.value === 'updated' ? undefined : listSort.value,
       page: shownPage > 1 ? String(shownPage) : undefined,
     })
   },
@@ -407,6 +417,21 @@ const {
 
 const searchItems = computed<SearchResultItem[]>(() => searchData.value?.items ?? [])
 const searchTotal = computed(() => searchData.value?.total ?? 0)
+
+// How many cards the view lists right now, whatever the filters leave (the header says how many there are in all).
+const shownCount = computed(() => (mode.value === 'gallery' ? searchTotal.value : total.value))
+
+const gallerySortItems = computed(() => [
+  { label: t('inventory.search.sort.nameAsc'), value: 'name' },
+  { label: t('inventory.search.sort.nameDesc'), value: '-name' },
+  { label: t('inventory.search.sort.quantity'), value: 'quantity' },
+  { label: t('inventory.search.sort.newest'), value: 'newest' },
+])
+const listSortItems = computed(() => [
+  { label: t('inventory.search.sort.updated'), value: 'updated' },
+  { label: t('inventory.search.sort.nameAsc'), value: 'name' },
+  { label: t('inventory.search.sort.nameDesc'), value: '-name' },
+])
 const searchPageCount = computed(() => Math.max(1, Math.ceil(searchTotal.value / searchPageSize)))
 
 // A `?page=` past the end (cards removed since, an old link) shows the last
@@ -710,6 +735,36 @@ async function onMoved() {
           v-model="filters.inText"
           :label="t('inventory.search.inText')"
         />
+
+        <!-- At the right end (tester feedback, round 15): how many cards the view lists right now, and the sort, which the
+             list has too (A-Z, Z-A, or the latest change first as before). -->
+        <div class="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
+          <p
+            class="text-sm font-semibold text-highlighted tabular-nums"
+            data-testid="inventory-shown-count"
+          >
+            {{ count('inventory.cardCount', shownCount) }}
+          </p>
+          <UFormField
+            :label="t('inventory.search.sortLabel')"
+            class="flex items-center gap-2"
+          >
+            <USelect
+              v-if="mode === 'gallery'"
+              v-model="filters.sort"
+              :items="gallerySortItems"
+              :aria-label="t('inventory.search.sortLabel')"
+              class="w-48"
+            />
+            <USelect
+              v-else
+              v-model="listSort"
+              :items="listSortItems"
+              :aria-label="t('inventory.search.sortLabel')"
+              class="w-48"
+            />
+          </UFormField>
+        </div>
       </div>
     </div>
 
@@ -719,7 +774,6 @@ async function onMoved() {
       v-model:filters="filters"
       :facets="facets"
       :kind-counts="kindCounts"
-      :show-sort="mode === 'gallery'"
     />
 
     <!-- Galerie: aggregated, faceted inventory-wide search -->

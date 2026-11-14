@@ -22,6 +22,7 @@ enableAutoUnmount(afterEach)
 afterEach(async () => {
   state.items = []
   state.status = 'success'
+  useState('card-locale-choice').value = null
   await setTestLocale('de')
 })
 
@@ -105,27 +106,63 @@ describe('CardFormatFilter', () => {
 describe('CardArchetypeFilter', () => {
   const archetypes = ['Stardust', 'Blue-Eyes', 'Atlantis, City of the Sea Dragon']
 
-  function itemsOf(component: { findComponent: (selector: unknown) => unknown }) {
-    const menu = component.findComponent(USelectMenu) as unknown as { props: (key: string) => unknown }
-    return menu.props('items') as string[]
-  }
+  interface ArchetypeItem { label: string, value: string, description?: string }
 
-  it('offers the archetypes sorted, with the Deckthema label', async () => {
+  function menuOf(component: { findComponent: (selector: unknown) => unknown }) {
+    return component.findComponent(USelectMenu) as unknown as { props: (key: string) => unknown, emitted: (name: string) => unknown[][] | undefined }
+  }
+  const itemsOf = (component: { findComponent: (selector: unknown) => unknown }) => menuOf(component).props('items') as ArchetypeItem[]
+
+  it('offers the archetypes sorted by what is shown, with the Deckthema label', async () => {
     const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: [] } })
 
-    expect(itemsOf(component)).toEqual(['Atlantis, City of the Sea Dragon', 'Blue-Eyes', 'Stardust'])
+    expect(itemsOf(component).map(item => item.value)).toEqual(['Atlantis, City of the Sea Dragon', 'Blue-Eyes', 'Stardust'])
     expect(component.find('[aria-label="Deckthema"]').exists()).toBe(true)
     expect(component.find('[aria-label="Deckthema"]').text()).toContain('Deckthema')
   })
 
+  // Tester feedback, round 15: "Gib mir die Deckthemen auch auf Deutsch".
+  it('shows the German name with the English one under it, and the English name is the value', async () => {
+    const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: [] } })
+
+    const blueEyes = itemsOf(component).find(item => item.value === 'Blue-Eyes')
+    expect(blueEyes).toEqual({ label: 'Blauäugiger', value: 'Blue-Eyes', description: 'Blue-Eyes' })
+    // No German name known: the English one, with nothing under it.
+    expect(itemsOf(component).find(item => item.value === 'Stardust')).toEqual({ label: 'Stardust', value: 'Stardust' })
+    // The search finds both names.
+    expect(menuOf(component).props('filterFields')).toEqual(['label', 'value'])
+  })
+
+  it('shows the English names when the cards are English', async () => {
+    useState('card-locale-choice').value = 'en'
+    const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: [] } })
+
+    expect(itemsOf(component).find(item => item.value === 'Blue-Eyes')).toEqual({ label: 'Blue-Eyes', value: 'Blue-Eyes' })
+  })
+
   it('shows what is picked', async () => {
     const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: ['Blue-Eyes', 'Stardust'] } })
-    expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blue-Eyes, Stardust')
+    expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blauäugiger, Stardust')
   })
 
   it('keeps a picked theme that is not in the list (an old link), so no filter is hidden', async () => {
     const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: ['Old Theme'] } })
-    expect(itemsOf(component)).toContain('Old Theme')
+    expect(itemsOf(component).map(item => item.value)).toContain('Old Theme')
+  })
+
+  // Tester feedback, round 15: "bei jedem Deckthema-Filter die Möglichkeit, nur den Deckthema-Filter zurückzusetzen".
+  it('has a cross that clears just this filter, only while something is picked', async () => {
+    const empty = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: [] } })
+    expect(menuOf(empty).props('clear')).toBe(true)
+    // The cross is a span inside the menu's button (a button in a button is not valid HTML).
+    expect(empty.find('[data-slot="trailingClear"]').exists()).toBe(false)
+
+    const picked = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: ['Blue-Eyes'] } })
+    const cross = picked.find('[data-slot="trailingClear"]')
+    expect(cross.exists()).toBe(true)
+    await cross.trigger('click')
+    // Nothing is left, not `undefined`.
+    expect(picked.emitted('update:modelValue')?.at(-1)).toEqual([[]])
   })
 
   it('is called "Archetype" in English', async () => {

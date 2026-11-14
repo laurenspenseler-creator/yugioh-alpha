@@ -108,6 +108,10 @@ export function pairSwissRound(state: DuelsState, round: number, options: { allo
  * two pauses made up when the field is odd).
  */
 export function startingSchedule(setup: FlowSetup, playerIds: readonly string[], random: () => number = Math.random): { duels: NewDuel[], pauses: Pause[] } {
+  // A Spielabend has no plan: the organizer makes the duels, one at a time.
+  if (setup.mode === 'free') {
+    return { duels: [], pauses: [] }
+  }
   if (setup.mode === 'round_robin') {
     const duels = roundRobinDuels(playerIds)
     const days = matchdaysOf(duels)

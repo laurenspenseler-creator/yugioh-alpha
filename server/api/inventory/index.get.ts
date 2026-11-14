@@ -3,6 +3,7 @@ import { useDb } from '../../db'
 import { requireCollectionOwnedByUser } from '../../utils/collections'
 import { listOwnedCards, parseInventoryListQuery } from '../../utils/inventory'
 import { requireUser } from '../../utils/session'
+import { resolveCardLocale } from '../../utils/ui-locale'
 import { UNASSIGNED_COLLECTION_ID } from '../../../shared/inventory'
 
 export default defineEventHandler(async (event) => {
@@ -16,5 +17,5 @@ export default defineEventHandler(async (event) => {
     requireCollectionOwnedByUser(db, user.id, options.collectionId)
   }
 
-  return listOwnedCards(db, user.id, options)
+  return listOwnedCards(db, user.id, { ...options, cardLocale: await resolveCardLocale(event) })
 })

@@ -76,6 +76,7 @@
       "reset": "Reset",
       "sortLabel": "Sort by",
       "sort": {
+        "updated": "Recently changed",
         "nameAsc": "Name (A-Z)",
         "nameDesc": "Name (Z-A)",
         "quantity": "Quantity",

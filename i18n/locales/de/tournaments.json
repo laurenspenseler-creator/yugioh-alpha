@@ -31,7 +31,36 @@
           "label": "Schweizer System",
           "description": "Die Gegner werden Runde für Runde nach dem Tabellenstand gepaart, niemand trifft jemanden zweimal. Gut für große Felder."
         },
+        "free": {
+          "label": "Spielabend",
+          "description": "Kein Spielplan. Du meldest die Teilnehmer an und paarst die Duelle selbst aus der Teilnehmerliste; für jedes Duell wählst du, ob es ein Einzelduell oder Best of 3 ist."
+        },
         "recommended": "Empfohlen bei {count} Spielern"
+      },
+      "free": {
+        "summary": "{mode} · die Duelle werden von Hand gepaart",
+        "bestOfHint": "Beim Spielabend wählst du bei jedem Duell einzeln, ob es ein Einzelduell oder Best of 3 ist.",
+        "pairTitle": "Neues Duell",
+        "pairHelp": "Wähle zwei Teilnehmer und wie sie spielen. Wer gerade in einem Duell sitzt, kann erst wieder gepaart werden, wenn das Ergebnis eingetragen ist.",
+        "playerA": "Spieler 1",
+        "playerB": "Spieler 2",
+        "pickPlayer": "Teilnehmer wählen",
+        "playedAs": "Gespielt wird",
+        "single": "Einzelduell",
+        "bestOf3": "Best of 3",
+        "start": "Duell starten",
+        "startFailed": "Das Duell konnte nicht gestartet werden.",
+        "noFreePlayers": "Es sind weniger als zwei Teilnehmer frei. Trage erst ein laufendes Ergebnis ein.",
+        "openTitle": "Laufende Duelle",
+        "openEmpty": "Gerade läuft kein Duell.",
+        "doneTitle": "Gespielte Duelle",
+        "doneEmpty": "Noch kein Duell gespielt.",
+        "remove": "Zurücknehmen",
+        "removeFailed": "Das Duell konnte nicht zurückgenommen werden.",
+        "progress": "{count} Duell gespielt | {count} Duelle gespielt",
+        "help1": "Ein Duell paarst du, wann du willst: zwei Teilnehmer wählen, Einzelduell oder Best of 3 wählen, starten.",
+        "help2": "Trage danach das Ergebnis ein, bei Best of 3 mit dem Spielstand (2:0 oder 2:1). Ein Duell, das du falsch gepaart hast, kannst du zurücknehmen, solange noch kein Ergebnis drin ist.",
+        "help3": "Die Tabelle sortiert nach Punkten, dann nach der Differenz der Duelle (Partien), dann nach dem direkten Vergleich. Wer ein Einzelduell gewinnt, bekommt 3 Punkte; bei Best of 3 gilt die gewählte Punktevergabe."
       },
       "setup": {
         "title": "Einstellungen",
@@ -167,6 +196,10 @@
         "optionB": {
           "label": "B · Gespielte Matches bleiben",
           "description": "Nur die offenen Matches werden gestrichen. Wer noch ein offenes Match gegen die Person hatte, bekommt ein Ersatzmatch."
+        },
+        "free": {
+          "optionA": "Alle Duelle der Person werden gestrichen, auch die gespielten.",
+          "optionB": "Die gespielten Duelle bleiben. Die Person wird nicht mehr gepaart."
         },
         "unavailable": "Geht bei diesem Stand nicht auf: Danach hätten nicht mehr alle gleich viele Matches.",
         "later": "Später entscheiden",

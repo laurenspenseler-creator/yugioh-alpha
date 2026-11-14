@@ -298,7 +298,9 @@ const actionHint = computed(() => {
               {{ t('tournaments.detail.notStarted') }}
             </div>
             <div v-else>
-              {{ t('tournaments.queue.board.progress', { done: tournament.queue.duelsDone, total: tournament.queue.duelsTotal }) }}
+              {{ tournament.queue.mode === 'free'
+                ? t('tournaments.queue.free.progress', { count: tournament.queue.duelsDone })
+                : t('tournaments.queue.board.progress', { done: tournament.queue.duelsDone, total: tournament.queue.duelsTotal }) }}
             </div>
           </template>
           <template v-else>
@@ -430,8 +432,14 @@ const actionHint = computed(() => {
           @updated="onUpdated"
         />
 
+        <!-- A Spielabend (round 15): no plan, the organizer pairs the duels from the registered players. -->
+        <TournamentsQueueFreeBoard
+          v-if="tournament.queue && tournament.queue.mode === 'free'"
+          :tournament="tournament"
+          @updated="onUpdated"
+        />
         <TournamentsQueueBoard
-          v-if="tournament.queue"
+          v-else-if="tournament.queue"
           :tournament="tournament"
           @updated="onUpdated"
           @decide="participantId => openLeave(participantId, 'decide')"

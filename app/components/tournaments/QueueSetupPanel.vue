@@ -6,6 +6,7 @@ import {
   MIN_DUEL_MINUTES,
   QUEUE_FLOWS,
   QUEUE_MODES,
+  SCHEDULED_QUEUE_MODES,
   defaultRounds,
   duelsPerPlayer,
   estimateMinutes,
@@ -109,7 +110,10 @@ const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`to
 const scoringItems = computed(() => SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
 // A single game has no score, so the scoring by games cannot tell anything apart: it is shown as the classic 3 and 0 and
 // cannot be changed while a duel is one game (it comes back as chosen when the duel is best of 3 again).
-const singleGame = computed(() => form.bestOf === 1)
+// A Spielabend (mode "free", tester feedback, round 15) has no plan and no duration: the organizer pairs the duels one by one
+// and picks single game or best of three for every duel, so the scoring by games is always available there.
+const isFree = computed(() => form.mode === 'free')
+const singleGame = computed(() => form.bestOf === 1 && !isFree.value)
 const effectiveScoring = computed<ScoringSystem>(() => singleGame.value ? 'match' : form.scoring)
 // New tournaments are only played in Spieltage; the choice is left to the ones that still have tables and a queue.
 const showFlow = computed(() => setup.value.flow === 'queue')
@@ -123,7 +127,7 @@ function parsedInteger(raw: FieldValue): number | null {
 
 /** R as it will be used: what was typed, else the app's own pick for this many players. */
 const effectiveRounds = computed<number | null>(() => {
-  if (form.mode === 'round_robin') {
+  if (form.mode === 'round_robin' || isFree.value) {
     return null
   }
   return parsedInteger(form.rounds) ?? defaultRounds(form.mode, Math.max(2, players.value), form.prelaunch)
@@ -157,7 +161,7 @@ const comparison = computed(() => {
   if (players.value < 2) {
     return []
   }
-  return QUEUE_MODES.map((mode) => {
+  return SCHEDULED_QUEUE_MODES.map((mode) => {
     const prelaunch = mode === 'swiss' && form.prelaunch
     const rounds = defaultRounds(mode, players.value, prelaunch)
     const candidate: SetupInput = { ...input.value, mode, rounds, prelaunch }
@@ -208,7 +212,7 @@ async function save() {
         flow: form.flow,
         bestOf: form.bestOf,
         scoring: effectiveScoring.value,
-        plannedRounds: form.mode === 'round_robin' ? null : parsedInteger(form.rounds),
+        plannedRounds: form.mode === 'round_robin' || isFree.value ? null : parsedInteger(form.rounds),
         prelaunch: form.mode === 'swiss' && form.prelaunch,
         // What is not a whole number goes to the server as typed, which answers with the matching message.
         tables: parsedInteger(form.tables) ?? form.tables,
@@ -233,7 +237,7 @@ async function save() {
         {{ t('tournaments.queue.setup.title') }}
       </h2>
       <UBadge
-        v-if="recommended && editable && form.mode !== recommended"
+        v-if="recommended && editable && form.mode !== recommended && !isFree"
         color="info"
         variant="subtle"
         :label="t('tournaments.queue.mode.recommended', { count: players }) + ': ' + t(`tournaments.queue.mode.${recommended}.label`)"
@@ -301,7 +305,10 @@ async function save() {
         :description="t('tournaments.queue.setup.prelaunchHint')"
       />
 
-      <UFormField :label="t('tournaments.queue.bestOf.label')">
+      <UFormField
+        v-if="!isFree"
+        :label="t('tournaments.queue.bestOf.label')"
+      >
         <USelect
           v-model="form.bestOf"
           :items="bestOfItems"
@@ -312,6 +319,13 @@ async function save() {
           {{ t(`tournaments.queue.bestOf.${form.bestOf}.description`) }}
         </p>
       </UFormField>
+      <p
+        v-else
+        class="text-xs text-muted"
+        data-testid="free-best-of-hint"
+      >
+        {{ t('tournaments.queue.free.bestOfHint') }}
+      </p>
 
       <UFormField :label="t('tournaments.new.scoring')">
         <USelect
@@ -328,6 +342,7 @@ async function save() {
       </UFormField>
 
       <div
+        v-if="!isFree"
         class="grid gap-4"
         :class="byRound ? 'sm:grid-cols-2' : 'sm:grid-cols-3'"
       >
@@ -368,12 +383,15 @@ async function save() {
           />
         </UFormField>
       </div>
-      <p class="-mt-2 text-xs text-muted">
+      <p
+        v-if="!isFree"
+        class="-mt-2 text-xs text-muted"
+      >
         {{ form.mode === 'round_robin' ? t('tournaments.queue.setup.roundsRoundRobin') : t('tournaments.queue.setup.roundsHint') }}
       </p>
 
       <div
-        v-if="form.mode !== 'round_robin'"
+        v-if="form.mode !== 'round_robin' && !isFree"
         class="flex flex-wrap items-end gap-2"
       >
         <UFormField :label="t('tournaments.queue.setup.wishedHours')">
@@ -413,7 +431,10 @@ async function save() {
         </li>
       </ul>
 
-      <div class="rounded-lg border border-default p-3">
+      <div
+        v-if="!isFree"
+        class="rounded-lg border border-default p-3"
+      >
         <div class="flex flex-wrap items-baseline justify-between gap-2">
           <span class="text-sm font-medium text-highlighted">{{ t('tournaments.queue.setup.estimate') }}</span>
           <span

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import type { useDb } from '../db'
 import { catalogCard, ownedCard } from '../db/schema'
@@ -53,7 +53,15 @@ export interface InventoryListOptions {
   legality?: FormatLegality
   // "Deckthema": the archetypes of a card, exact names.
   archetype?: string[]
+  // The order of the list (tester feedback, round 15: "Sortierung von A-Z"): recently changed first (the default),
+  // or by the name of the card in the card language, either way round.
+  sort?: InventoryListSort
+  cardLocale?: AppLocale
 }
+
+export type InventoryListSort = 'updated' | 'name' | '-name'
+
+export const INVENTORY_LIST_SORTS: readonly InventoryListSort[] = ['updated', 'name', '-name']
 
 // `code` (+ `params`) is what the UI translates (`errors.api.<code>`, ADR
 // 0014); the English statusMessage stays technical. Only errors a user can
@@ -723,7 +731,17 @@ export function parseInventoryListQuery(query: Record<string, unknown>): Invento
     formatId,
     legality,
     archetype,
+    sort: INVENTORY_LIST_SORTS.find(value => value === query.sort),
   }
+}
+
+/** The rows of the list: the newest change first, or by card name (in the card language, ADR 0015), the rows of one card by their change. */
+function listOrderBy(sort: InventoryListSort, cardLocale: AppLocale) {
+  if (sort === 'updated') {
+    return [desc(ownedCard.updatedAt)]
+  }
+  const nameKey = cardSortKey(cardLocale)
+  return [sort === '-name' ? desc(nameKey) : asc(nameKey), desc(ownedCard.updatedAt)]
 }
 
 export function listOwnedCards(db: Db, userId: string, options: InventoryListOptions = {}) {
@@ -781,7 +799,7 @@ export function listOwnedCards(db: Db, userId: string, options: InventoryListOpt
     .from(ownedCard)
     .innerJoin(catalogCard, eq(ownedCard.catalogCardId, catalogCard.id))
     .where(where)
-    .orderBy(desc(ownedCard.updatedAt))
+    .orderBy(...listOrderBy(options.sort ?? 'updated', options.cardLocale ?? 'en'))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
     .all()

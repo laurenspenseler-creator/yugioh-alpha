@@ -292,18 +292,6 @@ async function onAddedToInventory() {
           :aria-label="t('catalog.search.label')"
           class="w-full"
         />
-        <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <UCheckbox
-            v-model="inText"
-            :label="t('catalog.search.inText')"
-          />
-          <UCheckbox
-            v-model="owned"
-            :label="t('catalog.search.ownedOnly')"
-            data-testid="catalog-owned-only"
-          />
-        </div>
-
         <!-- Seven menus and the reset button: two rows of four until there is room for one row (the sidebar takes a part of the width). -->
         <div class="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-[repeat(7,minmax(0,1fr))_auto]">
           <CardFacetFilters
@@ -335,38 +323,56 @@ async function onAddedToInventory() {
           />
         </div>
 
-        <!-- "Deckthema" and "Zulässigkeit" (a rule format, then what to show of it), tester feedback, round 14. -->
-        <div class="flex flex-wrap gap-3">
+        <!-- One line at the bottom of the panel (tester feedback, round 15): the number of cards at the far left, then
+             "Deckthema" and "Zulässigkeit" (a rule format, then what to show of it), the two text/inventory switches and
+             the sort at the right end. It wraps on a narrow screen. -->
+        <div
+          class="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-default pt-3"
+          data-testid="catalog-toolbar"
+        >
+          <p
+            class="min-w-24 text-sm font-semibold text-highlighted tabular-nums"
+            data-testid="catalog-count"
+          >
+            {{ cardsTotalLabel }}
+          </p>
+
           <CardArchetypeFilter
             v-model="archetype"
             :archetypes="facets.archetypes ?? []"
-            menu-class="w-full sm:w-60"
+            menu-class="w-full sm:w-52"
           />
           <CardFormatFilter
             v-model:format-id="formatId"
             v-model:legality="legality"
-            menu-class="w-full sm:w-60"
+            menu-class="w-full sm:w-48"
           />
+
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <UCheckbox
+              v-model="inText"
+              :label="t('catalog.search.inText')"
+            />
+            <UCheckbox
+              v-model="owned"
+              :label="t('catalog.search.ownedOnly')"
+              data-testid="catalog-owned-only"
+            />
+          </div>
+
+          <UFormField
+            :label="t('catalog.sort.label')"
+            class="flex items-center gap-2 sm:ml-auto"
+          >
+            <USelect
+              v-model="sort"
+              :items="sortItems"
+              :aria-label="t('catalog.sort.label')"
+              class="w-40"
+            />
+          </UFormField>
         </div>
       </section>
-    </div>
-
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <p class="text-sm font-medium text-default">
-        {{ cardsTotalLabel }}
-      </p>
-
-      <UFormField
-        :label="t('catalog.sort.label')"
-        class="flex items-center gap-2"
-      >
-        <USelect
-          v-model="sort"
-          :items="sortItems"
-          :aria-label="t('catalog.sort.label')"
-          class="w-40"
-        />
-      </UFormField>
     </div>
 
     <UAlert

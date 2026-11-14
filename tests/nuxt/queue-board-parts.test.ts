@@ -23,6 +23,7 @@ const DUEL: QueueDuelDto = {
   startedAt: null,
   endedAt: null,
   queuePosition: null,
+  bestOf: null,
 }
 
 describe('a duel row', () => {
@@ -285,5 +286,57 @@ describe('the standings table of a duel tournament', () => {
     expect(byRound.text()).toContain('Spielt')
     expect(byRound.text()).not.toContain('Tisch 2')
     expect(byRound.text()).not.toContain('Wartet')
+  })
+})
+
+describe('a duel row of a Spielabend', () => {
+  it('plays the best-of of its own duel, whatever the tournament says', async () => {
+    const bo3 = await mountSuspended(QueueDuelRow, { props: { duel: { ...DUEL, bestOf: 3 as const }, canEdit: true, bestOf: 1 } })
+    const single = await mountSuspended(QueueDuelRow, { props: { duel: { ...DUEL, bestOf: 1 as const }, canEdit: true, bestOf: 3 } })
+
+    expect(bo3.findAll('button').map(button => button.text())).toEqual(['Anna gewinnt 2:0', 'Anna gewinnt 2:1', 'Ben gewinnt 2:0', 'Ben gewinnt 2:1'])
+    expect(single.findAll('button').map(button => button.text())).toEqual(['Anna hat gewonnen', 'Ben hat gewonnen'])
+  })
+
+  it('names the best-of of the duel, and only a duel that has one of its own', async () => {
+    const bo3 = await mountSuspended(QueueDuelRow, { props: { duel: { ...DUEL, bestOf: 3 as const }, canEdit: false } })
+    const single = await mountSuspended(QueueDuelRow, { props: { duel: { ...DUEL, bestOf: 1 as const }, canEdit: false } })
+    const none = await mountSuspended(QueueDuelRow, { props: { duel: DUEL, canEdit: false } })
+
+    expect(bo3.find('[data-testid="queue-duel-best-of"]').text()).toBe('Best of 3')
+    expect(single.find('[data-testid="queue-duel-best-of"]').text()).toBe('Einzelduell')
+    expect(none.find('[data-testid="queue-duel-best-of"]').exists()).toBe(false)
+  })
+
+  it('offers "Zurücknehmen" for a running duel to the organizer, and for no other', async () => {
+    const duel = { ...DUEL, bestOf: 1 as const }
+    const removable = await mountSuspended(QueueDuelRow, { props: { duel, canEdit: true, removable: true } })
+    const notRemovable = await mountSuspended(QueueDuelRow, { props: { duel, canEdit: true } })
+    const reader = await mountSuspended(QueueDuelRow, { props: { duel, canEdit: false, removable: true } })
+    const finished = await mountSuspended(QueueDuelRow, { props: { duel: { ...duel, status: 'done' as const, winnerParticipantId: 'pa' }, canEdit: true, removable: true } })
+
+    await removable.find('[data-testid="queue-duel-remove"]').trigger('click')
+
+    expect(removable.emitted('remove')).toHaveLength(1)
+    expect(notRemovable.find('[data-testid="queue-duel-remove"]').exists()).toBe(false)
+    expect(reader.find('[data-testid="queue-duel-remove"]').exists()).toBe(false)
+    expect(finished.find('[data-testid="queue-duel-remove"]').exists()).toBe(false)
+  })
+})
+
+describe('the standings table of a Spielabend', () => {
+  it('counts the duels played instead of "x of y", because there is no plan', async () => {
+    const detail = tournament('rounds')
+    const free = { ...detail, queue: { ...detail.queue!, mode: 'free' as const, duelsDone: 3, duelsTotal: 4 } } as TournamentDetail
+    const one = { ...detail, queue: { ...detail.queue!, mode: 'free' as const, duelsDone: 1, duelsTotal: 1 } } as TournamentDetail
+
+    const component = await mountSuspended(QueueTable, { props: { tournament: free } })
+    const single = await mountSuspended(QueueTable, { props: { tournament: one } })
+    const planned = await mountSuspended(QueueTable, { props: { tournament: detail } })
+
+    expect(component.text()).toContain('3 Duelle gespielt')
+    expect(component.text()).not.toContain('von 4')
+    expect(single.text()).toContain('1 Duell gespielt')
+    expect(planned.text()).not.toContain('Duell gespielt')
   })
 })

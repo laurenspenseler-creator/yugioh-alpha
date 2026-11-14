@@ -188,3 +188,9 @@ describe('a whole Swiss tournament', () => {
     }
   }
 })
+
+describe('startingSchedule of a Spielabend', () => {
+  it('fixes no duel and no pause: the organizer pairs the duels one at a time', () => {
+    expect(startingSchedule({ mode: 'free', rounds: null, prelaunch: false }, ids(6))).toEqual({ duels: [], pauses: [] })
+  })
+})

@@ -160,4 +160,41 @@ describe('the new tournament form', () => {
     await nextTick()
     expect(component.find('[data-testid="new-participant-count"]').text()).toBe('Teilnehmer: 2')
   })
+
+  // Tester feedback, round 15: "gib mir noch den spielmodus, spielabend."
+  it('offers the Spielabend as a mode and leaves the best-of to each duel', async () => {
+    const component = await mountSuspended(NewTournamentPage)
+
+    expect(component.find('[data-testid="free-best-of-hint"]').exists()).toBe(false)
+    formOf(component).mode = 'free'
+    await nextTick()
+
+    expect(component.find('button[aria-label="Modus"]').text()).toContain('Spielabend')
+    expect(component.text()).toContain('Kein Spielplan')
+    expect(component.find('[aria-label="Ein Match ist"]').exists()).toBe(false)
+    expect(component.find('[data-testid="free-best-of-hint"]').text()).toContain('bei jedem Duell einzeln')
+    expect(component.text()).not.toContain('Vorlauf')
+  })
+
+  it('keeps the scoring by games for a Spielabend, even when a new duel starts as a single game, and sends the mode', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ id: 't-9' }))
+    vi.stubGlobal('$fetch', fetchSpy)
+    const component = await mountSuspended(NewTournamentPage)
+    const form = formOf(component)
+
+    form.mode = 'free'
+    form.bestOf = 1
+    form.name = 'Spielabend'
+    form.participantsText = 'Anna\nBen'
+    await nextTick()
+    expect(component.find('button[aria-label="Punktevergabe"]').attributes('disabled')).toBeUndefined()
+
+    await component.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments')![1]).toMatchObject({
+      method: 'POST',
+      body: { name: 'Spielabend', engine: 'queue', mode: 'free', flow: 'rounds', prelaunch: false, scoring: 'games', participants: ['Anna', 'Ben'] },
+    })
+  })
 })

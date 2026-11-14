@@ -73,11 +73,13 @@ import {
   applyQueueRecompute,
   buildQueueDetail,
   confirmQueueRematch,
+  createFreeDuel,
   decideQueueLeave,
   extendQueueTournament,
   leaveQueuePlayer,
   previewQueueRecompute,
   queueSetupOf,
+  removeFreeDuel,
   reportQueueDuel,
   scheduleQueueDecider,
   startQueueTournament,
@@ -308,7 +310,8 @@ export function validateTournamentInput(body: unknown): TournamentInput {
     queue = {
       mode,
       prelaunch: mode === 'swiss' && body.prelaunch === true,
-      flow: body.flow === undefined ? DEFAULT_FLOW : normalizeFlow(body.flow),
+      // A Spielabend has no plan and no tables: it is always played "by Spieltag" style, nothing waits for a table.
+      flow: mode === 'free' ? 'rounds' : body.flow === undefined ? DEFAULT_FLOW : normalizeFlow(body.flow),
       bestOf: body.bestOf === undefined ? DEFAULT_BEST_OF : normalizeBestOf(body.bestOf),
       tables: body.tables === undefined ? DEFAULT_TABLES : normalizeTables(body.tables),
       duelMinutes: body.duelMinutes === undefined ? DEFAULT_DUEL_MINUTES : normalizeDuelMinutes(body.duelMinutes),
@@ -1341,7 +1344,7 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
       : patch.plannedRounds !== undefined ? patch.plannedRounds : row.plannedRounds,
     queueMode,
     prelaunch: queueMode === 'swiss' ? patch.prelaunch ?? row.prelaunch : false,
-    flow: patch.flow ?? row.flow,
+    flow: queueMode === 'free' ? 'rounds' : patch.flow ?? row.flow,
     bestOf: patch.bestOf ?? row.bestOf,
     tables: patch.tables ?? row.tables,
     duelMinutes: patch.duelMinutes ?? row.duelMinutes,
@@ -2179,6 +2182,31 @@ export function extendTournament(db: Db, userId: string, id: string): Tournament
   const row = requireQueueOrganizer(db, userId, id)
   db.transaction((tx) => {
     extendQueueTournament(tx as unknown as Db, row, new Date())
+  })
+  return getTournamentDetail(db, userId, id)
+}
+
+/**
+ * A new duel of a Spielabend (tester feedback, round 15): two registered players and, for this duel, a single game or best
+ * of three. `body`: `{ participantAId, participantBId, bestOf }`.
+ */
+export function createEveningDuel(db: Db, userId: string, id: string, body: unknown): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  if (!isRecord(body)) {
+    badRequest('invalid_body', 'Request body must be an object')
+  }
+  const bestOf = typeof body.bestOf === 'string' ? Number(body.bestOf) : body.bestOf
+  db.transaction((tx) => {
+    createFreeDuel(tx as unknown as Db, row, body.participantAId, body.participantBId, bestOf, new Date())
+  })
+  return getTournamentDetail(db, userId, id)
+}
+
+/** Takes back a duel of a Spielabend that was paired by mistake (only one that has not been played). */
+export function removeEveningDuel(db: Db, userId: string, id: string, duelId: string): TournamentDetail {
+  const row = requireQueueOrganizer(db, userId, id)
+  db.transaction((tx) => {
+    removeFreeDuel(tx as unknown as Db, row, duelId, new Date())
   })
   return getTournamentDetail(db, userId, id)
 }

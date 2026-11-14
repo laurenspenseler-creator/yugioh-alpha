@@ -5,10 +5,22 @@
 // Words: a duel is a single game (best of one); R is the number of duels each player has; n the number
 // of players; T the number of tables; d the length of a duel in minutes.
 
-/** Every player plays every other player once; the schedule is complete before the start. */
-export type QueueMode = 'round_robin' | 'champions_league' | 'swiss'
+/**
+ * Every player plays every other player once; the schedule is complete before the start. `free` is the Spielabend (tester
+ * feedback, round 15): no schedule at all, the organizer pairs the duels one by one from the registered players and chooses
+ * for every duel whether it is a single game or best of three.
+ */
+export type QueueMode = 'round_robin' | 'champions_league' | 'swiss' | 'free'
 
-export const QUEUE_MODES = ['round_robin', 'champions_league', 'swiss'] as const
+/** Every mode there is. */
+export const QUEUE_MODES = ['round_robin', 'champions_league', 'swiss', 'free'] as const
+/** The modes with a plan that the app draws (all but the Spielabend): the ones with rounds, tables and an estimated duration. */
+export const SCHEDULED_QUEUE_MODES = ['round_robin', 'champions_league', 'swiss'] as const
+
+/** The Spielabend has no plan: its duels are made one at a time. */
+export function isFreeMode(mode: QueueMode | null | undefined): boolean {
+  return mode === 'free'
+}
 
 /**
  * How the duels are played out. `queue`: tables and a queue, a table that becomes free gets the next duel at once.
@@ -109,6 +121,10 @@ export function validateSetup(input: SetupInput): SetupIssue[] {
   if (!Number.isInteger(input.players) || input.players < MIN_QUEUE_PLAYERS) {
     issues.push({ code: 'too_few_players', params: { min: MIN_QUEUE_PLAYERS } })
   }
+  // A Spielabend has no rounds, no tables to plan and no duration: two players are all it needs.
+  if (isFreeMode(input.mode)) {
+    return issues
+  }
   // With Spieltage nobody waits for a table, so the number of tables is not asked.
   if (input.flow !== 'rounds' && (!Number.isInteger(input.tables) || input.tables < 1 || input.tables > MAX_TABLES)) {
     issues.push({ code: 'tables_invalid', params: { max: MAX_TABLES } })
@@ -190,7 +206,7 @@ export const DEFAULT_CHAMPIONS_LEAGUE_ROUNDS = 6
  * never more than the field allows. A round robin has no R of its own.
  */
 export function defaultRounds(mode: QueueMode, players: number, prelaunch: boolean): number | null {
-  if (mode === 'round_robin') {
+  if (mode === 'round_robin' || isFreeMode(mode)) {
     return null
   }
   const most = Math.max(2, maxEvenRounds(players))

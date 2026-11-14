@@ -55,3 +55,4 @@ mark the old as superseded.
 | [0045](0045-classic-plus-v3-1.md) | Classic Plus v3.1: the card list and rule 8 for the Extra Deck | Accepted |
 | [0046](0046-card-image-cache.md) | Card images come from the app's own cache on disk | Accepted |
 | [0047](0047-card-kind-filter-leaving-out-and-own-inventory.md) | The kinds divide the cards; leaving kinds out; only my inventory | Accepted |
+| [0048](0048-tournament-spielabend.md) | The Spielabend: duels paired by hand, a best-of for each duel | Accepted |

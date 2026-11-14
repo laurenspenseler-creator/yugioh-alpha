@@ -31,7 +31,36 @@
           "label": "Swiss system",
           "description": "Opponents are paired round by round by the standings, nobody meets anybody twice. Good for large fields."
         },
+        "free": {
+          "label": "Game night",
+          "description": "No schedule. You register the players and pair the duels yourself from the list of players; for every duel you choose whether it is a single duel or best of 3."
+        },
         "recommended": "Recommended for {count} players"
+      },
+      "free": {
+        "summary": "{mode} · duels are paired by hand",
+        "bestOfHint": "On a game night you choose for every duel whether it is a single duel or best of 3.",
+        "pairTitle": "New duel",
+        "pairHelp": "Pick two players and how they play. Whoever is in a duel right now can only be paired again once the result is entered.",
+        "playerA": "Player 1",
+        "playerB": "Player 2",
+        "pickPlayer": "Pick a player",
+        "playedAs": "Played as",
+        "single": "Single duel",
+        "bestOf3": "Best of 3",
+        "start": "Start duel",
+        "startFailed": "The duel could not be started.",
+        "noFreePlayers": "Fewer than two players are free. Enter a running result first.",
+        "openTitle": "Running duels",
+        "openEmpty": "No duel is running.",
+        "doneTitle": "Duels played",
+        "doneEmpty": "No duel played yet.",
+        "remove": "Take back",
+        "removeFailed": "The duel could not be taken back.",
+        "progress": "{count} duel played | {count} duels played",
+        "help1": "You pair a duel whenever you like: pick two players, pick single duel or best of 3, start.",
+        "help2": "Then enter the result, with the score for best of 3 (2:0 or 2:1). A duel you paired by mistake can be taken back as long as it has no result.",
+        "help3": "The standings sort by points, then by the difference of the games, then by the direct comparison. A single duel won is worth 3 points; a best-of-3 duel follows the chosen scoring."
       },
       "setup": {
         "title": "Settings",
@@ -167,6 +196,10 @@
         "optionB": {
           "label": "B · Played matches stay",
           "description": "Only the open matches are struck. Whoever still had an open match against them gets a replacement match."
+        },
+        "free": {
+          "optionA": "All duels of the player are struck, the played ones too.",
+          "optionB": "The duels that were played stay. The player is not paired any more."
         },
         "unavailable": "This does not add up at the current standing: afterwards not everybody would have the same number of matches.",
         "later": "Decide later",

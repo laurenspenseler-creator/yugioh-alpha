@@ -790,6 +790,9 @@ export const tournamentDuel = sqliteTable(
     winnerParticipantId: text('winner_participant_id')
       .references(() => tournamentParticipant.id, { onDelete: 'set null' }),
     tableNumber: integer('table_number'),
+    // 1 = a single game, 3 = best of three, for this duel; NULL = what the tournament says (`tournament.best_of`). The
+    // Spielabend (mode 'free') sets it for every duel, since there the organizer chooses it duel by duel.
+    bestOf: integer('best_of').$type<BestOf>(),
     // The games each player won in a best-of-3 duel; NULL for a single game and for a duel not played.
     gamesA: integer('games_a'),
     gamesB: integer('games_b'),

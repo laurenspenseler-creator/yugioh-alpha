@@ -16,10 +16,13 @@ const props = defineProps<{
   bestOf?: number
   /** Spieltage have no tables and no queue, so no table number or place in the queue is shown. */
   byRound?: boolean
+  /** A Spielabend lets the organizer take back a duel that has not been played ("Zurücknehmen"). */
+  removable?: boolean
 }>()
 
 const emit = defineEmits<{
   result: [payload: { winnerId: string, gamesA?: number, gamesB?: number }]
+  remove: []
 }>()
 
 const { t } = useI18n()
@@ -27,6 +30,8 @@ const { t } = useI18n()
 const correcting = ref(false)
 
 const isVoid = computed(() => props.duel.status === 'void')
+// A duel of a Spielabend brings its own best-of; every other duel plays what the tournament says.
+const duelBestOf = computed(() => props.duel.bestOf ?? props.bestOf)
 const winnerName = computed(() => {
   if (props.duel.winnerParticipantId === props.duel.participantAId) {
     return props.duel.participantAName
@@ -103,6 +108,14 @@ function chooseScore(choice: { winnerId: string, own: number, other: number, asA
           :label="t(`tournaments.queue.board.kind.${duel.kind}`)"
         />
         <UBadge
+          v-if="duel.bestOf !== null"
+          size="sm"
+          color="neutral"
+          variant="outline"
+          :label="duel.bestOf === 3 ? t('tournaments.queue.free.bestOf3') : t('tournaments.queue.free.single')"
+          data-testid="queue-duel-best-of"
+        />
+        <UBadge
           v-if="!compact"
           size="sm"
           :color="STATUS_COLORS[duel.status]"
@@ -123,7 +136,7 @@ function chooseScore(choice: { winnerId: string, own: number, other: number, asA
     <!-- Four score buttons are too wide for one line in a card: two columns under the names, filled column by column, so
          the player named first has both of his buttons on the left and the other one on the right. -->
     <div
-      v-if="entering && bestOf === 3"
+      v-if="entering && duelBestOf === 3"
       class="grid w-full grid-flow-col grid-cols-2 grid-rows-2 gap-2"
       data-testid="queue-duel-scores"
     >
@@ -170,6 +183,18 @@ function chooseScore(choice: { winnerId: string, own: number, other: number, asA
       class="tap-target"
       :label="t('tournaments.queue.board.correct')"
       @click="correcting = true"
+    />
+    <UButton
+      v-if="removable && canEdit && duel.status === 'running'"
+      size="xs"
+      color="neutral"
+      variant="ghost"
+      icon="i-lucide-undo-2"
+      class="tap-target self-start sm:self-center"
+      :disabled="busy"
+      :label="t('tournaments.queue.free.remove')"
+      data-testid="queue-duel-remove"
+      @click="emit('remove')"
     />
   </div>
 </template>

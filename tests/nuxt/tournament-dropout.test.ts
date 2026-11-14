@@ -242,3 +242,15 @@ describe('recomputeSwiss', () => {
     expect(recomputeSwiss(state)).toEqual([])
   })
 })
+
+describe('a Spielabend', () => {
+  const setup: FlowSetup = { mode: 'free', rounds: null, prelaunch: false }
+
+  it('has no number of duels every player must end with, so nobody who leaves leaves a gap', () => {
+    const state = addDuels(build(4, setup), [{ a: 'p1', b: 'p2', round: 1, kind: 'regular' }], 'x')
+
+    expect(state.duels).toHaveLength(1)
+    expect(targetDuels(state, setup)).toBe(0)
+    expect(deficits(state, setup).size).toBe(0)
+  })
+})

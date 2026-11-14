@@ -72,7 +72,9 @@ describe('the inventory page: format legality and Deckthema', () => {
     }
     expect(component.find('[aria-label="Format"]').text()).toContain('GOAT')
     expect(component.find('[aria-label="Zulässigkeit"]').text()).toContain('Limitiert (1 Kopie)')
-    expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blue-Eyes')
+    // The value in the URL and the query is the English name; the menu shows it in German (round 15).
+    expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blauäugiger')
+    expect(component.find('[aria-label="Deckthema"]').text()).toContain(ATLANTIS)
   })
 
   it('writes a picked format and themes to the URL and goes back to page 1; the default legality is not written', async () => {

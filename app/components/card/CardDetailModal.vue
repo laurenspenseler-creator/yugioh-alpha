@@ -87,10 +87,14 @@ const showDates = computed(() => props.variant !== 'inventory')
 
 const subtitle = computed(() => showEnglishName.value && shown.value ? englishName(shown.value) : null)
 const showGermanHint = computed(() => cardLocale.value === 'de' && detail.value !== null && !hasGermanText(detail.value.card))
-// Wider than the default modal for the two columns. The header keeps its
-// full height (a tall title/chip block must not shrink under the scrolling
-// body) and leaves room for the absolutely placed close button.
-const ui = { content: 'sm:max-w-3xl', header: 'shrink-0', wrapper: 'min-w-0 flex-1 pe-10' }
+// Much wider than the default modal for the two columns (tester feedback, round 15: "mach die Fenster deutlich größer").
+// The header keeps its full height (a tall title/chip block must not shrink under the scrolling body) and leaves room
+// for the absolutely placed close button. With the printings (the catalog's view) the window has a fixed, large height
+// from `md` up and does not scroll as a whole: the card text and the list of sets scroll on their own ("bei den Sets
+// scrollen, nicht im ganzen Kartenanzeige-Fenster"). The other views scroll as one, their caller's editor decides the height.
+const ui = computed(() => showPrintings.value
+  ? { content: 'sm:max-w-6xl md:h-[min(54rem,calc(100dvh-2rem))]', body: 'md:overflow-hidden', header: 'shrink-0', wrapper: 'min-w-0 flex-1 pe-10' }
+  : { content: 'sm:max-w-5xl', header: 'shrink-0', wrapper: 'min-w-0 flex-1 pe-10' })
 
 // An alias id loads its canonical card (ADR 0023). Only a fresh detail
 // counts: a new `cardId` clears the old one before loading.
@@ -164,7 +168,10 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
     </template>
 
     <template #body>
-      <div class="grid gap-6 md:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]">
+      <div
+        class="grid gap-6 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]"
+        :class="showPrintings ? 'md:h-full md:min-h-0' : undefined"
+      >
         <div class="space-y-4 md:sticky md:top-0 md:self-start">
           <CardFloatingImage
             v-if="shown"
@@ -213,7 +220,10 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
           </dl>
         </div>
 
-        <div class="min-w-0 space-y-6">
+        <div
+          class="min-w-0 space-y-6"
+          :class="showPrintings ? 'md:flex md:min-h-0 md:flex-col md:gap-5 md:space-y-0' : undefined"
+        >
           <UAlert
             v-if="retiredAlert"
             color="warning"
@@ -238,6 +248,8 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
           <section
             v-else
             :aria-busy="pending"
+            :class="showPrintings ? 'md:max-h-[42%] md:shrink-0 md:overflow-y-auto md:pe-2' : undefined"
+            data-testid="card-text-section"
           >
             <h3 class="text-sm font-semibold text-highlighted">
               {{ t('card.detail.cardText') }}
@@ -265,11 +277,19 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
           </section>
 
           <template v-if="detail">
-            <section v-if="showPrintings && detail.printings.length > 0">
-              <h3 class="text-sm font-semibold text-highlighted">
+            <!-- The sets scroll in their own box; the rest of the window stands still. Below `md` the whole window scrolls. -->
+            <section
+              v-if="showPrintings && detail.printings.length > 0"
+              class="md:flex md:min-h-0 md:flex-1 md:flex-col"
+              data-testid="printings-section"
+            >
+              <h3 class="shrink-0 text-sm font-semibold text-highlighted">
                 {{ t('card.detail.printings') }}
               </h3>
-              <ul class="mt-2 divide-y divide-default overflow-hidden rounded-lg border border-default">
+              <ul
+                class="mt-2 divide-y divide-default overflow-y-auto rounded-lg border border-default max-md:max-h-80 md:min-h-0 md:flex-1"
+                data-testid="printings-list"
+              >
                 <li
                   v-for="printing in detail.printings"
                   :key="printing.setCode"
@@ -290,7 +310,7 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
 
             <section
               v-if="showDates && hasDates"
-              class="grid grid-cols-2 gap-3 text-sm text-toned"
+              class="grid shrink-0 grid-cols-2 gap-3 text-sm text-toned"
             >
               <div v-if="detail.card.tcgDate">
                 <span class="font-medium text-highlighted">TCG</span>

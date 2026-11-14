@@ -246,6 +246,8 @@ export interface QueueDuelDto {
   endedAt: string | null
   /** 1 = next up; null when the duel is not waiting (or one of its players left). */
   queuePosition: number | null
+  /** A single game (1) or best of three (3), chosen for this duel (a Spielabend); null = what the tournament says. */
+  bestOf: BestOf | null
 }
 
 export interface QueueTableRowDto {
@@ -412,6 +414,8 @@ export const TOURNAMENT_ERROR_CODES = [
   'invalid_flow', 'invalid_best_of', 'invalid_games', 'invalid_participants',
   // Extending a tournament by one more Spieltag (ADR 0044).
   'schedule_not_over',
+  // The Spielabend (round 15): duels paired by hand.
+  'not_free_tournament', 'invalid_pair', 'duel_not_open',
 ] as const
 export type TournamentErrorCode = typeof TOURNAMENT_ERROR_CODES[number]
 

@@ -1,8 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import {
+  defaultRounds,
   duelsPerPlayer,
   estimateMinutes,
+  isFreeMode,
   matchdayCount,
   maxEvenRounds,
   recommendedMode,
@@ -168,5 +170,25 @@ describe('Spieltage (the flow "rounds")', () => {
   it('turns a wished duration into days', () => {
     // 3 hours of 30-minute days: 6 days, an even number.
     expect(roundsForDuration({ mode: 'champions_league', players: 22, tables: 5, duelMinutes: 30, flow: 'rounds' }, 180)).toBe(6)
+  })
+})
+
+describe('the Spielabend (mode "free")', () => {
+  const codes = (input: SetupInput) => validateSetup(input).map(issue => issue.code)
+
+  it('is the only free mode', () => {
+    expect(isFreeMode('free')).toBe(true)
+    expect(isFreeMode('swiss')).toBe(false)
+    expect(isFreeMode(null)).toBe(false)
+  })
+
+  it('needs two players and nothing else: no rounds, no tables, no duel length', () => {
+    expect(codes(setup({ mode: 'free', players: 2, rounds: null, tables: 0, duelMinutes: 0 }))).toEqual([])
+    expect(codes(setup({ mode: 'free', players: 1, rounds: null }))).toEqual(['too_few_players'])
+  })
+
+  it('has no number of rounds of its own', () => {
+    expect(defaultRounds('free', 8, false)).toBeNull()
+    expect(defaultRounds('free', 8, true)).toBeNull()
   })
 })

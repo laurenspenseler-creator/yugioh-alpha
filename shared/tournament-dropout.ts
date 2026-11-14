@@ -25,6 +25,10 @@ function isStruckOut(player: DuelPlayer): boolean {
 
 /** How many duels every player who stays ends up with (Swiss: so far, the number of rounds paired). */
 export function targetDuels(state: DuelsState, setup: FlowSetup): number {
+  // A Spielabend has no number of duels every player must end with, so nobody lacks a duel and nothing is made up.
+  if (setup.mode === 'free') {
+    return 0
+  }
   if (setup.mode === 'round_robin') {
     return Math.max(0, state.players.length - 1 - state.players.filter(isStruckOut).length)
   }

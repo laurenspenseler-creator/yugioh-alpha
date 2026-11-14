@@ -50,6 +50,30 @@ The catalog and the inventory also filter by what a rule format allows, and by t
 * Where: both are placed by the catalog and the inventory themselves (`CardFormatFilter`, `CardArchetypeFilter`), not
   by the shared facet menus, so the deck builder and the format editor keep their menus.
 
+## Addendum: where the filters sit, German Deckthemen, count and sort (tester feedback, round 15)
+
+The tester's screenshots ("Zieh den blauen Bereich in den roten"):
+
+* **Catalog:** everything that is not the search box moves to one toolbar at the bottom of the filter panel
+  (`data-testid="catalog-toolbar"`): the number of cards at the far left, then Deckthema and Format, the two checkboxes
+  ("Auch im Kartentext suchen", "Nur in meinem Inventar suchen") and the sort menu at the right edge.
+* **Deck editor:** "Sortierung nach Erscheinungsdatum" is in the empty top right of the header (the actions slot), not above
+  the sections.
+* **Inventory:** a formatted count of the cards shown (as on the catalog page) and an A–Z / Z–A / "zuletzt geändert" sort
+  of the list (`sort=name|-name|updated`, `updated` the default; by the card name in the card language). The gallery keeps
+  its own order.
+* **Detail window of a card:** much larger, and only the card text and the list of printings (the sets it came out in)
+  scroll, each in its own area, not the whole window.
+* **Deckthema:** every menu has a cross that resets only this filter. The labels follow the card language: German names
+  from `shared/archetype-names-de.ts`, a hand-checked list of about 100 archetypes taken from the German names of their
+  cards; an archetype that is not in it stays in English (the catalog has only English names), and the English name is
+  shown as the description and searched too. The value in the URL and the API stays the English name.
+* **Why "Magna Warrior" shows 2 cards:** the catalog (YGOPRODeck) tags only those two cards with that archetype; the Magnet
+  Warrior cards carry "Magnet Warrior" or "Magnet". It is the data, not the filter.
+* **Not built: card pictures in German.** The catalog has one picture per card (the English one). There is no source of
+  German scans that the app may fetch without a licence of its own, so the card language changes names and texts, not the
+  picture.
+
 ## Consequences
 
 * A Pendulum monster no longer turns up when "Effekt", "Xyz" or "Normal" alone is picked; pick "Pendel" as well, or use the

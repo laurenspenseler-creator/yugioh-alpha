@@ -73,6 +73,12 @@ async function submit() {
 }
 
 const OPTIONS: DropOption[] = ['A', 'B']
+
+// A Spielabend has no schedule, so nobody gets a replacement match: its options say what they do there.
+const isFree = computed(() => props.tournament.queue?.mode === 'free')
+const optionDescription = (option: DropOption) => isFree.value
+  ? t(`tournaments.queue.leave.free.option${option}`)
+  : t(`tournaments.queue.leave.option${option}.description`)
 </script>
 
 <template>
@@ -111,7 +117,7 @@ const OPTIONS: DropOption[] = ['A', 'B']
             >
             <span class="space-y-0.5">
               <span class="block text-sm font-medium text-highlighted">{{ t(`tournaments.queue.leave.option${option}.label`) }}</span>
-              <span class="block text-xs text-muted">{{ t(`tournaments.queue.leave.option${option}.description`) }}</span>
+              <span class="block text-xs text-muted">{{ optionDescription(option) }}</span>
               <span
                 v-if="!choices[option]"
                 class="block text-xs text-warning"

@@ -18,14 +18,16 @@ import type { LeaveKind } from '../../shared/tournament-dropout'
 import { pairSwissRound, startingSchedule, swissRoundDue } from '../../shared/tournament-flow'
 import type { FlowSetup, NewDuel } from '../../shared/tournament-flow'
 import {
+  BEST_OF_CHOICES,
   DEFAULT_BEST_OF,
   DEFAULT_DUEL_MINUTES,
   GAMES_TO_WIN_BEST_OF_3,
   defaultRounds,
+  isFreeMode,
   usableTables,
   validateSetup,
 } from '../../shared/tournament-modes'
-import type { QueueMode } from '../../shared/tournament-modes'
+import type { BestOf, QueueMode } from '../../shared/tournament-modes'
 import { planQueue, queuePositions } from '../../shared/tournament-queue'
 import { computeTable } from '../../shared/tournament-table'
 import type {
@@ -268,7 +270,8 @@ export function reportQueueDuel(db: Db, row: TournamentRow, duelId: string, winn
   if (typeof winnerId !== 'string' || (winnerId !== duel.participantAId && winnerId !== duel.participantBId)) {
     badRequest('invalid_winner', 'The winner must be one of the two players')
   }
-  const score = gamesOfResult(row.bestOf ?? DEFAULT_BEST_OF, duel, winnerId, games)
+  // A duel of a Spielabend carries its own best-of; every other duel plays what the tournament says.
+  const score = gamesOfResult(duel.bestOf ?? row.bestOf ?? DEFAULT_BEST_OF, duel, winnerId, games)
   // Played in Spieltage nothing forces an order: a duel of a later day can be entered before its day has begun, as
   // long as both players are still in the tournament.
   const early = duel.status === 'planned' && row.flow === 'rounds' && isLive(loadState(db, row), toDuel(duel))
@@ -292,6 +295,87 @@ function requireRunning(row: TournamentRow): void {
   if (row.status !== 'running') {
     conflict('tournament_not_running', 'The tournament is not running')
   }
+}
+
+// --- The Spielabend: duels paired by hand ----------------------------------------------
+
+function requireFreeRunning(row: TournamentRow): void {
+  if (!isFreeMode(row.queueMode)) {
+    conflict('not_free_tournament', 'Only a Spielabend pairs its duels by hand')
+  }
+  requireRunning(row)
+}
+
+/** The lowest table number that no running duel uses: the table the new duel is played at. */
+function freeTableNumber(state: DuelsState): number {
+  const used = new Set(state.duels.filter(duel => duel.status === 'running' && duel.table !== null).map(duel => duel.table))
+  let number = 1
+  while (used.has(number)) {
+    number += 1
+  }
+  return number
+}
+
+/**
+ * A new duel of a Spielabend between two registered players, a single game or best of three (tester feedback, round 15).
+ * It starts at once: there is no plan and no queue. Players who already played each other may play again, but nobody can
+ * be in two duels at the same time, and nobody who left.
+ */
+export function createFreeDuel(db: Db, row: TournamentRow, aId: unknown, bId: unknown, bestOf: unknown, now: Date): void {
+  requireFreeRunning(row)
+  if (typeof aId !== 'string' || typeof bId !== 'string' || aId === bId) {
+    badRequest('invalid_pair', 'A duel needs two different players')
+  }
+  if (typeof bestOf !== 'number' || !(BEST_OF_CHOICES as readonly number[]).includes(bestOf)) {
+    badRequest('invalid_best_of', 'A duel is one game or best of three')
+  }
+  const state = loadState(db, row)
+  for (const id of [aId, bId]) {
+    const player = state.players.find(candidate => candidate.id === id)
+    if (!player) {
+      badRequest('invalid_pair', 'Player not found')
+    }
+    if (player.status !== 'active') {
+      badRequest('invalid_pair', 'This player has left')
+    }
+    if (state.duels.some(duel => duel.status === 'running' && (duel.a === id || duel.b === id))) {
+      conflict('player_in_duel', 'The player is in a running duel')
+    }
+  }
+  const last = db
+    .select({ position: sql<number | null>`max(${tournamentDuel.position})` })
+    .from(tournamentDuel)
+    .where(eq(tournamentDuel.tournamentId, row.id))
+    .get()?.position ?? 0
+  db.insert(tournamentDuel).values({
+    id: randomUUID(),
+    tournamentId: row.id,
+    participantAId: aId,
+    participantBId: bId,
+    round: 1,
+    kind: 'regular',
+    status: 'running',
+    tableNumber: freeTableNumber(state),
+    bestOf: bestOf as BestOf,
+    position: last + 1,
+    startedAt: now,
+    createdAt: now,
+  }).run()
+  db.update(tournament).set({ updatedAt: now }).where(eq(tournament.id, row.id)).run()
+}
+
+/** Takes back a duel of a Spielabend that was paired by mistake: only one that has not been played. */
+export function removeFreeDuel(db: Db, row: TournamentRow, duelId: string, now: Date): void {
+  requireFreeRunning(row)
+  const duel = db.select().from(tournamentDuel).where(and(eq(tournamentDuel.id, duelId), eq(tournamentDuel.tournamentId, row.id))).get()
+  if (!duel) {
+    fail(404, 'unknown_duel', 'Duel not found')
+  }
+  if (duel.status !== 'running') {
+    conflict('duel_not_open', 'Only a duel that has not been played can be taken back')
+  }
+  db.delete(tournamentDuel).where(eq(tournamentDuel.id, duelId)).run()
+  db.update(tournament).set({ updatedAt: now }).where(eq(tournament.id, row.id)).run()
 }
 
 /** A player leaves or is disqualified. `option` null = the organizer decides later (not for a disqualification). */
@@ -500,6 +584,7 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     startedAt: duelRow.startedAt ? duelRow.startedAt.toISOString() : null,
     endedAt: duelRow.endedAt ? duelRow.endedAt.toISOString() : null,
     queuePosition: waitingIndex.get(duelRow.id) ?? null,
+    bestOf: duelRow.bestOf,
   }))
 
   const organizer = role === 'organizer'
@@ -517,7 +602,9 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
   const activeCount = state.players.filter(player => player.status === 'active').length
   // Spieltage: every day still to be played takes one duel; with a queue the open duels are shared by the tables.
   const openDays = new Set(state.duels.filter(duel => (duel.status === 'planned' || duel.status === 'running') && isLive(state, duel)).map(duel => duel.round)).size
-  const remainingMinutes = running_ && openDuels > 0
+  // A Spielabend has no plan, so nothing to estimate and no deciding duel to ask for.
+  const free = isFreeMode(setup.mode)
+  const remainingMinutes = running_ && openDuels > 0 && !free
     ? (byRound ? openDays : Math.ceil(openDuels / usableTables(setup.tables, Math.max(2, activeCount)))) * setup.duelMinutes
     : null
 
@@ -542,9 +629,9 @@ export function buildQueueDetail(db: Db, row: TournamentRow, participants: Parti
     undecided: state.players.filter(player => player.status === 'dropped' && player.dropOption === null).map(player => player.id),
     dropOptions: dropChoices,
     remainingMinutes,
-    firstPlaceTie: running_ ? firstPlaceTieOf(state, row.scoring) : [],
+    firstPlaceTie: running_ && !free ? firstPlaceTieOf(state, row.scoring) : [],
     canRecompute: organizer && running_ && row.queueMode === 'swiss' && recomputeSwiss(state).length > 0,
-    canExtend: organizer && running_ && openDuels === 0,
+    canExtend: organizer && running_ && !free && openDuels === 0,
     duelsDone: state.duels.filter(duel => duel.status === 'done').length,
     duelsTotal: state.duels.filter(duel => duel.status !== 'void').length,
   }

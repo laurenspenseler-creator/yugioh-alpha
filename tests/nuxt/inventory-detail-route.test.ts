@@ -202,16 +202,18 @@ describe('filters in "Liste" (#145)', () => {
     expect(listToggle.attributes('aria-pressed')).toBe('true')
   })
 
-  it('shows the sort only in "Galerie"', async () => {
+  // Tester feedback, round 15: the list sorts too (A-Z), with the number of cards it lists, next to the search text.
+  it('has a sort and a count in "Liste" and in "Galerie", beside the search text', async () => {
     state.inventory = { items: [listRow], total: 1 }
 
     const list = await mountSuspended(InventoryPage, { route: '/inventory' })
-    expect(list.text()).not.toContain('Sortierung')
-    expect(list.findComponent(InventorySearchPanel).props('showSort')).toBe(false)
+    expect(list.text()).toContain('Sortierung')
+    expect(list.find('[data-testid="inventory-shown-count"]').text()).toBe('1 Karte')
     list.unmount()
 
     const gallery = await mountSuspended(InventoryPage, { route: '/inventory?view=gallery' })
     expect(gallery.text()).toContain('Sortierung')
+    expect(gallery.find('[data-testid="inventory-shown-count"]').exists()).toBe(true)
   })
 })
 

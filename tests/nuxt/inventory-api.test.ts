@@ -1,6 +1,6 @@
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import Database from 'better-sqlite3'
 import { beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '../../server/db/schema'
@@ -304,6 +304,40 @@ describe('inventory persistence helpers', () => {
       expect(rows(listOwnedCards(db, 'user-a', { q: 'dark' }))).toEqual(['Dark Magician/-', 'Dark Magician/col-1'])
       expect(rows(listOwnedCards(db, 'user-a', { q: 'TOPF' }))).toEqual(['Pot of Greed/col-1'])
       expect(listOwnedCards(db, 'user-a', { q: '%' }).total).toBe(0)
+    })
+
+    // Tester feedback, round 15: "sortierung von a-z" for the list of the inventory.
+    describe('sort', () => {
+      const names = (result: ReturnType<typeof listOwnedCards>) => result.items.map(item => item.cardName)
+
+      it('lists the latest change first by default and when asked for "updated"', () => {
+        const later = new Date(Date.now() + 60_000)
+        db.update(schema.ownedCard).set({ updatedAt: later }).where(and(eq(schema.ownedCard.userId, 'user-a'), eq(schema.ownedCard.catalogCardId, 55144522))).run()
+
+        expect(names(listOwnedCards(db, 'user-a'))[0]).toBe('Pot of Greed')
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'updated' }))[0]).toBe('Pot of Greed')
+      })
+
+      it('sorts A to Z and Z to A by the card name, the rows of one card together', () => {
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'name' }))).toEqual(['Dark Magician', 'Dark Magician', 'Pot of Greed'])
+        expect(names(listOwnedCards(db, 'user-a', { sort: '-name' }))).toEqual(['Pot of Greed', 'Dark Magician', 'Dark Magician'])
+      })
+
+      it('sorts by the name in the card language', () => {
+        // In German Pot of Greed comes first ("Topf" before "Zaubermeister"), in English Dark Magician does.
+        seedGermanNames(db, { 46986414: 'Zaubermeister', 55144522: 'Topf der Gier' })
+
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'name', cardLocale: 'de' }))[0]).toBe('Pot of Greed')
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'name', cardLocale: 'en' }))[0]).toBe('Dark Magician')
+      })
+
+      it('reads only the three known sorts from the query', () => {
+        expect(parseInventoryListQuery({ sort: 'name' }).sort).toBe('name')
+        expect(parseInventoryListQuery({ sort: '-name' }).sort).toBe('-name')
+        expect(parseInventoryListQuery({ sort: 'updated' }).sort).toBe('updated')
+        expect(parseInventoryListQuery({ sort: 'quantity' }).sort).toBeUndefined()
+        expect(parseInventoryListQuery({}).sort).toBeUndefined()
+      })
     })
 
     it('finds catalog cards for the picker by German name or passcode', () => {

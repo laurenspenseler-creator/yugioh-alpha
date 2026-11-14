@@ -19,27 +19,19 @@ export interface InventorySearchFilters {
   sort: 'name' | '-name' | 'quantity' | 'newest'
 }
 
+// The sort is not here: it sits with the search text (tester feedback, round 15), where the page also shows how many
+// cards it lists, for the list and the gallery alike.
 withDefaults(defineProps<{
   facets: CardFacetOptions
   /** Different cards per card kind, shown as chips in a row under the filters; they also toggle the "Kartenart" filter. */
   kindCounts?: Array<{ kind: InventoryKind, count: number }>
-  /** The sort select; only "Galerie" sorts ("Liste" stays "recently changed first"). */
-  showSort?: boolean
 }>(), {
   kindCounts: () => [],
-  showSort: true,
 })
 
 const { t } = useI18n()
 
 const filters = defineModel<InventorySearchFilters>('filters', { required: true })
-
-const sortItems = computed(() => [
-  { label: t('inventory.search.sort.nameAsc'), value: 'name' },
-  { label: t('inventory.search.sort.nameDesc'), value: '-name' },
-  { label: t('inventory.search.sort.quantity'), value: 'quantity' },
-  { label: t('inventory.search.sort.newest'), value: 'newest' },
-])
 
 function toggleKind(kind: CardKind) {
   filters.value.kind = filters.value.kind.includes(kind)
@@ -101,22 +93,5 @@ function resetFilters() {
       :active="filters.kind"
       @toggle="toggleKind"
     />
-
-    <div
-      v-if="showSort"
-      class="flex justify-end"
-    >
-      <UFormField
-        :label="t('inventory.search.sortLabel')"
-        class="flex items-center gap-2"
-      >
-        <USelect
-          v-model="filters.sort"
-          :items="sortItems"
-          :aria-label="t('inventory.search.sortLabel')"
-          class="w-40"
-        />
-      </UFormField>
-    </div>
   </div>
 </template>

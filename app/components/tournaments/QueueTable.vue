@@ -20,6 +20,8 @@ const queue = computed(() => props.tournament.queue!)
 const live = computed(() => props.tournament.status === 'running')
 // Spieltage have no tables and no queue: the last column only says who is playing right now.
 const byRound = computed(() => queue.value.flow === 'rounds')
+// A Spielabend has no schedule, so there is no "x of y duels": it counts the duels played.
+const isFree = computed(() => queue.value.mode === 'free')
 
 /** The decks each player plays (ADR 0039), by name; shown next to the player so everybody knows what they face. */
 const decksOf = computed(() => new Map(props.tournament.participants.map(participant => [participant.id, participant.decks.map(deck => deck.name).join(' / ')])))
@@ -102,7 +104,7 @@ const remaining = computed(() => {
       </h2>
       <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
         <p class="text-xs text-muted">
-          {{ t('tournaments.queue.board.progress', { done: queue.duelsDone, total: queue.duelsTotal }) }}
+          {{ isFree ? t('tournaments.queue.free.progress', { count: queue.duelsDone }) : t('tournaments.queue.board.progress', { done: queue.duelsDone, total: queue.duelsTotal }) }}
           <template v-if="remaining">
             · {{ remaining }}
           </template>
