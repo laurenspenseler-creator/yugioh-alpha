@@ -115,8 +115,23 @@ mockNuxtImport('useFetch', () => {
           attributes: ['LIGHT'],
           races: ['Dragon'],
           levels: [8],
+          archetypes: ['Blue-Eyes', 'Atlantis, City of the Sea Dragon'],
           sets: [{ id: 'legend-of-blue-eyes', name: 'Legend of Blue Eyes' }],
         }),
+      }
+    }
+
+    // The "Zulässigkeit" filter's format menu.
+    if (resolvedUrl === '/api/formats') {
+      return {
+        data: ref({
+          items: [
+            { id: 'goat', name: 'Goat', isBuiltin: true },
+            { id: 'edison', name: 'Edison', isBuiltin: true },
+            { id: 'own-1', name: 'Mein Format', isBuiltin: false },
+          ],
+        }),
+        status: ref('success'),
       }
     }
 
@@ -330,6 +345,94 @@ describe('catalog page', () => {
     })
     expect(route.value.query.page).toBeUndefined()
     expect(lastQuery('/api/catalog/cards')).toMatchObject({ excludeKind: 'pendulum,token', page: 1 })
+  })
+
+  // Tester feedback, round 14: "bau beim Inventar und beim Katalog die Filter-Option Format-Zulässigkeit" and
+  // "auch die Option, nach Deckthemen zu filtern".
+  describe('the format legality and the Deckthema filter', () => {
+    it('has both: a Format menu, and a Deckthema menu with the archetypes of the catalog', async () => {
+      const component = await mountPage()
+
+      expect(component.find('[aria-label="Format"]').exists()).toBe(true)
+      expect(component.find('[aria-label="Deckthema"]').exists()).toBe(true)
+      // The "Zulässigkeit" menu waits for a format.
+      expect(component.find('[aria-label="Zulässigkeit"]').exists()).toBe(false)
+    })
+
+    it('writes a picked format and what to show of it to the URL and the query; the default is not written', async () => {
+      const component = await mountPage()
+      const route = useRouter().currentRoute
+      const filter = component.findComponent({ name: 'CardFormatFilter' })
+
+      filter.vm.$emit('update:formatId', 'goat')
+      await vi.waitFor(() => {
+        expect(route.value.query.formatId).toBe('goat')
+      })
+      expect(route.value.query.legality).toBeUndefined()
+      expect(lastQuery('/api/catalog/cards')).toMatchObject({ formatId: 'goat', legality: 'legal', page: 1 })
+      expect(component.find('[aria-label="Zulässigkeit"]').exists()).toBe(true)
+
+      filter.vm.$emit('update:legality', 'limited')
+      await vi.waitFor(() => {
+        expect(route.value.query.legality).toBe('limited')
+      })
+      expect(lastQuery('/api/catalog/cards')).toMatchObject({ formatId: 'goat', legality: 'limited' })
+    })
+
+    it('reads them from a deep link, and reset clears them', async () => {
+      const component = await mountPage({ route: '/catalog?formatId=edison&legality=illegal&archetype=Blue-Eyes' })
+      const route = useRouter().currentRoute
+
+      expect(lastQuery('/api/catalog/cards')).toMatchObject({ formatId: 'edison', legality: 'illegal', archetype: ['Blue-Eyes'] })
+      expect(component.find('[aria-label="Format"]').text()).toContain('Edison')
+      expect(component.find('[aria-label="Zulässigkeit"]').text()).toContain('Nicht zulässig')
+      expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blue-Eyes')
+
+      const reset = component.findAll('button').find(btn => btn.text() === 'Zurücksetzen')
+      await reset!.trigger('click')
+      await vi.waitFor(() => {
+        expect(route.value.query.formatId).toBeUndefined()
+      })
+      expect(route.value.query.legality).toBeUndefined()
+      expect(route.value.query.archetype).toBeUndefined()
+      const query = lastQuery('/api/catalog/cards')
+      expect(query.formatId).toBeUndefined()
+      expect(query.legality).toBeUndefined()
+      expect(query.archetype).toBeUndefined()
+    })
+
+    it('ignores a legality it does not know', async () => {
+      await mountPage({ route: '/catalog?formatId=goat&legality=banned' })
+      expect(lastQuery('/api/catalog/cards')).toMatchObject({ formatId: 'goat', legality: 'legal' })
+    })
+
+    it('drops a format that is not in the list any more (deleted, or someone else\'s)', async () => {
+      await mountPage({ route: '/catalog?formatId=gone-format' })
+      const route = useRouter().currentRoute
+
+      await vi.waitFor(() => {
+        expect(route.value.query.formatId).toBeUndefined()
+      })
+      expect(lastQuery('/api/catalog/cards').formatId).toBeUndefined()
+    })
+
+    it('sends the themes as repeated keys, and keeps a comma in a name', async () => {
+      const component = await mountPage()
+      const route = useRouter().currentRoute
+
+      component.findComponent({ name: 'CardArchetypeFilter' }).vm.$emit('update:modelValue', ['Blue-Eyes', 'Atlantis, City of the Sea Dragon'])
+      await vi.waitFor(() => {
+        expect(route.value.query.archetype).toEqual(['Blue-Eyes', 'Atlantis, City of the Sea Dragon'])
+      })
+      expect(lastQuery('/api/catalog/cards')).toMatchObject({ archetype: ['Blue-Eyes', 'Atlantis, City of the Sea Dragon'], page: 1 })
+    })
+
+    it('counts as a filter: the empty result says "no matches"', async () => {
+      catalogState.total = 0
+      catalogState.items = []
+      const component = await mountPage({ route: '/catalog?formatId=goat&legality=illegal' })
+      expect(component.text()).toContain('Keine Karten gefunden')
+    })
   })
 
   it('opens the add-to-inventory modal pre-filled with the clicked card (#6)', async () => {

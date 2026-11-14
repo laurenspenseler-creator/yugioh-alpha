@@ -5,12 +5,14 @@ import type { useDb } from '../db'
 import { catalogCard, ownedCard } from '../db/schema'
 import { CARD_TEXT_EXCERPT_LENGTH, MAX_OWNED_QUANTITY, UNASSIGNED_COLLECTION_ID } from '../../shared/inventory'
 import type { CardKind } from '../../shared/card-kind'
+import type { FormatLegality } from '../../shared/format-legality'
 import type { AppLocale } from '../../shared/locale'
 import { activeCatalogCard, cardNameMatches, escapedLike, escapeLikeTerm } from './card-name-search'
 import { primaryImageUrlSql } from './card-image-sql'
 import { resolvePasscode } from './card-passcode'
 import { cardDescDeSql, cardNameDeSql, cardSortKey } from './card-translation-sql'
 import { assertCollectionOwnedByUser } from './collections'
+import { legalityCardIds } from './format-legality'
 import { inventoryCardFilterClauses, parseInventorySearchQuery } from './inventory-search'
 
 type Db = ReturnType<typeof useDb>
@@ -46,6 +48,11 @@ export interface InventoryListOptions {
   attribute?: string[]
   race?: string[]
   level?: number[]
+  // "Zulässigkeit" (tester feedback, round 14): a rule format and what to show of it.
+  formatId?: string
+  legality?: FormatLegality
+  // "Deckthema": the archetypes of a card, exact names.
+  archetype?: string[]
 }
 
 // `code` (+ `params`) is what the UI translates (`errors.api.<code>`, ADR
@@ -700,7 +707,7 @@ export function parseInventoryListQuery(query: Record<string, unknown>): Invento
   const catalogCardId = typeof query.catalogCardId === 'string' ? Number(query.catalogCardId) : Number.NaN
   // The card filters parse like the aggregated search's (CSV and/or
   // repeated params).
-  const { inText, kind, type, attribute, race, level } = parseInventorySearchQuery(query)
+  const { inText, kind, type, attribute, race, level, formatId, legality, archetype } = parseInventorySearchQuery(query)
   return {
     q: typeof query.q === 'string' ? query.q : undefined,
     page: typeof query.page === 'string' ? Number(query.page) : undefined,
@@ -713,6 +720,9 @@ export function parseInventoryListQuery(query: Record<string, unknown>): Invento
     attribute,
     race,
     level,
+    formatId,
+    legality,
+    archetype,
   }
 }
 
@@ -730,6 +740,8 @@ export function listOwnedCards(db: Db, userId: string, options: InventoryListOpt
       attribute: options.attribute ?? [],
       race: options.race ?? [],
       level: options.level ?? [],
+      archetype: options.archetype ?? [],
+      legalityIds: legalityCardIds(db, userId, options),
     }),
   ]
   // Row-level filters: unlike the aggregated search (inventory-search.ts),

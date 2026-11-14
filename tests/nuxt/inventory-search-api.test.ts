@@ -59,6 +59,7 @@ interface CardSeed {
   atk?: number | null
   def?: number | null
   tcgDate?: string | null
+  archetype?: string | null
 }
 
 function seedCards(db: TestDb, cards: CardSeed[]) {
@@ -74,6 +75,7 @@ function seedCards(db: TestDb, cards: CardSeed[]) {
     atk: card.atk ?? null,
     def: card.def ?? null,
     tcgDate: card.tcgDate ?? null,
+    archetype: card.archetype ?? null,
     syncedAt: now,
   }))).run()
 }
@@ -624,7 +626,25 @@ describe('inventory search facets', () => {
       attributes: ['DARK'],
       races: ['Spellcaster'],
       levels: [7],
+      archetypes: [],
     })
+  })
+
+  it('lists the archetypes ("Deckthemen") of the owned cards, each once and sorted', async () => {
+    seedCards(db, [
+      { id: 46986414, name: 'Dark Magician', type: 'Normal Monster', archetype: 'Dark Magician' },
+      { id: 89631139, name: 'Blue-Eyes White Dragon', type: 'Normal Monster', archetype: 'Blue-Eyes' },
+      { id: 23995346, name: 'Blue-Eyes Ultimate Dragon', type: 'Fusion Monster', archetype: 'Blue-Eyes' },
+      { id: 40640057, name: 'Kuriboh', type: 'Effect Monster', archetype: null },
+      { id: 55144522, name: 'Pot of Greed', type: 'Spell Card', archetype: 'Greed' },
+    ])
+    for (const id of [46986414, 89631139, 23995346, 40640057]) {
+      await addOwnedCard(db, 'user-a', validateInventoryInput({ catalog_card_id: id }))
+    }
+    // Another player's theme does not show up.
+    await addOwnedCard(db, 'user-b', validateInventoryInput({ catalog_card_id: 55144522 }))
+
+    expect(loadInventorySearchFacets(db, 'user-a').archetypes).toEqual(['Blue-Eyes', 'Dark Magician'])
   })
 
   it('leaves the Skill Card character out of the races', async () => {
@@ -648,6 +668,7 @@ describe('inventory search facets', () => {
       attributes: [],
       races: [],
       levels: [],
+      archetypes: [],
     })
   })
 })

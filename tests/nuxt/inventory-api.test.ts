@@ -142,6 +142,10 @@ describe('inventory validation', () => {
       attribute: [],
       race: [],
       level: [],
+      // No format and no Deckthema asked for (round 14).
+      formatId: undefined,
+      legality: undefined,
+      archetype: [],
     })
     for (const catalogCardId of ['abc', '0', '-3', '1.5', '']) {
       expect(parseInventoryListQuery({ catalogCardId }).catalogCardId).toBeUndefined()

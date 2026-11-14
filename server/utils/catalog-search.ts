@@ -7,6 +7,7 @@ import { resolveCatalogCardId } from './card-passcode'
 import { primaryImageFirst, primaryImageUrlSql } from './card-image-sql'
 import { cardDescDeSql, cardNameDeSql, cardSortKey } from './card-translation-sql'
 import { buildCardListWhere, type CardListQuery } from './catalog-query'
+import { legalityCardIds } from './format-legality'
 
 type Db = ReturnType<typeof useDb>
 
@@ -31,10 +32,12 @@ export interface CatalogCardSummary {
 /**
  * One page of catalog cards. `cardLocale` is the card language the names are
  * shown in (ADR 0015): "by name" sorts by the German name in `de`. `userId` is
- * whose inventory the "nur mein Inventar" filter (`filters.owned`) looks at.
+ * whose inventory the "nur mein Inventar" filter (`filters.owned`) looks at, and
+ * whose formats the "Zulässigkeit" filter (`filters.formatId`) may name.
  */
 export async function searchCatalog(db: Db, filters: CardListQuery, cardLocale: AppLocale = 'en', userId?: string) {
-  const where = buildCardListWhere(filters, userId)
+  const legalityIds = userId ? legalityCardIds(db, userId, filters) : null
+  const where = buildCardListWhere(filters, userId, legalityIds)
   const offset = (filters.page - 1) * filters.pageSize
   const nameKey = cardSortKey(cardLocale)
   const orderBy = filters.sort === '-name'
@@ -155,7 +158,7 @@ export async function getCatalogCardDetail(db: Db, id: number) {
 }
 
 export async function getCatalogFacets(db: Db) {
-  const [types, attributes, races, levels, sets] = await Promise.all([
+  const [types, attributes, races, levels, sets, archetypes] = await Promise.all([
     db
       .selectDistinct({ value: catalogCard.type })
       .from(catalogCard)
@@ -194,6 +197,12 @@ export async function getCatalogFacets(db: Db) {
       })
       .from(catalogSet)
       .orderBy(asc(catalogSet.name)),
+    // The "Deckthema" menu: every archetype of an active card (about 700).
+    db
+      .selectDistinct({ value: catalogCard.archetype })
+      .from(catalogCard)
+      .where(and(activeCatalogCard(), isNotNull(catalogCard.archetype), ne(catalogCard.archetype, '')))
+      .orderBy(asc(catalogCard.archetype)),
   ])
 
   // A set without a printing of an active card would find nothing in the set
@@ -207,6 +216,7 @@ export async function getCatalogFacets(db: Db) {
     attributes: attributes.flatMap(item => item.value ? [item.value] : []),
     races: races.flatMap(item => item.value ? [item.value] : []),
     levels: levels.flatMap(item => item.value === null ? [] : [item.value]),
+    archetypes: archetypes.flatMap(item => item.value ? [item.value] : []),
     sets: sets.filter(set => set.hasCards).map(toOption),
     setsWithoutCards: sets.filter(set => !set.hasCards).map(toOption),
   }

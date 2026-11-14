@@ -2,13 +2,14 @@
 import type { LocationQueryRaw } from 'vue-router'
 import { isCardKind } from '~~/shared/card-kind'
 import type { InventoryKind } from '~~/shared/deck-breakdown'
+import { DEFAULT_FORMAT_LEGALITY, isFormatLegality } from '~~/shared/format-legality'
 import { UNASSIGNED_COLLECTION_ID } from '~~/shared/inventory'
 import type { InventorySearchFilters } from '~/components/inventory/InventorySearchPanel.vue'
 import type { MoveEntry } from '~/components/inventory/MoveCopiesModal.vue'
 import type { CardDetailPreview } from '~/utils/card-detail'
 import type { InventorySearchResultItem } from '~/utils/inventory-search-result'
 import { isPreviousHistoryEntry } from '~/utils/history-entry'
-import { csvQueryValue, queryList } from '~/utils/query-list'
+import { csvQueryValue, queryExactList, queryList } from '~/utils/query-list'
 
 interface InventoryItem {
   id: string
@@ -54,6 +55,7 @@ interface SearchFacets {
   attributes: string[]
   races: string[]
   levels: number[]
+  archetypes: string[]
 }
 
 function emptyFacets(): SearchFacets {
@@ -62,6 +64,7 @@ function emptyFacets(): SearchFacets {
     attributes: [],
     races: [],
     levels: [],
+    archetypes: [],
   }
 }
 
@@ -94,7 +97,9 @@ const selectedCard = ref<CatalogCard | null>(null)
 //   on load.
 // - The search (#148): `?q=` (the debounced text), `?inText=1` ("Auch im
 //   Kartentext suchen", kept even without a text, as in the catalog),
-//   `?kind=` / `type` / `attribute` / `race` / `level` (comma lists) and `?sort=`
+//   `?kind=` / `type` / `attribute` / `race` / `level` (comma lists), `?archetype=` ("Deckthema",
+//   repeated keys: a name can hold a comma), `?formatId=` with
+//   `?legality=` ("Zulässigkeit", the default `legal` is not written) and `?sort=`
 //   (Galerie; `name` is not written).
 // - `?page=` — the shown view's page (#148); each view keeps its own counter,
 //   the other one starts at 1 on a reload. Any filter or scope change goes
@@ -176,6 +181,9 @@ const filters = ref<SearchFilters>({
   attribute: queryList(route.query.attribute),
   race: queryList(route.query.race),
   level: queryList(route.query.level).map(Number).filter(Number.isInteger),
+  archetype: queryExactList(route.query.archetype),
+  formatId: typeof route.query.formatId === 'string' ? route.query.formatId : '',
+  legality: isFormatLegality(route.query.legality) ? route.query.legality : DEFAULT_FORMAT_LEGALITY,
   sort: querySort(route.query.sort),
   page: mode.value === 'gallery' ? initialPage : 1,
 })
@@ -204,6 +212,9 @@ const listQuery = computed(() => ({
   attribute: filters.value.attribute.length ? filters.value.attribute.join(',') : undefined,
   race: filters.value.race.length ? filters.value.race.join(',') : undefined,
   level: filters.value.level.length ? filters.value.level.join(',') : undefined,
+  archetype: filters.value.archetype.length ? filters.value.archetype : undefined,
+  formatId: filters.value.formatId || undefined,
+  legality: filters.value.formatId ? filters.value.legality : undefined,
   page: page.value,
   pageSize,
   collectionId: collectionId.value || undefined,
@@ -291,6 +302,9 @@ watch(
     filters.value.attribute,
     filters.value.race,
     filters.value.level,
+    filters.value.archetype,
+    filters.value.formatId,
+    filters.value.legality,
     filters.value.sort,
   ],
   () => {
@@ -312,6 +326,9 @@ watch(
     filters.value.attribute,
     filters.value.race,
     filters.value.level,
+    filters.value.archetype,
+    filters.value.formatId,
+    filters.value.legality,
     filters.value.sort,
     mode.value,
     page.value,
@@ -327,6 +344,9 @@ watch(
       attribute: csvQueryValue(filters.value.attribute),
       race: csvQueryValue(filters.value.race),
       level: csvQueryValue(filters.value.level),
+      archetype: filters.value.archetype.length ? filters.value.archetype : undefined,
+      formatId: filters.value.formatId || undefined,
+      legality: filters.value.formatId && filters.value.legality !== DEFAULT_FORMAT_LEGALITY ? filters.value.legality : undefined,
       sort: filters.value.sort === 'name' ? undefined : filters.value.sort,
       page: shownPage > 1 ? String(shownPage) : undefined,
     })
@@ -340,7 +360,9 @@ const hasActiveFacets = computed(() => Boolean(
   || filters.value.type.length
   || filters.value.attribute.length
   || filters.value.race.length
-  || filters.value.level.length,
+  || filters.value.level.length
+  || filters.value.archetype.length
+  || filters.value.formatId,
 ))
 
 // Search text or facets (not the collection, which is the page's scope).
@@ -363,6 +385,9 @@ const searchQuery = computed(() => ({
   attribute: filters.value.attribute.length ? filters.value.attribute.join(',') : undefined,
   race: filters.value.race.length ? filters.value.race.join(',') : undefined,
   level: filters.value.level.length ? filters.value.level.join(',') : undefined,
+  archetype: filters.value.archetype.length ? filters.value.archetype : undefined,
+  formatId: filters.value.formatId || undefined,
+  legality: filters.value.formatId ? filters.value.legality : undefined,
   collectionId: collectionId.value || undefined,
   sort: filters.value.sort,
   page: filters.value.page,
@@ -407,6 +432,7 @@ const facets = computed<SearchFacets>(() => ({
   attributes: facetsData.value?.attributes ?? [],
   races: facetsData.value?.races ?? [],
   levels: facetsData.value?.levels ?? [],
+  archetypes: facetsData.value?.archetypes ?? [],
 }))
 
 function openAdd(card: CatalogCard) {

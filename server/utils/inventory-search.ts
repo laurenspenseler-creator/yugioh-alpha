@@ -6,9 +6,11 @@ import { cardKindClause, parseCardKinds } from './card-kind-sql'
 import { cardNameMatches, cardTextMatches } from './card-name-search'
 import { primaryImageUrlSql } from './card-image-sql'
 import { cardNameDeSql } from './card-translation-sql'
+import { legalityClause, parseFormatLegalityQuery } from './format-legality'
 import { parseQueryFlag } from './query-flag'
 import { UNASSIGNED_COLLECTION_ID } from '../../shared/inventory'
 import type { CardKind } from '../../shared/card-kind'
+import type { FormatLegality } from '../../shared/format-legality'
 
 export { UNASSIGNED_COLLECTION_ID }
 
@@ -31,6 +33,12 @@ export interface InventorySearchFilters {
   attribute: string[]
   race: string[]
   level: number[]
+  // "Zulässigkeit" (tester feedback, round 14): a rule format the user may see and what to show of it. The ids of the
+  // cards that pass are worked out by the caller (`legalityCardIds`) and given to `buildInventorySearchWhere`.
+  formatId?: string
+  legality?: FormatLegality
+  // "Deckthema": the archetypes of a card, exact names (one of them is enough).
+  archetype: string[]
   // A collection id owned by the caller, or `UNASSIGNED_COLLECTION_ID`.
   collectionId?: string
   // With a real `collectionId`: only that collection's copies count, in the
@@ -64,6 +72,15 @@ function toStringArray(raw: unknown): string[] {
     }
   }
   return out
+}
+
+// Exact values: repeated keys only, never split at a comma (an archetype's name can hold one).
+function toExactStringArray(raw: unknown): string[] {
+  const out = toValueList(raw)
+    .filter((value): value is string => typeof value === 'string')
+    .map(value => value.trim())
+    .filter(value => value !== '')
+  return [...new Set(out)]
 }
 
 function toIntArray(raw: unknown): number[] {
@@ -119,6 +136,8 @@ export function parseInventorySearchQuery(rawQuery: Record<string, unknown>): In
     attribute: toStringArray(rawQuery.attribute),
     race: toStringArray(rawQuery.race),
     level: toIntArray(rawQuery.level),
+    ...parseFormatLegalityQuery(rawQuery.formatId, rawQuery.legality),
+    archetype: toExactStringArray(rawQuery.archetype),
     collectionId: toTrimmedString(rawQuery.collectionId),
     scoped: parseQueryFlag(rawQuery.scoped),
     sort: toSort(rawQuery.sort),
@@ -127,8 +146,14 @@ export function parseInventorySearchQuery(rawQuery: Record<string, unknown>): In
   }
 }
 
-/** The per-card part of the inventory filters, shared by the search and the "Liste" (#145). */
-export type InventoryCardFilters = Pick<InventorySearchFilters, 'q' | 'inText' | 'kind' | 'type' | 'attribute' | 'race' | 'level'>
+/**
+ * The per-card part of the inventory filters, shared by the search and the "Liste" (#145). `legalityIds` are the cards that
+ * pass the "Zulässigkeit" filter, when there is one.
+ */
+export type InventoryCardFilters = Pick<InventorySearchFilters, 'q' | 'inText' | 'kind' | 'type' | 'attribute' | 'race' | 'level'> & {
+  archetype?: string[]
+  legalityIds?: readonly number[] | null
+}
 
 /**
  * The WHERE clauses that filter by catalog card properties: the name (and,
@@ -165,6 +190,12 @@ export function inventoryCardFilterClauses(filters: InventoryCardFilters): SQL[]
   if (filters.level.length > 0) {
     clauses.push(inArray(catalogCard.level, filters.level) as SQL)
   }
+  if (filters.archetype && filters.archetype.length > 0) {
+    clauses.push(inArray(catalogCard.archetype, filters.archetype) as SQL)
+  }
+  if (filters.legalityIds) {
+    clauses.push(legalityClause(filters.legalityIds))
+  }
 
   return clauses
 }
@@ -181,8 +212,8 @@ export function inventoryCardFilterClauses(filters: InventoryCardFilters): SQL[]
  * The deck builder's "Quelle" asks for `scoped` instead: then it is a plain
  * row filter, and the quantities are that collection's copies only.
  */
-export function buildInventorySearchWhere(userId: string, filters: InventorySearchFilters): SQL {
-  const clauses: SQL[] = [eq(ownedCard.userId, userId), ...inventoryCardFilterClauses(filters)]
+export function buildInventorySearchWhere(userId: string, filters: InventorySearchFilters, legalityIds?: readonly number[] | null): SQL {
+  const clauses: SQL[] = [eq(ownedCard.userId, userId), ...inventoryCardFilterClauses({ ...filters, legalityIds })]
 
   if (filters.collectionId) {
     clauses.push(
@@ -207,6 +238,8 @@ export interface InventorySearchFacets {
   attributes: string[]
   races: string[]
   levels: number[]
+  /** The "Deckthema" menu: the archetypes of the cards the user owns. */
+  archetypes: string[]
 }
 
 function isNonEmptyString(value: string | null | undefined): value is string {
@@ -229,6 +262,7 @@ export function loadInventorySearchFacets(db: Db, userId: string): InventorySear
       attribute: catalogCard.attribute,
       race: catalogCard.race,
       level: catalogCard.level,
+      archetype: catalogCard.archetype,
     })
     .from(ownedCard)
     .innerJoin(catalogCard, eq(ownedCard.catalogCardId, catalogCard.id))
@@ -247,6 +281,7 @@ export function loadInventorySearchFacets(db: Db, userId: string): InventorySear
     // #17), matching `getCatalogFacets` in server/utils/catalog-search.ts.
     races: uniqueSortedStrings(rows.filter(row => row.type !== 'Skill Card').map(row => row.race)),
     levels,
+    archetypes: uniqueSortedStrings(rows.map(row => row.archetype)),
   }
 }
 

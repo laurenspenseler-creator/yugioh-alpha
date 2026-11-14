@@ -28,6 +28,8 @@ export interface CardFacetOptions {
   attributes: string[]
   races: string[]
   levels: number[]
+  /** The "Deckthema" menu (`CardArchetypeFilter`, which the catalog and the inventory place themselves); optional. */
+  archetypes?: string[]
 }
 
 const props = withDefaults(defineProps<{

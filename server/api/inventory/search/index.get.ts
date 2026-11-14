@@ -11,6 +11,7 @@ import {
   UNASSIGNED_COLLECTION_ID,
 } from '../../../utils/inventory-search'
 import type { InventorySearchSort } from '../../../utils/inventory-search'
+import { legalityCardIds } from '../../../utils/format-legality'
 import { requireUser } from '../../../utils/session'
 import { cardSortKey } from '../../../utils/card-translation-sql'
 import { resolveCardLocale } from '../../../utils/ui-locale'
@@ -43,7 +44,7 @@ export default defineEventHandler(async (event) => {
     assertCollectionOwnedByUser(db, user.id, filters.collectionId)
   }
 
-  const where = buildInventorySearchWhere(user.id, filters)
+  const where = buildInventorySearchWhere(user.id, filters, legalityCardIds(db, user.id, filters))
 
   const pageRows = db
     .select({

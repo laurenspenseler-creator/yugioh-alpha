@@ -28,6 +28,15 @@
       "printings": "Printings",
       "pendulumScale": "Pendelbereich"
     },
+    "archetypeSearch": "Deckthema suchen...",
+    "legality": {
+      "anyFormat": "Alle Formate",
+      "legal": "Zulässig",
+      "illegal": "Nicht zulässig",
+      "unlimited": "Unbeschränkt (3 Kopien)",
+      "semi_limited": "Semi-limitiert (2 Kopien)",
+      "limited": "Limitiert (1 Kopie)"
+    },
     "field": {
       "quantity": "Anzahl",
       "collection": "Sammlung",
@@ -38,6 +47,9 @@
       "level": "Stufe/Rang",
       "kind": "Kartenart",
       "excludeKind": "Ohne Kartenart",
+      "format": "Format",
+      "archetype": "Deckthema",
+      "legality": "Zulässigkeit",
       "raceSpell": "Zauberart",
       "raceTrap": "Fallenart",
       "raceSpellTrap": "Zauber-/Fallenart",

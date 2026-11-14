@@ -2,8 +2,10 @@
 import { cardFrame } from '~~/shared/card-frame'
 import { isCardKind } from '~~/shared/card-kind'
 import type { CardKind } from '~~/shared/card-kind'
+import { DEFAULT_FORMAT_LEGALITY, isFormatLegality } from '~~/shared/format-legality'
+import type { FormatLegality } from '~~/shared/format-legality'
 import { isPreviousHistoryEntry } from '~/utils/history-entry'
-import { csvQueryValue as csv, queryList } from '~/utils/query-list'
+import { csvQueryValue as csv, queryExactList, queryList } from '~/utils/query-list'
 import { CARD_LEVEL_ICON, cardLevel } from '~/utils/card-level'
 import type { CardDetailSummary } from '~/utils/card-detail'
 
@@ -12,6 +14,8 @@ interface CatalogFacets {
   attributes: string[]
   races: string[]
   levels: number[]
+  /** The "Deckthema" menu; older fixtures lack it. */
+  archetypes?: string[]
   sets: Array<{ id: string, name: string }>
 }
 
@@ -54,6 +58,12 @@ const kind = ref<CardKind[]>(queryList(route.query.kind).filter(isCardKind))
 // "Ohne Kartenart" and "Nur in meinem Inventar suchen" (tester feedback, round 12); both live in the URL like the rest.
 const excludeKind = ref<CardKind[]>(queryList(route.query.excludeKind).filter(isCardKind))
 const owned = ref(route.query.owned === '1')
+// "Zulässigkeit" (tester feedback, round 14): a rule format and what to show of it; the default (the cards it allows) is
+// not written to the URL.
+const formatId = ref(typeof route.query.formatId === 'string' ? route.query.formatId : '')
+const legality = ref<FormatLegality>(isFormatLegality(route.query.legality) ? route.query.legality : DEFAULT_FORMAT_LEGALITY)
+// "Deckthema" (the archetype); repeated keys in the URL and the query, since a name can hold a comma.
+const archetype = ref<string[]>(queryExactList(route.query.archetype))
 const type = ref<string[]>(queryList(route.query.type))
 const attribute = ref<string[]>(queryList(route.query.attribute))
 const race = ref<string[]>(queryList(route.query.race))
@@ -75,7 +85,7 @@ watch(searchInput, (value) => {
 })
 
 const filtersActive = computed(() =>
-  Boolean(debouncedSearch.value.trim() || kind.value.length || excludeKind.value.length || owned.value || type.value.length || attribute.value.length || race.value.length || level.value.length || setId.value),
+  Boolean(debouncedSearch.value.trim() || kind.value.length || excludeKind.value.length || owned.value || formatId.value || archetype.value.length || type.value.length || attribute.value.length || race.value.length || level.value.length || setId.value),
 )
 
 const cardQuery = computed(() => ({
@@ -85,6 +95,9 @@ const cardQuery = computed(() => ({
   kind: csv(kind.value),
   excludeKind: csv(excludeKind.value),
   owned: owned.value ? 1 : undefined,
+  formatId: formatId.value || undefined,
+  legality: formatId.value ? legality.value : undefined,
+  archetype: archetype.value.length ? archetype.value : undefined,
   type: csv(type.value),
   attribute: csv(attribute.value),
   race: csv(race.value),
@@ -151,17 +164,20 @@ watch(pending, (value) => {
   }
 })
 
-watch([kind, excludeKind, owned, type, attribute, race, level, setId, sort, debouncedSearch, inText], () => {
+watch([kind, excludeKind, owned, formatId, legality, archetype, type, attribute, race, level, setId, sort, debouncedSearch, inText], () => {
   page.value = 1
 }, { deep: true })
 
-watch([debouncedSearch, inText, kind, excludeKind, owned, type, attribute, race, level, setId, sort, page], async () => {
+watch([debouncedSearch, inText, kind, excludeKind, owned, formatId, legality, archetype, type, attribute, race, level, setId, sort, page], async () => {
   await router.replace({
     query: {
       ...route.query,
       q: debouncedSearch.value.trim() || undefined,
       inText: inText.value ? '1' : undefined,
       owned: owned.value ? '1' : undefined,
+      formatId: formatId.value || undefined,
+      legality: formatId.value && legality.value !== DEFAULT_FORMAT_LEGALITY ? legality.value : undefined,
+      archetype: archetype.value.length ? archetype.value : undefined,
       kind: csv(kind.value),
       excludeKind: csv(excludeKind.value),
       type: csv(type.value),
@@ -215,6 +231,9 @@ function resetFilters() {
   debouncedSearch.value = ''
   inText.value = false
   owned.value = false
+  formatId.value = ''
+  legality.value = DEFAULT_FORMAT_LEGALITY
+  archetype.value = []
   kind.value = []
   excludeKind.value = []
   type.value = []
@@ -313,6 +332,20 @@ async function onAddedToInventory() {
             variant="outline"
             class="min-w-0 justify-center"
             @click="resetFilters"
+          />
+        </div>
+
+        <!-- "Deckthema" and "Zulässigkeit" (a rule format, then what to show of it), tester feedback, round 14. -->
+        <div class="flex flex-wrap gap-3">
+          <CardArchetypeFilter
+            v-model="archetype"
+            :archetypes="facets.archetypes ?? []"
+            menu-class="w-full sm:w-60"
+          />
+          <CardFormatFilter
+            v-model:format-id="formatId"
+            v-model:legality="legality"
+            menu-class="w-full sm:w-60"
           />
         </div>
       </section>

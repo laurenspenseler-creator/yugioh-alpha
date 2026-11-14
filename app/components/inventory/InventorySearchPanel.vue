@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { CardKind } from '~~/shared/card-kind'
 import type { InventoryKind } from '~~/shared/deck-breakdown'
+import { DEFAULT_FORMAT_LEGALITY } from '~~/shared/format-legality'
+import type { FormatLegality } from '~~/shared/format-legality'
 import type { CardFacetOptions } from '~/components/card/CardFacetFilters.vue'
 
 export interface InventorySearchFilters {
@@ -9,6 +11,11 @@ export interface InventorySearchFilters {
   attribute: string[]
   race: string[]
   level: number[]
+  /** "Deckthema" (tester feedback, round 14): the archetypes a card may have. */
+  archetype: string[]
+  /** "Zulässigkeit" (tester feedback, round 14): a rule format (`''` for none) and what to show of it. */
+  formatId: string
+  legality: FormatLegality
   sort: 'name' | '-name' | 'quantity' | 'newest'
 }
 
@@ -50,6 +57,9 @@ function resetFilters() {
   filters.value.attribute = []
   filters.value.race = []
   filters.value.level = []
+  filters.value.archetype = []
+  filters.value.formatId = ''
+  filters.value.legality = DEFAULT_FORMAT_LEGALITY
   filters.value.sort = 'name'
 }
 </script>
@@ -65,6 +75,16 @@ function resetFilters() {
         v-model:level="filters.level"
         :facets="facets"
         menu-class="w-36"
+      />
+      <CardArchetypeFilter
+        v-model="filters.archetype"
+        :archetypes="facets.archetypes ?? []"
+        menu-class="w-44"
+      />
+      <CardFormatFilter
+        v-model:format-id="filters.formatId"
+        v-model:legality="filters.legality"
+        menu-class="w-44"
       />
       <UButton
         icon="i-lucide-rotate-ccw"

@@ -28,6 +28,15 @@
       "printings": "Printings",
       "pendulumScale": "Pendulum Scale"
     },
+    "archetypeSearch": "Search archetypes...",
+    "legality": {
+      "anyFormat": "Any format",
+      "legal": "Allowed",
+      "illegal": "Not allowed",
+      "unlimited": "Unlimited (3 copies)",
+      "semi_limited": "Semi-limited (2 copies)",
+      "limited": "Limited (1 copy)"
+    },
     "field": {
       "quantity": "Quantity",
       "collection": "Collection",
@@ -38,6 +47,9 @@
       "level": "Level/Rank",
       "kind": "Card kind",
       "excludeKind": "Without card kind",
+      "format": "Format",
+      "archetype": "Archetype",
+      "legality": "Legality",
       "raceSpell": "Spell type",
       "raceTrap": "Trap type",
       "raceSpellTrap": "Spell/Trap type",
