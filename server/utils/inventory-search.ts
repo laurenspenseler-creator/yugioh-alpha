@@ -2,12 +2,14 @@ import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import type { useDb } from '../db'
 import { catalogCard, ownedCard } from '../db/schema'
+import { archetypeClause } from './archetype-clause'
 import { cardKindClause, parseCardKinds } from './card-kind-sql'
 import { cardNameMatches, cardTextMatches } from './card-name-search'
 import { primaryImageUrlSql } from './card-image-sql'
 import { cardNameDeSql } from './card-translation-sql'
 import { legalityClause, parseFormatLegalityQuery } from './format-legality'
 import { parseQueryFlag } from './query-flag'
+import { extraArchetypesOf } from '../../shared/archetype-members'
 import { UNASSIGNED_COLLECTION_ID } from '../../shared/inventory'
 import type { CardKind } from '../../shared/card-kind'
 import type { FormatLegality } from '../../shared/format-legality'
@@ -191,7 +193,7 @@ export function inventoryCardFilterClauses(filters: InventoryCardFilters): SQL[]
     clauses.push(inArray(catalogCard.level, filters.level) as SQL)
   }
   if (filters.archetype && filters.archetype.length > 0) {
-    clauses.push(inArray(catalogCard.archetype, filters.archetype) as SQL)
+    clauses.push(archetypeClause(filters.archetype))
   }
   if (filters.legalityIds) {
     clauses.push(legalityClause(filters.legalityIds))
@@ -258,6 +260,7 @@ function uniqueSortedStrings(values: Array<string | null | undefined>): string[]
 export function loadInventorySearchFacets(db: Db, userId: string): InventorySearchFacets {
   const rows = db
     .selectDistinct({
+      id: catalogCard.id,
       type: catalogCard.type,
       attribute: catalogCard.attribute,
       race: catalogCard.race,
@@ -281,7 +284,8 @@ export function loadInventorySearchFacets(db: Db, userId: string): InventorySear
     // #17), matching `getCatalogFacets` in server/utils/catalog-search.ts.
     races: uniqueSortedStrings(rows.filter(row => row.type !== 'Skill Card').map(row => row.race)),
     levels,
-    archetypes: uniqueSortedStrings(rows.map(row => row.archetype)),
+    // Also the archetypes the game counts an owned card in although the catalog files it elsewhere (shared/archetype-members.ts).
+    archetypes: uniqueSortedStrings(rows.flatMap(row => [row.archetype, ...extraArchetypesOf(row.id)])),
   }
 }
 

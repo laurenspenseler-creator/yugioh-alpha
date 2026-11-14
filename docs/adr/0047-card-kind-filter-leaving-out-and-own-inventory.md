@@ -68,8 +68,23 @@ The tester's screenshots ("Zieh den blauen Bereich in den roten"):
   from `shared/archetype-names-de.ts`, a hand-checked list of about 100 archetypes taken from the German names of their
   cards; an archetype that is not in it stays in English (the catalog has only English names), and the English name is
   shown as the description and searched too. The value in the URL and the API stays the English name.
-* **Why "Magna Warrior" shows 2 cards:** the catalog (YGOPRODeck) tags only those two cards with that archetype; the Magnet
-  Warrior cards carry "Magnet Warrior" or "Magnet". It is the data, not the filter.
+* **"Magna Warrior" showed 2 cards: that was wrong, not the filter's fault.** The tester asked whether it is right. First
+  answer (mistaken): "it is the data". Checked again against the game's own member lists (Yugipedia, "Magna Warrior" and
+  "Magnet Warrior"): the game has **four** Magna Warriors (Valkyrion, Berserkion, Tellusion, Plasma Warrior Eitom) and the
+  family is split by YGOPRODeck, which has one archetype per card, over "Magna Warrior" (2 cards), "Magnet Warrior" (8)
+  and "Magnet" (9). A card does not have to carry the archetype's name (Plasma Warrior Eitom does not), and the catalog's
+  single field cannot say it. Two more facts: in German, French, Italian and Portuguese both archetypes have one name
+  ("Magnetkrieger"), so a German player picking it expects both.
+  * `shared/archetype-members.ts` lists the cards the game counts in an archetype although the catalog files them
+    elsewhere (Valkyrion and Berserkion for "Magna Warrior"; the Electromagnet Warriors, Delta, Sigma and Omega Plus for
+    "Magnet Warrior"). They are added, never taken away: `archetypeClause()` (catalog, inventory list and gallery) matches
+    the catalog's archetype or this list, and the inventory's menu offers the extra archetypes of the cards one owns.
+    Now "Magna Warrior" lists 4 cards, "Magnet Warrior" 15, both 17.
+  * In the German card language the menu has one entry "Magnetkrieger" for the archetypes that share a German name; picking
+    it filters by both English names (URL and API unchanged).
+  * **Limit:** this is a hand-checked list for this family. Other archetypes can be incomplete in the same way, because the
+    source has one archetype per card. The complete fix would take the game's own set codes (card databases of the
+    simulators, several archetypes per card) as the source; that is a larger change and not done.
 * **Not built: card pictures in German.** The catalog has one picture per card (the English one). There is no source of
   German scans that the app may fetch without a licence of its own, so the card language changes names and texts, not the
   picture.

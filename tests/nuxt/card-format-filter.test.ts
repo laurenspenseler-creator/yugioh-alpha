@@ -106,7 +106,7 @@ describe('CardFormatFilter', () => {
 describe('CardArchetypeFilter', () => {
   const archetypes = ['Stardust', 'Blue-Eyes', 'Atlantis, City of the Sea Dragon']
 
-  interface ArchetypeItem { label: string, value: string, description?: string }
+  interface ArchetypeItem { label: string, value: string, names: string[], description?: string }
 
   function menuOf(component: { findComponent: (selector: unknown) => unknown }) {
     return component.findComponent(USelectMenu) as unknown as { props: (key: string) => unknown, emitted: (name: string) => unknown[][] | undefined }
@@ -126,18 +126,69 @@ describe('CardArchetypeFilter', () => {
     const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: [] } })
 
     const blueEyes = itemsOf(component).find(item => item.value === 'Blue-Eyes')
-    expect(blueEyes).toEqual({ label: 'Blauäugiger', value: 'Blue-Eyes', description: 'Blue-Eyes' })
+    expect(blueEyes).toEqual({ label: 'Blauäugiger', value: 'Blue-Eyes', names: ['Blue-Eyes'], description: 'Blue-Eyes' })
     // No German name known: the English one, with nothing under it.
-    expect(itemsOf(component).find(item => item.value === 'Stardust')).toEqual({ label: 'Stardust', value: 'Stardust' })
+    expect(itemsOf(component).find(item => item.value === 'Stardust')).toEqual({ label: 'Stardust', value: 'Stardust', names: ['Stardust'] })
     // The search finds both names.
-    expect(menuOf(component).props('filterFields')).toEqual(['label', 'value'])
+    expect(menuOf(component).props('filterFields')).toEqual(['label', 'value', 'description'])
   })
 
   it('shows the English names when the cards are English', async () => {
     useState('card-locale-choice').value = 'en'
     const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes, modelValue: [] } })
 
-    expect(itemsOf(component).find(item => item.value === 'Blue-Eyes')).toEqual({ label: 'Blue-Eyes', value: 'Blue-Eyes' })
+    expect(itemsOf(component).find(item => item.value === 'Blue-Eyes')).toEqual({ label: 'Blue-Eyes', value: 'Blue-Eyes', names: ['Blue-Eyes'] })
+  })
+
+  // Tester feedback, round 15: "Magna Warrior" showed 2 cards. In German both archetypes are "Magnetkrieger".
+  describe('two English archetypes with one German name', () => {
+    const family = ['Magna Warrior', 'Magnet Warrior', 'Stardust']
+    const GROUP = ['Magna Warrior', 'Magnet Warrior'].join('\u001F')
+    const menuModel = (component: { findComponent: (selector: unknown) => unknown }) => menuOf(component).props('modelValue') as string[]
+
+    it('are one entry in German, with both English names under it', async () => {
+      const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes: family, modelValue: [] } })
+
+      expect(itemsOf(component).map(item => item.label)).toEqual(['Magnetkrieger', 'Stardust'])
+      expect(itemsOf(component)[0]).toEqual({
+        label: 'Magnetkrieger',
+        value: GROUP,
+        names: ['Magna Warrior', 'Magnet Warrior'],
+        description: 'Magna Warrior · Magnet Warrior',
+      })
+    })
+
+    it('stay two entries when the cards are English', async () => {
+      useState('card-locale-choice').value = 'en'
+      const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes: family, modelValue: [] } })
+
+      expect(itemsOf(component).map(item => item.label)).toEqual(['Magna Warrior', 'Magnet Warrior', 'Stardust'])
+      expect(itemsOf(component).every(item => item.names.length === 1)).toBe(true)
+    })
+
+    it('filter by both English names when the entry is picked, and by nothing when it is taken out again', async () => {
+      const component = await mountSuspended(CardArchetypeFilter, { props: { archetypes: family, modelValue: ['Stardust'] } })
+
+      await (menuOf(component) as unknown as { vm: { $emit: (name: string, value: unknown) => void } }).vm.$emit('update:modelValue', ['Stardust', GROUP])
+      expect(component.emitted('update:modelValue')?.at(-1)).toEqual([['Magna Warrior', 'Magnet Warrior', 'Stardust']])
+    })
+
+    it('shows the entry as picked when only one of its two names is in the filter, so no filter is hidden', async () => {
+      const one = await mountSuspended(CardArchetypeFilter, { props: { archetypes: family, modelValue: ['Magna Warrior'] } })
+      const none = await mountSuspended(CardArchetypeFilter, { props: { archetypes: family, modelValue: [] } })
+
+      expect(menuModel(one)).toEqual([GROUP])
+      expect(menuModel(none)).toEqual([])
+      expect(one.find('[aria-label="Deckthema"]').text()).toContain('Magnetkrieger')
+    })
+
+    it('clears both names with the cross', async () => {
+      const picked = await mountSuspended(CardArchetypeFilter, { props: { archetypes: family, modelValue: ['Magna Warrior', 'Magnet Warrior'] } })
+
+      await picked.find('[data-slot="trailingClear"]').trigger('click')
+
+      expect(picked.emitted('update:modelValue')?.at(-1)).toEqual([[]])
+    })
   })
 
   it('shows what is picked', async () => {

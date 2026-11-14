@@ -1,5 +1,6 @@
 import { and, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 import { catalogCard, catalogPrinting, ownedCard } from '../db/schema'
+import { archetypeClause } from './archetype-clause'
 import { activeCatalogCard, cardNameMatches, cardTextMatches } from './card-name-search'
 import { cardKindClause, cardKindExcludeClause, parseCardKinds } from './card-kind-sql'
 import { legalityClause, parseFormatLegalityQuery } from './format-legality'
@@ -138,7 +139,7 @@ export function buildCardListWhere(filters: CardListQuery, userId?: string, lega
   }
 
   if (filters.archetypes.length > 0) {
-    conditions.push(inArray(catalogCard.archetype, filters.archetypes))
+    conditions.push(archetypeClause(filters.archetypes))
   }
 
   if (filters.types.length > 0) {

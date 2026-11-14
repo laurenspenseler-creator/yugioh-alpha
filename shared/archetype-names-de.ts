@@ -69,6 +69,9 @@ export const ARCHETYPE_NAMES_DE: Readonly<Record<string, string>> = {
   'Lunalight': 'Lunalicht',
   'Lyrilusc': 'Lyrikliedervogel',
   'Machina': 'Maschinenwesen',
+  // "Magna Warrior" and "Magnet Warrior" are two archetypes in English and one, "Magnetkrieger", in German (Yugipedia: in French,
+  // German, Italian and Portuguese both have the same name). The menu shows them as one entry (CardArchetypeFilter).
+  'Magna Warrior': 'Magnetkrieger',
   'Magnet Warrior': 'Magnetkrieger',
   'Masked HERO': 'Maskierter HELD',
   'Materiactor': 'Materiaktor',
