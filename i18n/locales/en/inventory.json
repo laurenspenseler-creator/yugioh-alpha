@@ -13,6 +13,43 @@
       "addCard": "Add card",
       "files": "Files"
     },
+    "export": {
+      "menu": "Export",
+      "hint": "Exports what the list shows right now, on all pages.",
+      "formats": {
+        "xlsx": "Excel table (.xlsx)",
+        "docx": "Word document (.docx)",
+        "txt": "Text list (.txt)"
+      },
+      "title": "Inventory – {scope}",
+      "sheet": "Inventory",
+      "fileStem": "inventory",
+      "kinds": "{count} different card | {count} different cards",
+      "filtered": "only the matches of the search",
+      "asOf": "as of {date}",
+      "columns": {
+        "quantity": "Quantity",
+        "name": "Name",
+        "englishName": "English name",
+        "collection": "Collection",
+        "type": "Type",
+        "attribute": "Attribute",
+        "race": "Monster type",
+        "level": "Level/Rank",
+        "atk": "ATK",
+        "def": "DEF",
+        "passcode": "Passcode",
+        "note": "Note"
+      },
+      "empty": "There are no cards to export.",
+      "toast": {
+        "downloaded": "{name} downloaded",
+        "truncated": "The export only holds the first {count} rows."
+      },
+      "errors": {
+        "failed": "The export did not work."
+      }
+    },
     "kinds": {
       "label": "Cards by kind",
       "filterBy": "{kind}: {count} cards, filter by this card kind"

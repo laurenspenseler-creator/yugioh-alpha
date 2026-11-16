@@ -294,6 +294,16 @@ the row looks the same for everyone and Pendel never vanishes; the chips stay in
 and share it evenly, and on a window too narrow for ten of them the row scrolls sideways
 instead of wrapping.
 
+### Export
+
+"Exportieren" in the inventory's toolbar writes the list as an Excel table, a Word
+document or a text list ([ADR 0051](adr/0051-inventory-export.md)).
+`GET /api/inventory/export` takes the query of `GET /api/inventory` (without page,
+page size and sort) and answers `{ items, truncated }`, every row of the list ordered
+by collection and name (at most 20,000). The browser builds the file
+(`app/utils/inventory-export.ts` words the rows, `shared/inventory-export.ts` writes the
+`.xlsx` / `.docx` zips with `fflate`).
+
 ### Dateien
 
 `/inventory/files` (the "Dateien" button in the inventory's header) keeps files

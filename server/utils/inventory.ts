@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import type { useDb } from '../db'
-import { catalogCard, ownedCard } from '../db/schema'
+import { catalogCard, collection, ownedCard } from '../db/schema'
 import { CARD_TEXT_EXCERPT_LENGTH, MAX_OWNED_QUANTITY, UNASSIGNED_COLLECTION_ID } from '../../shared/inventory'
 import type { CardKind } from '../../shared/card-kind'
 import type { FormatLegality } from '../../shared/format-legality'
@@ -748,9 +748,8 @@ function listOrderBy(sort: InventoryListSort, cardLocale: AppLocale) {
   return cardSortOrderBy(sort, cardLocale, { updated: sql`${ownedCard.updatedAt}` }, [desc(ownedCard.updatedAt)])
 }
 
-export function listOwnedCards(db: Db, userId: string, options: InventoryListOptions = {}) {
-  const page = Math.max(1, options.page ?? 1)
-  const pageSize = Math.min(100, Math.max(1, options.pageSize ?? 20))
+/** The rows a list view (or an export of it) shows: the user's own copies that pass the search, the facets and the scope. */
+function ownedCardWhere(db: Db, userId: string, options: InventoryListOptions) {
   const q = options.q?.trim()
   const clauses = [
     eq(ownedCard.userId, userId),
@@ -778,7 +777,13 @@ export function listOwnedCards(db: Db, userId: string, options: InventoryListOpt
   if (options.catalogCardId !== undefined) {
     clauses.push(eq(ownedCard.catalogCardId, options.catalogCardId))
   }
-  const where = and(...clauses)
+  return and(...clauses)
+}
+
+export function listOwnedCards(db: Db, userId: string, options: InventoryListOptions = {}) {
+  const page = Math.max(1, options.page ?? 1)
+  const pageSize = Math.min(100, Math.max(1, options.pageSize ?? 20))
+  const where = ownedCardWhere(db, userId, options)
 
   const rows = db
     .select({
@@ -819,6 +824,50 @@ export function listOwnedCards(db: Db, userId: string, options: InventoryListOpt
   const items = rows.map(({ cardRetiredAt, ...row }) => ({ ...row, cardRetired: cardRetiredAt !== null }))
 
   return { items, total, page, pageSize }
+}
+
+/** The most rows one export carries; a bigger inventory gets the first ones and says so (`truncated`). */
+export const INVENTORY_EXPORT_MAX_ROWS = 20000
+
+/**
+ * Every row the list shows for the same search, facets and scope, not one page of it (ADR 0051): the export of the inventory as
+ * a file. One row per card and collection, in the order of a document: collection by name (the copies without one last), then
+ * the card's name in the card language. The browser turns the rows into an Excel, Word or text file in its own language.
+ */
+export function exportOwnedCards(db: Db, userId: string, options: InventoryListOptions = {}) {
+  const where = ownedCardWhere(db, userId, options)
+
+  const rows = db
+    .select({
+      catalogCardId: ownedCard.catalogCardId,
+      collectionId: ownedCard.collectionId,
+      collectionName: collection.name,
+      quantity: ownedCard.quantity,
+      note: ownedCard.note,
+      name: catalogCard.name,
+      nameDe: cardNameDeSql(),
+      type: catalogCard.type,
+      attribute: catalogCard.attribute,
+      race: catalogCard.race,
+      level: catalogCard.level,
+      linkval: catalogCard.linkval,
+      atk: catalogCard.atk,
+      def: catalogCard.def,
+    })
+    .from(ownedCard)
+    .innerJoin(catalogCard, eq(ownedCard.catalogCardId, catalogCard.id))
+    .leftJoin(collection, eq(ownedCard.collectionId, collection.id))
+    .where(where)
+    .orderBy(
+      sql`${collection.name} is null`,
+      asc(sql`${collection.name} collate nocase`),
+      ...cardSortOrderBy('name', options.cardLocale ?? 'en', {}, [asc(ownedCard.id)]),
+    )
+    .limit(INVENTORY_EXPORT_MAX_ROWS + 1)
+    .all()
+
+  const truncated = rows.length > INVENTORY_EXPORT_MAX_ROWS
+  return { items: truncated ? rows.slice(0, INVENTORY_EXPORT_MAX_ROWS) : rows, truncated }
 }
 
 /**

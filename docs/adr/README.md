@@ -58,3 +58,4 @@ mark the old as superseded.
 | [0048](0048-tournament-spielabend.md) | The Spielabend: duels paired by hand, a best-of for each duel | Accepted |
 | [0049](0049-archetypes-from-the-game-and-one-sort.md) | Deckthemen from the game's data, one sort for every card list, the card window | Accepted |
 | [0050](0050-classic-plus-handover-16-november.md) | Classic Plus: the hand-over of 16 November 2026 | Accepted |
+| [0051](0051-inventory-export.md) | Exporting the inventory as Excel, Word or text | Accepted |

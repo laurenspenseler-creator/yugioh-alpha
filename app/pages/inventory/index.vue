@@ -230,6 +230,9 @@ const listQuery = computed(() => ({
   collectionId: collectionId.value || undefined,
 }))
 
+// The export (ADR 0051) takes the list's search, filters and scope, with every page of it; its order is its own (by collection).
+const exportQuery = computed(() => ({ ...listQuery.value, page: undefined, pageSize: undefined, sort: undefined }))
+
 const { data, pending, refresh } = await useFetch<{ items: InventoryItem[], total: number }>('/api/inventory', {
   query: listQuery,
   default: () => ({ items: [], total: 0 }),
@@ -724,6 +727,13 @@ async function onMoved() {
       </p>
 
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <InventoryExportMenu
+          :scope="headerTitle"
+          :query="exportQuery"
+          :filtered="hasActiveSearchFilters"
+          :disabled="shownCount === 0"
+        />
+
         <UButton
           v-if="mode === 'list'"
           icon="i-lucide-list-checks"

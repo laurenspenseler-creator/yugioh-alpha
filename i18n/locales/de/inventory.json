@@ -13,6 +13,43 @@
       "addCard": "Karte hinzufügen",
       "files": "Dateien"
     },
+    "export": {
+      "menu": "Exportieren",
+      "hint": "Exportiert, was die Liste gerade zeigt, auf allen Seiten.",
+      "formats": {
+        "xlsx": "Excel-Tabelle (.xlsx)",
+        "docx": "Word-Dokument (.docx)",
+        "txt": "Textliste (.txt)"
+      },
+      "title": "Inventar – {scope}",
+      "sheet": "Inventar",
+      "fileStem": "inventar",
+      "kinds": "{count} verschiedene Karte | {count} verschiedene Karten",
+      "filtered": "nur die Treffer der Suche",
+      "asOf": "Stand {date}",
+      "columns": {
+        "quantity": "Anzahl",
+        "name": "Name",
+        "englishName": "Englischer Name",
+        "collection": "Sammlung",
+        "type": "Typ",
+        "attribute": "Attribut",
+        "race": "Monsterart",
+        "level": "Stufe/Rang",
+        "atk": "ATK",
+        "def": "DEF",
+        "passcode": "Passcode",
+        "note": "Notiz"
+      },
+      "empty": "Es gibt keine Karten zum Exportieren.",
+      "toast": {
+        "downloaded": "{name} heruntergeladen",
+        "truncated": "Der Export enthält nur die ersten {count} Zeilen."
+      },
+      "errors": {
+        "failed": "Der Export hat nicht geklappt."
+      }
+    },
     "kinds": {
       "label": "Karten nach Art",
       "filterBy": "{kind}: {count} Karten, nach dieser Kartenart filtern"

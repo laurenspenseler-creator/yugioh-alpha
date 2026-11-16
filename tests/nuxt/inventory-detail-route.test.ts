@@ -4,6 +4,7 @@ import { nextTick, toValue } from 'vue'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import { USelect } from '#components'
 import CardDetailModal from '~/components/card/CardDetailModal.vue'
+import InventoryExportMenu from '~/components/inventory/InventoryExportMenu.vue'
 import InventorySearchPanel from '~/components/inventory/InventorySearchPanel.vue'
 import InventoryPage from '~/pages/inventory/index.vue'
 import { optionLabels, selectWithOption } from './fixtures/select-wrapper'
@@ -229,6 +230,33 @@ describe('filters in "Liste" (#145)', () => {
     expect(gallery.find('[data-testid="inventory-shown-count"]').exists()).toBe(true)
     // Selecting belongs to the list.
     expect(gallery.find('[data-testid="inventory-toolbar"]').text()).not.toContain('Auswählen')
+  })
+
+  // ADR 0051: "Exportieren" sits in the toolbar in both views and exports what the list shows, every page of it.
+  it('has an export in the toolbar that takes the list\'s search and filters, but no page and no sort', async () => {
+    state.inventory = { items: [listRow], total: 1 }
+
+    const list = await mountSuspended(InventoryPage, { route: '/inventory?q=dark&type=Spell%20Card&page=2&listSort=-atk' })
+    const menu = list.findComponent(InventoryExportMenu)
+    expect(list.find('[data-testid="inventory-toolbar"]').find('[data-testid="inventory-export"]').exists()).toBe(true)
+    expect(menu.props('scope')).toBe('Alle Karten')
+    expect(menu.props('filtered')).toBe(true)
+    expect(menu.props('disabled')).toBe(false)
+    expect(menu.props('query')).toMatchObject({ q: 'dark', type: 'Spell Card' })
+    expect(menu.props('query')).not.toHaveProperty('page', 2)
+    expect(menu.props('query')).not.toHaveProperty('sort', '-atk')
+    list.unmount()
+
+    const gallery = await mountSuspended(InventoryPage, { route: '/inventory?view=gallery' })
+    expect(gallery.find('[data-testid="inventory-export"]').exists()).toBe(true)
+    expect(gallery.findComponent(InventoryExportMenu).props('filtered')).toBe(false)
+  })
+
+  it('switches the export off while the list is empty', async () => {
+    state.inventory = { items: [], total: 0 }
+
+    const component = await mountSuspended(InventoryPage, { route: '/inventory' })
+    expect(component.findComponent(InventoryExportMenu).props('disabled')).toBe(true)
   })
 
   it('sorts the list by every field with a direction, the latest change first by default, and writes it to the URL', async () => {

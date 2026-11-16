@@ -38,6 +38,8 @@ every deck as you build it. The assistant plans with the cards in your binder, n
 - **Filter by type, attribute, monster type and level**, and search card text as well as names.
 - **English and German.** Search finds a card by either name, and cards show the official German names and
   texts if you prefer them.
+- **Export your inventory** as an Excel table, a Word document or a text list. The file holds what the list shows
+  (the same collection, search and filters, every page), and the text list can be pasted into quick entry again.
 
 ### Add a stack of cards in seconds
 
