@@ -176,25 +176,49 @@ describe('the new tournament form', () => {
     expect(component.text()).not.toContain('Vorlauf')
   })
 
-  it('keeps the scoring by games for a Spielabend, even when a new duel starts as a single game, and sends the mode', async () => {
+  // Tester feedback, round 16: "Verteil Punkte beim Spielabend über Duelle, nicht Matches. Da geht nur 3-0 oder 1-0."
+  it('offers "Pro Duell 3 · 0" and "Pro Duell 1 · 0" for a Spielabend, not the scorings of the matches, and sends the mode', async () => {
     const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ id: 't-9' }))
     vi.stubGlobal('$fetch', fetchSpy)
     const component = await mountSuspended(NewTournamentPage)
     const form = formOf(component)
 
     form.mode = 'free'
-    form.bestOf = 1
     form.name = 'Spielabend'
     form.participantsText = 'Anna\nBen'
     await nextTick()
+    // The scoring of the matches ("Nach Spielen") gives way to the first of the two per duel.
+    expect(form.scoring).toBe('duel_3_0')
     expect(component.find('button[aria-label="Punktevergabe"]').attributes('disabled')).toBeUndefined()
+    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Pro Duell 3 · 0')
+    expect(component.text()).toContain('Jedes gewonnene Duell')
 
     await component.find('form').trigger('submit')
     await flushPromises()
 
     expect(fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments')![1]).toMatchObject({
       method: 'POST',
-      body: { name: 'Spielabend', engine: 'queue', mode: 'free', flow: 'rounds', prelaunch: false, scoring: 'games', participants: ['Anna', 'Ben'] },
+      body: { name: 'Spielabend', engine: 'queue', mode: 'free', flow: 'rounds', prelaunch: false, scoring: 'duel_3_0', participants: ['Anna', 'Ben'] },
     })
+  })
+
+  it('sends "Pro Duell 1 · 0" when that is chosen, and takes the scoring of the matches back when the mode is changed back', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ id: 't-9' }))
+    vi.stubGlobal('$fetch', fetchSpy)
+    const component = await mountSuspended(NewTournamentPage)
+    const form = formOf(component)
+
+    form.mode = 'free'
+    await nextTick()
+    form.scoring = 'duel_1_0'
+    form.name = 'Spielabend'
+    await component.find('form').trigger('submit')
+    await flushPromises()
+    expect(fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments')![1]).toMatchObject({ body: { scoring: 'duel_1_0' } })
+
+    form.mode = 'swiss'
+    await nextTick()
+    expect(form.scoring).toBe('games')
+    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Nach Spielen')
   })
 })

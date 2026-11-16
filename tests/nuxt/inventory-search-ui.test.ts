@@ -213,7 +213,7 @@ describe('inventory search panel (Galerie)', () => {
 
     // Clicking the tile opens the card detail overlay (#88) with the
     // editor for the user's copies (#135), the card text and a catalog
-    // link — but none of the catalog-only sections.
+    // link, and the sets it came out in.
     stubOverlayFetch()
     await tileButton(component, 'Blue-Eyes White Dragon').trigger('click')
     await nextTick()
@@ -233,8 +233,14 @@ describe('inventory search panel (Galerie)', () => {
     // From the gallery no row is singled out.
     expect(dialog.find('[data-focused]').exists()).toBe(false)
     expect(overlay).not.toContain('In Liste bearbeiten')
-    expect(overlay).not.toContain('Printings')
-    expect(overlay).not.toContain('LOB-001')
+    // The sets the card came out in are shown here too (tester feedback, round 16: "Im Inventar kannst du auch die Sets anzeigen").
+    expect(overlay).toContain('Printings')
+    expect(overlay).toContain('LOB-001')
+    expect(overlay).toContain('Legend of Blue Eyes White Dragon')
+    expect(dialog.find('[data-testid="printings-list"]').exists()).toBe(true)
+    // The release dates and the English name stay a catalog thing.
+    expect(overlay).not.toContain('TCG')
+    expect(overlay).not.toContain('Englisch:')
   })
 
   it('renders tile skeletons while the search is loading', async () => {

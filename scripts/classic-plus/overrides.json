@@ -1,324 +1,1370 @@
 {
+  "102380": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Lava-Golem. Rule: 8 (2 gegnerische Monster als Tribut)."
+  },
+  "402416": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Auslöschen!!!-Lohe. Rule: 8 + 12 Teil 2. [NEU] Alpha hat sie auf 2."
+  },
+  "1546123": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Cyber End-Drache. Durchschlag bzw. zweiter Angriff sind keine Vervielfachung."
+  },
+  "1845204": {
+    "hits": [
+      {
+        "rule": "7c",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "7d",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Instantfusion. Rule: 7(c) / 7(d)."
+  },
+  "2314238": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Angriff mit Dunkler Magie. Rule: 8."
+  },
+  "3136426": {
+    "hits": [
+      {
+        "rule": "3.3",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Stufenbeschränkung - Gebiet B. Rule: 3, Schritt 3."
+  },
+  "4538826": {
+    "hits": [],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Chaos-Imperator, der Drache des Armageddon. Rule: 1 (Pendelmonster). [NEU] war unlimitiert."
+  },
   "4929256": {
     "hits": [
       {
         "rule": "8",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Möbius der Frostmonarch. Rule 8, Tribute costs (Ä2) → 2, as in v3."
+    "note": "v3.1 card list (16 Nov 2026): Möbius der Frostmonarch. Rule: 8 + Tributkosten."
+  },
+  "5008836": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Exodia, die legendäre Verteidigerin. Rule: 12 Teil 1 (eigene Siegbedingung). [NEU]."
+  },
+  "5851097": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Bedeutungslosigkeit der Eitelkeit. Rule: 3."
+  },
+  "6325660": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Dominus-Funke. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "7902349": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Linker Arm der Verbotenen. Rule: 12 Teil 1. [NEU]."
+  },
+  "8038143": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Tachyonen-Transmigration. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "8124921": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Rechtes Bein der Verbotenen. Rule: 12 Teil 1. [NEU]."
+  },
+  "10045474": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Unendliche Unbeständigkeit. Rule: 4 (nach Ä17). [NEU] Falle aus der Hand im Gegnerzug."
+  },
+  "11384280": {
+    "hits": [
+      {
+        "rule": "6a",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Kanonensoldat. Rule: 6(a) + Ä7. [NEU]."
+  },
+  "12600382": {
+    "hits": [
+      {
+        "rule": "9a",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "9b",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Exodia Necross. Rule: 9 (Kampf und Zauber-/Falleneffekte). [NEU] war unlimitiert."
+  },
+  "13048472": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Vor-Vorbereitung der Riten. suchen, ziehen nicht."
+  },
+  "13256226": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Elementar-HELD Geist von Neos. Rule: 4 + Ä18. [NEU] war unlimitiert."
+  },
+  "13893596": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Exodius der ultimative verbotene Lord. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "14088859": {
+    "hits": [
+      {
+        "rule": "7c",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "7d",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Neos-Fusion. Rule: 7(c) / 7(d)."
+  },
+  "14386013": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Beherrschung des dunklen Geistes. Rule: 12 Teil 2. Rule 12 part 2 (Ä12): searches or places the parts of Destiny Board by name. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "14883228": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Taifun. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "15693423": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Ausgeglichener Zweikampf. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
   },
   "16762927": {
     "hits": [
       {
         "rule": "3.4",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 0,
-    "note": "v3.1 card list: Grabwächters Diener stays forbidden."
+    "note": "v3.1 card list (16 Nov 2026): Grabwächters Diener. Rule: 3, Schritt 4. einzige Grabwächter-Karte ohne Bedingungskette."
+  },
+  "17375316": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Beschlagnahme. nur 1 Karte aus der Hand → Regel 8 greift nicht."
+  },
+  "18964575": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Flinke Vogelscheuche. Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase."
   },
   "19523799": {
     "hits": [
       {
         "rule": "6a",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Ookazi. Rule 6(a) is flat → 1, checked."
+    "note": "v3.1 card list (16 Nov 2026): Ookazi. Rule: 6(a)."
+  },
+  "19665973": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Kampfausblender. Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase."
   },
   "20654247": {
     "hits": [
       {
         "rule": "9a",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Blauäugiger Chaosdrache. Rule 9(a), unconditional: cannot be targeted, cannot be destroyed → 1."
+    "note": "v3.1 card list (16 Nov 2026): Blauäugiger Chaosdrache. Rule: 9(a) unbedingt (Ziel und Zerstörung). [korr.] war 2."
+  },
+  "21082832": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Chaosform. unverändert aus v3."
+  },
+  "21143940": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Maskenwechsel. reguläre Beschwörungsmethode der Maskierten HELDEN."
   },
   "22842126": {
     "hits": [
       {
         "rule": "5",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Pantheismus der Monarchen. Rule 5, own cost bound to one kind of card (Ä3) → 2, as in v3."
+    "note": "v3.1 card list (16 Nov 2026): Pantheismus der Monarchen. Rule: 5 + gebundene Eigenkosten (Ä3). Regel jetzt vorhanden."
+  },
+  "23002292": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Roter Neustart. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
   },
   "23015896": {
     "hits": [
       {
-        "rule": "7b",
-        "reason": "v3.1 card list"
-      },
-      {
         "rule": "8",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Feuerkönig Hochavatar Garunix. Rule 8 plus self-revival, which a copy limit does not stop (trait III) → 1. If it dominates in play: a second stacking rule (mass removal plus self-revival = forbidden), not the number."
+    "note": "v3.1 card list (16 Nov 2026): Feuerkönig Hochavatar Garunix. Rule: 8 + Selbstwiederbelebung (Merkmal III). [korr.] war 2."
   },
   "23020408": {
     "hits": [
       {
         "rule": "5",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Seelendiener. Rule 5 → 1, checked."
+    "note": "v3.1 card list (16 Nov 2026): Seelendiener. Rule: 5."
   },
   "23171610": {
     "hits": [
       {
         "rule": "6b",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Begrenzer-Entferner. Rule 6(b), own costs (Ä2) → 2, as in v3."
+    "note": "v3.1 card list (16 Nov 2026): Begrenzer-Entferner. Rule: 6(b) + Eigenkosten. Regel jetzt vorhanden."
+  },
+  "23212990": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Sechserangriff - Donnerschlag. 1 Karte pro Effekt."
+  },
+  "23434538": {
+    "hits": [
+      {
+        "rule": "5",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Maxx „C“. Rule: 5."
+  },
+  "24094653": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Polymerisation. Eigenes Material zählt nicht als Removal (Ä2, Merkmal II)."
+  },
+  "24317029": {
+    "hits": [
+      {
+        "rule": "7e",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list (16 Nov 2026): Grabwächters Spion. Rule: 7(e) neu (Ä13). [NEU] war unlimitiert."
+  },
+  "30170981": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Geisternachricht „L“. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "30241314": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Makrokosmos. Rule: 3, Schritt 4 (Umleitung, siehe Ä6). Alpha hat ihn aktuell auf 3."
   },
   "31305911": {
     "hits": [
       {
         "rule": "9b",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Marshmallon. Rule 9(b) → 2."
+    "note": "v3.1 card list (16 Nov 2026): Marshmallon. Rule: 9(b)."
+  },
+  "31893528": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Geisternachricht „I“. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "33244944": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Vertrag mit Exodia. Erledigt, bleibt unlimitiert. Tote Karte bis alle 5 Teile im Friedhof liegen, beschwört dann genau ein Monster, das selbst auf 1 steht. Eine zweite Kopie hat nichts zu beschwören."
+  },
+  "33396948": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Exodia, die Verbotene. Rule: 12 Teil 1. [NEU]."
+  },
+  "34302287": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Phantasmaspiralschlacht. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
   },
   "34966096": {
     "hits": [
       {
         "rule": "7b",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Chaosbetrüger. Rule 7(b), it brings itself back (trait III) → 1, checked."
+    "note": "v3.1 card list (16 Nov 2026): Chaosbetrüger. Rule: 7(b) + Selbstrückholung."
+  },
+  "35316708": {
+    "hits": [
+      {
+        "rule": "11a",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Zeitsiegel. Rule: 11."
+  },
+  "35480699": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Buch der Verfinsterung. verdecktes Drehen zählt nicht als Removal."
+  },
+  "35809262": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Elementar-HELD Flammenflügelmann. Schaden nur nach Kampfzerstörung."
   },
   "37576645": {
     "hits": [
       {
         "rule": "5",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Tollkühne Gier. Rule 5 → 1, checked."
+    "note": "v3.1 card list (16 Nov 2026): Tollkühne Gier. Rule: 5."
+  },
+  "37613663": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "7c",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Millenniums-Anch. Rule: 12 Teil 2 + 7(c). [NEU]."
   },
   "37630732": {
     "hits": [
       {
         "rule": "6b",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
-    "maxCopies": 2,
-    "note": "v3.1 card list: Kraftbündnis. Rule 6(b), own costs (Ä2) → 2, as in v3."
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Kraftbündnis. Rule: 6(b), LP zählen nicht (Ä10). [korr.] war 2."
+  },
+  "37742478": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Aufrichtig. Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase."
+  },
+  "40366667": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Dominus-Impuls. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "40640057": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Kuriboh. Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase."
+  },
+  "40737112": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Dunkler Magier des Chaos. unverändert aus v3."
+  },
+  "40771118": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Verhängnisvolle Strafe. Rule: 12 Teil 2. Rule 12 part 2 (Ä12): searches or places the parts of Destiny Board by name. Not named in the authors' list. For the rule authors to confirm."
   },
   "40854197": {
     "hits": [
       {
         "rule": "8",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Elementar-HELD Absoluter Nullpunkt. Rule 8; its destruction triggers it (trait III) → 1."
+    "note": "v3.1 card list (16 Nov 2026): Elementar-HELD Absoluter Nullpunkt. Rule: 8 + Merkmal III (seine Zerstörung löst ihn aus). [NEU] war unlimitiert."
   },
   "41578483": {
     "hits": [
       {
-        "rule": "7a",
-        "reason": "v3.1 card list"
-      },
-      {
         "rule": "10",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Millenniumäugiges Opfer. Rule 10 stays flat → 1."
+    "note": "v3.1 card list (16 Nov 2026): Millenniumäugiges Opfer. Rule: 10. [korr.] war 2."
+  },
+  "42091632": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Dominus-Spirale. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
   },
   "43228023": {
     "hits": [
       {
         "rule": "8",
-        "reason": "v3.1 card list"
-      },
-      {
-        "rule": "9a",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Blauäugiger alternativer ultimativer Drache (K3). Rule 9(a), unconditional protection (trait III) → 1; rule 8 belongs in the reasons too (up to 3 cards)."
+    "note": "v3.1 card list (16 Nov 2026): Blauäugiger alternativer ultimativer Drache. Rule: 8 + Merkmal III. Regel ergänzt (K3)."
+  },
+  "43898403": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list (16 Nov 2026): Zwillings-Twister. Rule: 8 + Eigenkosten (Abwurf). [korr.] war 1, Name war falsch."
+  },
+  "44519536": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Linkes Bein der Verbotenen. Rule: 12 Teil 1. [NEU]."
+  },
+  "44656491": {
+    "hits": [
+      {
+        "rule": "3.3",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Friedensbote. Rule: 3, Schritt 3."
+  },
+  "44763025": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Verbrecher-Duo. Rule: 8 + Ä10 + Ä11. [NEU] Alpha hat sie auf unlimitiert."
+  },
+  "45906428": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Wunderfusion. geben nur eigene Karten ab."
+  },
+  "46411259": {
+    "hits": [
+      {
+        "rule": "7c",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "7d",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Metamorphose. Rule: 7(c) / 7(d)."
+  },
+  "47222536": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Dunkler magischer Kreis. Suchen zählt nicht als Ziehen."
   },
   "47355498": {
     "hits": [
       {
         "rule": "3.2",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Tal der Toten. One of the four cards of rule 3, step 2 → 2."
+    "note": "v3.1 card list (16 Nov 2026): Tal der Toten. Rule: 3, Schritt 2 (Spielfeldzauber)."
+  },
+  "47963370": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Magier des Chaos. unverändert aus v3."
+  },
+  "48130397": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Superpolymerisation. Rule: 8 (gegnerisches Material)."
+  },
+  "48680970": {
+    "hits": [
+      {
+        "rule": "7b",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "9a",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Ewige Seele. Rule: 9(a) + 7(b)."
+  },
+  "51452091": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Königlicher Erlass. Rule: 3. unverändert aus v3."
+  },
+  "52947044": {
+    "hits": [
+      {
+        "rule": "7c",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "7d",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Fusionsschicksal. Rule: 7(c) / 7(d)."
+  },
+  "54652250": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Menschenfresserkäfer. zerstört nur 1 Monster."
+  },
+  "54913680": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Sechs Schriftrollen der Samurai. gibt nur eigene Karten als Tribut ab."
   },
   "56532353": {
     "hits": [
       {
         "rule": "10",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Neo-Blauäugiger ultimativer Drache (K2). Rule 10 (negation from the GY); it has no protection effect → 1."
+    "note": "v3.1 card list (16 Nov 2026): Neo-Blauäugiger ultimativer Drache. Rule: 10. Regel korrigiert (K2)."
+  },
+  "57774843": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Urteilsdrache. Rule: 8 + Häufigkeitsmodifikator."
+  },
+  "57839750": {
+    "hits": [
+      {
+        "rule": "7e",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list (16 Nov 2026): Mutter Grizzly. Rule: 7(e) neu (Ä13). [NEU]."
+  },
+  "58053438": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Lieder der Beherrscher. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
   },
   "58481572": {
     "hits": [
       {
         "rule": "3.2",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Maskierter HELD Dunkles Gesetz. One of the four cards of rule 3, step 2 → 2."
+    "note": "v3.1 card list (16 Nov 2026): Maskierter HELD Dunkles Gesetz. Rule: 3, Prüfschritt 2 (Monsteranker)."
+  },
+  "58604027": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "5",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "9a",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Inkarnation der legendären Exodia. Rule: 5 / 9(a) / 12 — drei Wege."
+  },
+  "58657303": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Grabwächters Spiritualist. gibt das aufgeführte Material ab."
+  },
+  "58921041": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Antimagischer Duft. Rule: 3, Schritt 4."
   },
   "59400890": {
     "hits": [
       {
         "rule": "7c",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Dunkler Magier der Zerstörung. Rule 7(c), body + banishes one of your own monsters → 2."
+    "note": "v3.1 card list (16 Nov 2026): Dunkler Magier der Zerstörung. Rule: 7(c), Merkmal I + II. [korr.] war 1."
+  },
+  "59839761": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Deltakrähe - Antiumkehrung. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
   },
   "60461804": {
     "hits": [
       {
         "rule": "7b",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Schicksals-HELD - Destroyer Phoenix Enforcer. Rule 7(b), body (Ä2) → 2, as in v3."
+    "note": "v3.1 card list (16 Nov 2026): Schicksals-HELD - Destroyer Phoenix Enforcer. Rule: 7(b)."
+  },
+  "60806437": {
+    "hits": [
+      {
+        "rule": "7e",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list (16 Nov 2026): Ufo-Schildkröte. Rule: 7(e) neu (Ä13). [NEU]."
+  },
+  "61397885": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Phantasmaspiralkraft. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "61740673": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Kaiserlicher Befehl. Rule: 3. unverändert aus v3."
   },
   "63176202": {
     "hits": [
       {
         "rule": "3.2",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Großer Shogun Shien. One of the four cards of rule 3, step 2 → 2."
+    "note": "v3.1 card list (16 Nov 2026): Großer Shogun Shien. Rule: 3, Schritt 2 (Monsteranker)."
   },
   "63519819": {
-    "hits": [],
+    "hits": [
+      {
+        "rule": "3.2",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Tausendäugiges Opfer (K4). Check step 2b of rule 3 already said limit 1 → 1."
+    "note": "v3.1 card list (16 Nov 2026): Tausendäugiges Opfer. Rule: 3, Prüfschritt 2b. [korr.] war 2 (K4)."
+  },
+  "63899196": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Masterplan der Monarchen. suchen, ziehen nicht."
+  },
+  "64043465": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Auslöschen!!!. Rule: 12 Teil 2. [NEU]."
   },
   "64631466": {
     "hits": [],
     "maxCopies": 3,
-    "note": "v3.1 test table (round 12): Aufgegeben stays unlimited. Brain Control gets a monster for 800 LP (price circumvention, 1); Relinquished is a Ritual Monster that pays the full Ritual price, so its equip effect is no rule 7(a)."
+    "note": "v3.1 card list (16 Nov 2026): Aufgegeben. Keine Regel greift. Er rüstet aus statt Kontrolle zu übernehmen, und er zahlt den vollen Ritualpreis → Regel 7 greift nach Ä9 nicht. Konami hat ihn nie limitiert."
+  },
+  "66765023": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Fliegender Elefant. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel by a direct attack. Stays at limit 1. For the rule authors to confirm."
+  },
+  "67287533": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Geisternachricht „N“. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "69553552": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: F.A. Gewinner. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
   },
   "70000776": {
     "hits": [
       {
         "rule": "3.2",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Verborgene Tempel im Tal der Toten. One of the four cards of rule 3, step 2 → 2."
+    "note": "v3.1 card list (16 Nov 2026): Verborgene Tempel im Tal der Toten. Rule: 3, Schritt 2 (Selbstzerstörungsklausel)."
   },
   "70551291": {
-    "hits": [],
+    "hits": [
+      {
+        "rule": "3.2",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Schwarz Glänzender Soldat - Legendärer Schwertkämpfer (K4). Check step 2b of rule 3 says limit 1 → 1."
+    "note": "v3.1 card list (16 Nov 2026): Schwarz Glänzender Soldat – Leg. Schwertkämpfer. Rule: 8 + 3, Prüfschritt 2b. [korr.] war 2 (K4)."
+  },
+  "70903634": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Rechter Arm der Verbotenen. Rule: 12 Teil 1. [NEU]."
+  },
+  "71143015": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Ultimative Fusion. Rule: 8."
+  },
+  "72427512": {
+    "hits": [
+      {
+        "rule": "9b",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Imitierender Menschenfresserkäfer. Rule: 9(b) + Ä15 (Flip). [NEU]."
+  },
+  "72930878": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Schwarzer Schall. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "74063034": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Beschwörung. geben nur eigene Karten ab."
+  },
+  "74157028": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Cyber Zwillings-Drache. Durchschlag bzw. zweiter Angriff sind keine Vervielfachung."
+  },
+  "75286621": {
+    "hits": [
+      {
+        "rule": "10",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Beschworener Mechaba. Rule: 10."
+  },
+  "76375976": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Mystische Mine. Rule: 3. unverändert aus v3."
+  },
+  "77044671": {
+    "hits": [
+      {
+        "rule": "7e",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list (16 Nov 2026): Pyramidenschildkröte. Rule: 7(e) neu (Ä13). [NEU]."
+  },
+  "77751766": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Sommer-Hausaufgaben fertig!. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
   },
   "79206925": {
     "hits": [
       {
         "rule": "9a",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Grabwächters Übernatürlicher (K6). Rule 9(a), the protection depends on Necrovalley (Ä4, chain of named cards) → 2."
+    "note": "v3.1 card list (16 Nov 2026): Grabwächters Übernatürlicher. Rule: 9(a) + Bedingungskette (Ä4). [NEU] fehlte ganz."
+  },
+  "79571449": {
+    "hits": [
+      {
+        "rule": "5",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Elegante Wohltäterin. Rule: 5. [NEU] = „Anmutige Barmherzigkeit“ aus der Juni-Liste."
+  },
+  "79613121": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Magier des Schwarzen Chaos MAX. unverändert aus v3."
+  },
+  "79856792": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list (16 Nov 2026): Regenbogendrache. Rule: 8, Merkmal I + II. [NEU]."
+  },
+  "81171949": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Jackpot-7. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "81843628": {
+    "hits": [
+      {
+        "rule": "8",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Nadelwurm. Rule: 8 + Ä15 (Flip). [NEU]."
   },
   "82301904": {
     "hits": [
       {
         "rule": "8",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Chaos-Imperatordrache - Gesandter des Endes. Rule 8; 1000 LP, own hand and field, no other activation that turn → 2. The conspicuous result of the new tiers; the round will most likely object."
+    "note": "v3.1 card list (16 Nov 2026): Chaos-Imperatordrache - Gesandter des Endes. Rule: 8, Merkmal I + II. [korr.] war 1."
+  },
+  "82732705": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Kräfte rauben. Rule: 3."
+  },
+  "83011278": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Mystische Tomate. Suchen zählt nicht als Ziehen."
+  },
+  "83257450": {
+    "hits": [
+      {
+        "rule": "10",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      },
+      {
+        "rule": "9a",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Inkarnation der unaufhaltbaren Exodia. Rule: 9(a), zusätzlich 10."
   },
   "83555666": {
     "hits": [],
     "maxCopies": 3,
-    "note": "v3.1 card list: Ring der Zerstörung stays unlimited (current text after errata)."
+    "note": "v3.1 card list (16 Nov 2026): Ring der Zerstörung. Schaden ist Nebenprodukt, braucht ein gegnerisches Monster (Ä8)."
+  },
+  "84171830": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Domäne der wahren Monarchen. Rule: 3. unverändert aus v3."
+  },
+  "84536654": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Gestaltwechsel. reguläre Beschwörungsmethode der Maskierten HELDEN."
+  },
+  "85742772": {
+    "hits": [
+      {
+        "rule": "3.3",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Schwerkraftbindung. Rule: 3, Schritt 3. dt. Name jetzt geklärt."
   },
   "86346643": {
     "hits": [
       {
         "rule": "8",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Regenbogen-Neos. Rule 8 (Ä1), body + own costs (Ä2), no self-revival (Nomi) → 2."
+    "note": "v3.1 card list (16 Nov 2026): Regenbogen-Neos. Rule: 8, Merkmal I + II. [NEU] war unlimitiert (3)."
+  },
+  "87607094": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Kalliber-Neustart. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "87639778": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Harpyien-Federsturm. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
   },
   "87910978": {
     "hits": [
       {
         "rule": "7a",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 1,
-    "note": "v3.1 card list: Gehirnkontrolle (K7: the official name). Rule 7(a) → 1, checked."
+    "note": "v3.1 card list (16 Nov 2026): Gehirnkontrolle. Rule: 7(a)."
   },
   "90434657": {
     "hits": [
       {
         "rule": "10",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Pharaonengräber im Tal der Toten (K6). Rule 10 plus a chain of named cards (Ä4) → 2."
+    "note": "v3.1 card list (16 Nov 2026): Pharaonengräber im Tal der Toten. Rule: 10 + Bedingungskette (Ä4). [NEU] fehlte ganz."
   },
   "90488465": {
     "hits": [
       {
         "rule": "7b",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Der Chaosschöpfer. Rule 7(b), body + banishes two of your own monsters → 2."
+    "note": "v3.1 card list (16 Nov 2026): Der Chaosschöpfer. Rule: 7(b), Merkmal I + II. [korr.] war 1."
+  },
+  "90846359": {
+    "hits": [
+      {
+        "rule": "3.4",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 card list (16 Nov 2026): Rivalität der Kriegsherren. Rule: 3."
+  },
+  "93600443": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Maskenwechsel II. reguläre Beschwörungsmethode der Maskierten HELDEN."
   },
   "93920745": {
     "hits": [
       {
         "rule": "8",
-        "reason": "v3.1 card list"
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Pinguinsoldat. Rule: 8 + Ä15 (Flip). [korr.] zwischenzeitlich auf 2 geführt."
+  },
+  "94212438": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Schicksalstafel. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "94772232": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Geisternachricht „A“. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "94820406": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Finstere Fusion. geben nur eigene Karten ab."
+  },
+  "95308449": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Letzter Countdown. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Final Countdown is a Normal Spell: after the activation nothing stays on the field that the opponent could remove, so it is forbidden. For the rule authors to confirm."
+  },
+  "95956346": {
+    "hits": [
+      {
+        "rule": "7e",
+        "reason": "v3.1 card list (16 Nov 2026)"
       }
     ],
     "maxCopies": 2,
-    "note": "v3.1 card list: Pinguinsoldat. Rule 8, Flip monster with a body → 2. The authors have not checked its text against the database themselves."
+    "note": "v3.1 card list (16 Nov 2026): Strahlender Engel (official German name: Glänzender Elf). Rule: 7(e) neu (Ä13). [NEU] The list says \"Strahlender Engel\"; the card of the June list is Shining Angel."
+  },
+  "96729612": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Vorbereitung der Riten. suchen, ziehen nicht."
+  },
+  "97017120": {
+    "hits": [
+      {
+        "rule": "7e",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 2,
+    "note": "v3.1 card list (16 Nov 2026): Riesenratte. Rule: 7(e) neu (Ä13). [NEU] war unlimitiert."
+  },
+  "97045737": {
+    "hits": [
+      {
+        "rule": "4",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 0,
+    "note": "v3.1 rule text, not in the card list: Dominus-Säuberung. Rule: 4 (Ä17). Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list. For the rule authors to confirm."
+  },
+  "97795930": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Phantasmaspiralangriff. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
+  },
+  "99365553": {
+    "hits": [
+      {
+        "rule": "7b",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Lichtpulsar-Drache. Rule: 7(b) + Selbstrückholung."
+  },
+  "99523325": {
+    "hits": [],
+    "maxCopies": 3,
+    "note": "v3.1 card list (16 Nov 2026): Grabwächters Stele. Suchen zählt nicht als Ziehen."
+  },
+  "99877698": {
+    "hits": [
+      {
+        "rule": "6a",
+        "reason": "v3.1 card list (16 Nov 2026)"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 card list (16 Nov 2026): Grabwächters Kanonenträger. Rule: 6(a) + Ä7. [korr.] war verboten."
+  },
+  "101206080": {
+    "hits": [
+      {
+        "rule": "12",
+        "reason": "v3.1 rule text, not in the card list"
+      }
+    ],
+    "maxCopies": 1,
+    "note": "v3.1 rule text, not in the card list: Fireworks Celebration. Rule: 12 Teil 1. Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap). For the rule authors to confirm."
   }
 }

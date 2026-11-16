@@ -146,6 +146,8 @@ describe('inventory validation', () => {
       formatId: undefined,
       legality: undefined,
       archetype: [],
+      // Without a sort in the request the list starts with the latest change (round 16: "-updated").
+      sort: '-updated',
     })
     for (const catalogCardId of ['abc', '0', '-3', '1.5', '']) {
       expect(parseInventoryListQuery({ catalogCardId }).catalogCardId).toBeUndefined()
@@ -306,16 +308,17 @@ describe('inventory persistence helpers', () => {
       expect(listOwnedCards(db, 'user-a', { q: '%' }).total).toBe(0)
     })
 
-    // Tester feedback, round 15: "sortierung von a-z" for the list of the inventory.
+    // Tester feedback, rounds 15 and 16: one sort for every card list, a field and a direction ("-" in front for descending).
     describe('sort', () => {
       const names = (result: ReturnType<typeof listOwnedCards>) => result.items.map(item => item.cardName)
 
-      it('lists the latest change first by default and when asked for "updated"', () => {
+      it('lists the latest change first by default and for "-updated", the oldest first for "updated"', () => {
         const later = new Date(Date.now() + 60_000)
         db.update(schema.ownedCard).set({ updatedAt: later }).where(and(eq(schema.ownedCard.userId, 'user-a'), eq(schema.ownedCard.catalogCardId, 55144522))).run()
 
         expect(names(listOwnedCards(db, 'user-a'))[0]).toBe('Pot of Greed')
-        expect(names(listOwnedCards(db, 'user-a', { sort: 'updated' }))[0]).toBe('Pot of Greed')
+        expect(names(listOwnedCards(db, 'user-a', { sort: '-updated' }))[0]).toBe('Pot of Greed')
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'updated' }))[0]).toBe('Dark Magician')
       })
 
       it('sorts A to Z and Z to A by the card name, the rows of one card together', () => {
@@ -331,15 +334,27 @@ describe('inventory persistence helpers', () => {
         expect(names(listOwnedCards(db, 'user-a', { sort: 'name', cardLocale: 'en' }))[0]).toBe('Dark Magician')
       })
 
-      it('reads only the three known sorts from the query', () => {
-        expect(parseInventoryListQuery({ sort: 'name' }).sort).toBe('name')
-        expect(parseInventoryListQuery({ sort: '-name' }).sort).toBe('-name')
-        expect(parseInventoryListQuery({ sort: 'updated' }).sort).toBe('updated')
-        expect(parseInventoryListQuery({ sort: 'quantity' }).sort).toBeUndefined()
-        expect(parseInventoryListQuery({}).sort).toBeUndefined()
+      it('sorts by the fields of the card, a Spell having no ATK last either way, the rows of one card together', () => {
+        // Dark Magician (2500 ATK, level 7, a monster) against Pot of Greed (a Spell: no ATK, no level).
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'atk' }))).toEqual(['Dark Magician', 'Dark Magician', 'Pot of Greed'])
+        expect(names(listOwnedCards(db, 'user-a', { sort: '-atk' }))).toEqual(['Dark Magician', 'Dark Magician', 'Pot of Greed'])
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'level' }))[2]).toBe('Pot of Greed')
+        // By card type the monster comes before the Spell, and the other way round.
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'type' }))[2]).toBe('Pot of Greed')
+        expect(names(listOwnedCards(db, 'user-a', { sort: '-type' }))[0]).toBe('Pot of Greed')
+        expect(names(listOwnedCards(db, 'user-a', { sort: 'release' })).length).toBe(3)
+      })
+
+      it('reads the card fields, the list\'s own `updated` with a direction, and the old `newest`; anything else is the default', () => {
+        for (const value of ['name', '-name', 'updated', '-updated', 'atk', '-def', 'level', 'type', '-scale', 'release', '-release']) {
+          expect(parseInventoryListQuery({ sort: value }).sort, value).toBe(value)
+        }
+        expect(parseInventoryListQuery({ sort: 'newest' }).sort).toBe('-release')
+        // `quantity` is the gallery's field, not the list's.
+        expect(parseInventoryListQuery({ sort: 'quantity' }).sort).toBe('-updated')
+        expect(parseInventoryListQuery({}).sort).toBe('-updated')
       })
     })
-
     it('finds catalog cards for the picker by German name or passcode', () => {
       seedGermanNames(db, { 46986414: 'Dunkler Magier' })
 

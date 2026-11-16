@@ -65,7 +65,7 @@ The tester's screenshots ("Zieh den blauen Bereich in den roten"):
 * **Detail window of a card:** much larger, and only the card text and the list of printings (the sets it came out in)
   scroll, each in its own area, not the whole window.
 * **Deckthema:** every menu has a cross that resets only this filter. The labels follow the card language: German names
-  from `shared/archetype-names-de.ts`, a hand-checked list of about 100 archetypes taken from the German names of their
+  from `shared/archetype-names-de.ts`, at first a hand-checked list of about 100 archetypes taken from the German names of their
   cards; an archetype that is not in it stays in English (the catalog has only English names), and the English name is
   shown as the description and searched too. The value in the URL and the API stays the English name.
 * **"Magna Warrior" showed 2 cards: that was wrong, not the filter's fault.** The tester asked whether it is right. First
@@ -75,16 +75,13 @@ The tester's screenshots ("Zieh den blauen Bereich in den roten"):
   and "Magnet" (9). A card does not have to carry the archetype's name (Plasma Warrior Eitom does not), and the catalog's
   single field cannot say it. Two more facts: in German, French, Italian and Portuguese both archetypes have one name
   ("Magnetkrieger"), so a German player picking it expects both.
-  * `shared/archetype-members.ts` lists the cards the game counts in an archetype although the catalog files them
-    elsewhere (Valkyrion and Berserkion for "Magna Warrior"; the Electromagnet Warriors, Delta, Sigma and Omega Plus for
-    "Magnet Warrior"). They are added, never taken away: `archetypeClause()` (catalog, inventory list and gallery) matches
-    the catalog's archetype or this list, and the inventory's menu offers the extra archetypes of the cards one owns.
-    Now "Magna Warrior" lists 4 cards, "Magnet Warrior" 15, both 17.
+  * First fix (commit fd0c412): a hand-checked list of extra members for this family (`shared/archetype-members.ts`),
+    added to what the catalog says. "Magna Warrior" then listed 4 cards, "Magnet Warrior" 15, both 17.
   * In the German card language the menu has one entry "Magnetkrieger" for the archetypes that share a German name; picking
-    it filters by both English names (URL and API unchanged).
-  * **Limit:** this is a hand-checked list for this family. Other archetypes can be incomplete in the same way, because the
-    source has one archetype per card. The complete fix would take the game's own set codes (card databases of the
-    simulators, several archetypes per card) as the source; that is a larger change and not done.
+    it filters by both English names (URL and API unchanged). This stays.
+  * **The hand list is gone ([ADR 0049](0049-archetypes-from-the-game-and-one-sort.md)):** the tester said again that the
+    Deckthemen do not fit ("passen immer noch nicht"), and the cause was general (one archetype per card in the source).
+    The membership of every card and the German names of the archetypes now come from Yugipedia's data.
 * **Not built: card pictures in German.** The catalog has one picture per card (the English one). There is no source of
   German scans that the app may fetch without a licence of its own, so the card language changes names and texts, not the
   picture.

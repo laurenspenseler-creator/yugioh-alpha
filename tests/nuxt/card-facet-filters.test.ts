@@ -313,4 +313,46 @@ describe('CardFacetFilters following the kind', () => {
 
     expect(valuesOf(component as never, 'Monsterart')).toHaveLength(allFacets.races.length)
   })
+
+  // Tester feedback, round 16: "Lass mich jeden Filter einzeln zurücksetzen": the small cross of a menu, only while something is picked.
+  describe('resetting a filter on its own', () => {
+    const picked = {
+      facets,
+      kind: ['normal', 'effect'] as CardKind[],
+      excludeKind: ['link'] as CardKind[],
+      type: ['Normal Monster'],
+      attribute: ['LIGHT'],
+      race: ['Dragon'],
+      level: [8],
+    }
+
+    const crossOf = (component: VueWrapper, label: string) => component.find(`[aria-label="${label}"] [data-slot="trailingClear"]`)
+
+    it('has a cross on every menu that has something picked, and none on the ones that have not', async () => {
+      const component = await mountSuspended(CardFacetFilters, { props: picked })
+      const empty = await mountSuspended(CardFacetFilters, { props: { ...picked, kind: [], excludeKind: [], type: [], attribute: [], race: [], level: [] } })
+
+      for (const label of ['Kartenart', 'Ohne Kartenart', 'Typ', 'Attribut', 'Monsterart', 'Stufe/Rang']) {
+        expect(crossOf(component, label).exists(), label).toBe(true)
+        expect(crossOf(empty, label).exists(), label).toBe(false)
+      }
+    })
+
+    it('empties just the menu of the cross: the list is [], not undefined, and the other filters stay', async () => {
+      const component = await mountSuspended(CardFacetFilters, { props: picked })
+
+      await crossOf(component, 'Attribut').trigger('click')
+      expect(component.emitted('update:attribute')?.at(-1)).toEqual([[]])
+      expect(component.emitted('update:type')).toBeUndefined()
+      expect(component.emitted('update:race')).toBeUndefined()
+      expect(component.emitted('update:level')).toBeUndefined()
+
+      await crossOf(component, 'Stufe/Rang').trigger('click')
+      expect(component.emitted('update:level')?.at(-1)).toEqual([[]])
+      await crossOf(component, 'Kartenart').trigger('click')
+      expect(component.emitted('update:kind')?.at(-1)).toEqual([[]])
+      await crossOf(component, 'Ohne Kartenart').trigger('click')
+      expect(component.emitted('update:excludeKind')?.at(-1)).toEqual([[]])
+    })
+  })
 })

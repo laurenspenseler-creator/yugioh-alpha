@@ -29,6 +29,25 @@
       "pendulumScale": "Pendulum Scale"
     },
     "archetypeSearch": "Search archetypes...",
+    "sort": {
+      "label": "Sort by",
+      "field": {
+        "release": "Release date",
+        "atk": "ATK",
+        "def": "DEF",
+        "level": "Level",
+        "name": "Name",
+        "type": "Card type",
+        "scale": "Pendulum scale",
+        "updated": "Last changed",
+        "quantity": "Copies",
+        "default": "Default"
+      },
+      "ascending": "Ascending",
+      "descending": "Descending",
+      "switchToAscending": "Sort ascending (A–Z, smallest, oldest first)",
+      "switchToDescending": "Sort descending (Z–A, largest, newest first)"
+    },
     "legality": {
       "anyFormat": "Any format",
       "legal": "Allowed",

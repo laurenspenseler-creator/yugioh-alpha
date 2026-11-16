@@ -73,15 +73,7 @@
       "placeholder": "Search your inventory...",
       "label": "Search inventory",
       "inText": "Also search card text",
-      "reset": "Reset",
-      "sortLabel": "Sort by",
-      "sort": {
-        "updated": "Recently changed",
-        "nameAsc": "Name (A-Z)",
-        "nameDesc": "Name (Z-A)",
-        "quantity": "Quantity",
-        "newest": "Newest"
-      }
+      "reset": "Reset"
     },
     "gallery": {
       "loadFailed": "Couldn't load the search",

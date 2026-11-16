@@ -2,14 +2,15 @@ import { and, eq, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import type { useDb } from '../db'
 import { catalogCard, ownedCard } from '../db/schema'
+import { archetypeData, archetypesForMenu } from './archetype-data'
 import { archetypeClause } from './archetype-clause'
+import { DEFAULT_CARD_SORT_VALUE, readSortValue } from './card-sort-sql'
 import { cardKindClause, parseCardKinds } from './card-kind-sql'
 import { cardNameMatches, cardTextMatches } from './card-name-search'
 import { primaryImageUrlSql } from './card-image-sql'
 import { cardNameDeSql } from './card-translation-sql'
 import { legalityClause, parseFormatLegalityQuery } from './format-legality'
 import { parseQueryFlag } from './query-flag'
-import { extraArchetypesOf } from '../../shared/archetype-members'
 import { UNASSIGNED_COLLECTION_ID } from '../../shared/inventory'
 import type { CardKind } from '../../shared/card-kind'
 import type { FormatLegality } from '../../shared/format-legality'
@@ -18,10 +19,14 @@ export { UNASSIGNED_COLLECTION_ID }
 
 type Db = ReturnType<typeof useDb>
 
-export type InventorySearchSort = 'name' | '-name' | 'quantity' | 'newest'
+/**
+ * A field of `shared/card-sort.ts` or `quantity` (the copies owned), "-" in front for descending (`name`, `-atk`, `-quantity`).
+ * The old `newest` is read as `-release`.
+ */
+export type InventorySearchSort = string
 
-const SORT_VALUES: readonly InventorySearchSort[] = ['name', '-name', 'quantity', 'newest']
-const DEFAULT_SORT: InventorySearchSort = 'name'
+/** The fields the gallery has on top of the card's own ones. */
+export const GALLERY_EXTRA_SORTS = ['quantity'] as const
 const DEFAULT_PAGE = 1
 const DEFAULT_PAGE_SIZE = 24
 const MAX_PAGE_SIZE = 60
@@ -101,10 +106,7 @@ function toTrimmedString(raw: unknown): string | undefined {
 }
 
 function toSort(raw: unknown): InventorySearchSort {
-  const value = Array.isArray(raw) ? raw[0] : raw
-  return typeof value === 'string' && (SORT_VALUES as readonly string[]).includes(value)
-    ? (value as InventorySearchSort)
-    : DEFAULT_SORT
+  return readSortValue(raw, DEFAULT_CARD_SORT_VALUE, GALLERY_EXTRA_SORTS)
 }
 
 function toPositiveInt(raw: unknown, fallback: number): number {
@@ -275,6 +277,7 @@ export function loadInventorySearchFacets(db: Db, userId: string): InventorySear
   const levels = Array.from(
     new Set(rows.map(row => row.level).filter((level): level is number => level !== null)),
   ).sort((a, b) => a - b)
+  const data = archetypeData()
 
   return {
     types: uniqueSortedStrings(rows.map(row => row.type)),
@@ -284,8 +287,8 @@ export function loadInventorySearchFacets(db: Db, userId: string): InventorySear
     // #17), matching `getCatalogFacets` in server/utils/catalog-search.ts.
     races: uniqueSortedStrings(rows.filter(row => row.type !== 'Skill Card').map(row => row.race)),
     levels,
-    // Also the archetypes the game counts an owned card in although the catalog files it elsewhere (shared/archetype-members.ts).
-    archetypes: uniqueSortedStrings(rows.flatMap(row => [row.archetype, ...extraArchetypesOf(row.id)])),
+    // The archetypes of the owned cards as the game has them (`archetype-data.ts`; the catalog's for a card the data lacks).
+    archetypes: uniqueSortedStrings(rows.flatMap(row => archetypesForMenu(data, row.id, row.archetype))),
   }
 }
 

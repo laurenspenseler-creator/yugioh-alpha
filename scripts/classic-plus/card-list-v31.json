@@ -1,0 +1,1588 @@
+{
+ "source": "Classic Plus — Änderungen für v3.1, Vollständige Übergabe (08.–16.11.2026), Teil 3, plus the cards the new rules 4 (Ä17) and 12 (Ä12) hit by their wording",
+ "cards": [
+  {
+   "id": 58921041,
+   "name": "Antimagischer Duft",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3, Schritt 4",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 15693423,
+   "name": "Ausgeglichener Zweikampf",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 5851097,
+   "name": "Bedeutungslosigkeit der Eitelkeit",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 4538826,
+   "name": "Chaos-Imperator, der Drache des Armageddon",
+   "limit": 0,
+   "rules": [],
+   "rule": "1 (Pendelmonster)",
+   "note": "[NEU] war unlimitiert",
+   "source": "list"
+  },
+  {
+   "id": 59839761,
+   "name": "Deltakrähe - Antiumkehrung",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 84171830,
+   "name": "Domäne der wahren Monarchen",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 6325660,
+   "name": "Dominus-Funke",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 40366667,
+   "name": "Dominus-Impuls",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 97045737,
+   "name": "Dominus-Säuberung",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 42091632,
+   "name": "Dominus-Spirale",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 16762927,
+   "name": "Grabwächters Diener",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3, Schritt 4",
+   "note": "einzige Grabwächter-Karte ohne Bedingungskette",
+   "source": "list"
+  },
+  {
+   "id": 87639778,
+   "name": "Harpyien-Federsturm",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 61740673,
+   "name": "Kaiserlicher Befehl",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 87607094,
+   "name": "Kalliber-Neustart",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 51452091,
+   "name": "Königlicher Erlass",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 82732705,
+   "name": "Kräfte rauben",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 95308449,
+   "name": "Letzter Countdown",
+   "limit": 0,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Final Countdown is a Normal Spell: after the activation nothing stays on the field that the opponent could remove, so it is forbidden.",
+   "source": "rule-text"
+  },
+  {
+   "id": 58053438,
+   "name": "Lieder der Beherrscher",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 30241314,
+   "name": "Makrokosmos",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3, Schritt 4 (Umleitung, siehe Ä6)",
+   "note": "Alpha hat ihn aktuell auf 3",
+   "source": "list"
+  },
+  {
+   "id": 76375976,
+   "name": "Mystische Mine",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 61397885,
+   "name": "Phantasmaspiralkraft",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 34302287,
+   "name": "Phantasmaspiralschlacht",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 90846359,
+   "name": "Rivalität der Kriegsherren",
+   "limit": 0,
+   "rules": [
+    "3.4"
+   ],
+   "rule": "3",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 23002292,
+   "name": "Roter Neustart",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 72930878,
+   "name": "Schwarzer Schall",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 8038143,
+   "name": "Tachyonen-Transmigration",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 14883228,
+   "name": "Taifun",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (Ä17)",
+   "note": "Rule 4 (Ä17): a Trap Card the text lets you activate from your hand, and its effect negates or removes. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 10045474,
+   "name": "Unendliche Unbeständigkeit",
+   "limit": 0,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 (nach Ä17)",
+   "note": "[NEU] Falle aus der Hand im Gegnerzug",
+   "source": "list"
+  },
+  {
+   "id": 57774843,
+   "name": "Urteilsdrache",
+   "limit": 0,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Häufigkeitsmodifikator",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 2314238,
+   "name": "Angriff mit Dunkler Magie",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 64043465,
+   "name": "Auslöschen!!!",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 2",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 402416,
+   "name": "Auslöschen!!!-Lohe",
+   "limit": 1,
+   "rules": [
+    "12",
+    "8"
+   ],
+   "rule": "8 + 12 Teil 2",
+   "note": "[NEU] Alpha hat sie auf 2",
+   "source": "list"
+  },
+  {
+   "id": 14386013,
+   "name": "Beherrschung des dunklen Geistes",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 2",
+   "note": "Rule 12 part 2 (Ä12): searches or places the parts of Destiny Board by name. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 75286621,
+   "name": "Beschworener Mechaba",
+   "limit": 1,
+   "rules": [
+    "10"
+   ],
+   "rule": "10",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 43228023,
+   "name": "Blauäugiger alternativer ultimativer Drache",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Merkmal III",
+   "note": "Regel ergänzt (K3)",
+   "source": "list"
+  },
+  {
+   "id": 20654247,
+   "name": "Blauäugiger Chaosdrache",
+   "limit": 1,
+   "rules": [
+    "9a"
+   ],
+   "rule": "9(a) unbedingt (Ziel und Zerstörung)",
+   "note": "[korr.] war 2",
+   "source": "list"
+  },
+  {
+   "id": 34966096,
+   "name": "Chaosbetrüger",
+   "limit": 1,
+   "rules": [
+    "7b"
+   ],
+   "rule": "7(b) + Selbstrückholung",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 79571449,
+   "name": "Elegante Wohltäterin",
+   "limit": 1,
+   "rules": [
+    "5"
+   ],
+   "rule": "5",
+   "note": "[NEU] = „Anmutige Barmherzigkeit“ aus der Juni-Liste",
+   "source": "list"
+  },
+  {
+   "id": 40854197,
+   "name": "Elementar-HELD Absoluter Nullpunkt",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Merkmal III (seine Zerstörung löst ihn aus)",
+   "note": "[NEU] war unlimitiert",
+   "source": "list"
+  },
+  {
+   "id": 13256226,
+   "name": "Elementar-HELD Geist von Neos",
+   "limit": 1,
+   "rules": [
+    "4"
+   ],
+   "rule": "4 + Ä18",
+   "note": "[NEU] war unlimitiert",
+   "source": "list"
+  },
+  {
+   "id": 48680970,
+   "name": "Ewige Seele",
+   "limit": 1,
+   "rules": [
+    "7b",
+    "9a"
+   ],
+   "rule": "9(a) + 7(b)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 12600382,
+   "name": "Exodia Necross",
+   "limit": 1,
+   "rules": [
+    "9a",
+    "9b"
+   ],
+   "rule": "9 (Kampf und Zauber-/Falleneffekte)",
+   "note": "[NEU] war unlimitiert",
+   "source": "list"
+  },
+  {
+   "id": 5008836,
+   "name": "Exodia, die legendäre Verteidigerin",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1 (eigene Siegbedingung)",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 33396948,
+   "name": "Exodia, die Verbotene",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 13893596,
+   "name": "Exodius der ultimative verbotene Lord",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 69553552,
+   "name": "F.A. Gewinner",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 23015896,
+   "name": "Feuerkönig Hochavatar Garunix",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Selbstwiederbelebung (Merkmal III)",
+   "note": "[korr.] war 2",
+   "source": "list"
+  },
+  {
+   "id": 101206080,
+   "name": "Fireworks Celebration",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 66765023,
+   "name": "Fliegender Elefant",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel by a direct attack. Stays at limit 1.",
+   "source": "rule-text"
+  },
+  {
+   "id": 44656491,
+   "name": "Friedensbote",
+   "limit": 1,
+   "rules": [
+    "3.3"
+   ],
+   "rule": "3, Schritt 3",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 52947044,
+   "name": "Fusionsschicksal",
+   "limit": 1,
+   "rules": [
+    "7c",
+    "7d"
+   ],
+   "rule": "7(c) / 7(d)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 87910978,
+   "name": "Gehirnkontrolle",
+   "limit": 1,
+   "rules": [
+    "7a"
+   ],
+   "rule": "7(a)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 94772232,
+   "name": "Geisternachricht „A“",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 31893528,
+   "name": "Geisternachricht „I“",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 30170981,
+   "name": "Geisternachricht „L“",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 67287533,
+   "name": "Geisternachricht „N“",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 99877698,
+   "name": "Grabwächters Kanonenträger",
+   "limit": 1,
+   "rules": [
+    "6a"
+   ],
+   "rule": "6(a) + Ä7",
+   "note": "[korr.] war verboten",
+   "source": "list"
+  },
+  {
+   "id": 72427512,
+   "name": "Imitierender Menschenfresserkäfer",
+   "limit": 1,
+   "rules": [
+    "9b"
+   ],
+   "rule": "9(b) + Ä15 (Flip)",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 58604027,
+   "name": "Inkarnation der legendären Exodia",
+   "limit": 1,
+   "rules": [
+    "12",
+    "5",
+    "9a"
+   ],
+   "rule": "5 / 9(a) / 12 — drei Wege",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 83257450,
+   "name": "Inkarnation der unaufhaltbaren Exodia",
+   "limit": 1,
+   "rules": [
+    "10",
+    "9a"
+   ],
+   "rule": "9(a), zusätzlich 10",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 1845204,
+   "name": "Instantfusion",
+   "limit": 1,
+   "rules": [
+    "7c",
+    "7d"
+   ],
+   "rule": "7(c) / 7(d)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 81171949,
+   "name": "Jackpot-7",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 11384280,
+   "name": "Kanonensoldat",
+   "limit": 1,
+   "rules": [
+    "6a"
+   ],
+   "rule": "6(a) + Ä7",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 37630732,
+   "name": "Kraftbündnis",
+   "limit": 1,
+   "rules": [
+    "6b"
+   ],
+   "rule": "6(b), LP zählen nicht (Ä10)",
+   "note": "[korr.] war 2",
+   "source": "list"
+  },
+  {
+   "id": 102380,
+   "name": "Lava-Golem",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 (2 gegnerische Monster als Tribut)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 99365553,
+   "name": "Lichtpulsar-Drache",
+   "limit": 1,
+   "rules": [
+    "7b"
+   ],
+   "rule": "7(b) + Selbstrückholung",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 7902349,
+   "name": "Linker Arm der Verbotenen",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 44519536,
+   "name": "Linkes Bein der Verbotenen",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 23434538,
+   "name": "Maxx „C“",
+   "limit": 1,
+   "rules": [
+    "5"
+   ],
+   "rule": "5",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 46411259,
+   "name": "Metamorphose",
+   "limit": 1,
+   "rules": [
+    "7c",
+    "7d"
+   ],
+   "rule": "7(c) / 7(d)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 41578483,
+   "name": "Millenniumäugiges Opfer",
+   "limit": 1,
+   "rules": [
+    "10"
+   ],
+   "rule": "10",
+   "note": "[korr.] war 2",
+   "source": "list"
+  },
+  {
+   "id": 37613663,
+   "name": "Millenniums-Anch",
+   "limit": 1,
+   "rules": [
+    "12",
+    "7c"
+   ],
+   "rule": "12 Teil 2 + 7(c)",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 81843628,
+   "name": "Nadelwurm",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Ä15 (Flip)",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 56532353,
+   "name": "Neo-Blauäugiger ultimativer Drache",
+   "limit": 1,
+   "rules": [
+    "10"
+   ],
+   "rule": "10",
+   "note": "Regel korrigiert (K2)",
+   "source": "list"
+  },
+  {
+   "id": 14088859,
+   "name": "Neos-Fusion",
+   "limit": 1,
+   "rules": [
+    "7c",
+    "7d"
+   ],
+   "rule": "7(c) / 7(d)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 19523799,
+   "name": "Ookazi",
+   "limit": 1,
+   "rules": [
+    "6a"
+   ],
+   "rule": "6(a)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 97795930,
+   "name": "Phantasmaspiralangriff",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 93920745,
+   "name": "Pinguinsoldat",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Ä15 (Flip)",
+   "note": "[korr.] zwischenzeitlich auf 2 geführt",
+   "source": "list"
+  },
+  {
+   "id": 70903634,
+   "name": "Rechter Arm der Verbotenen",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 8124921,
+   "name": "Rechtes Bein der Verbotenen",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 94212438,
+   "name": "Schicksalstafel",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 70551291,
+   "name": "Schwarz Glänzender Soldat – Leg. Schwertkämpfer",
+   "limit": 1,
+   "rules": [
+    "3.2",
+    "8"
+   ],
+   "rule": "8 + 3, Prüfschritt 2b",
+   "note": "[korr.] war 2 (K4)",
+   "source": "list"
+  },
+  {
+   "id": 85742772,
+   "name": "Schwerkraftbindung",
+   "limit": 1,
+   "rules": [
+    "3.3"
+   ],
+   "rule": "3, Schritt 3",
+   "note": "dt. Name jetzt geklärt",
+   "source": "list"
+  },
+  {
+   "id": 23020408,
+   "name": "Seelendiener",
+   "limit": 1,
+   "rules": [
+    "5"
+   ],
+   "rule": "5",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 77751766,
+   "name": "Sommer-Hausaufgaben fertig!",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 1",
+   "note": "Rule 12 (Ä12): wins the Duel without the LP of the opponent at 0, or names that win condition. Not named in the authors' list. Limit 1 as the rule says; interruptible (a body or a Continuous Trap).",
+   "source": "rule-text"
+  },
+  {
+   "id": 3136426,
+   "name": "Stufenbeschränkung - Gebiet B",
+   "limit": 1,
+   "rules": [
+    "3.3"
+   ],
+   "rule": "3, Schritt 3",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 48130397,
+   "name": "Superpolymerisation",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 (gegnerisches Material)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 63519819,
+   "name": "Tausendäugiges Opfer",
+   "limit": 1,
+   "rules": [
+    "3.2"
+   ],
+   "rule": "3, Prüfschritt 2b",
+   "note": "[korr.] war 2 (K4)",
+   "source": "list"
+  },
+  {
+   "id": 37576645,
+   "name": "Tollkühne Gier",
+   "limit": 1,
+   "rules": [
+    "5"
+   ],
+   "rule": "5",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 71143015,
+   "name": "Ultimative Fusion",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 44763025,
+   "name": "Verbrecher-Duo",
+   "limit": 1,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Ä10 + Ä11",
+   "note": "[NEU] Alpha hat sie auf unlimitiert",
+   "source": "list"
+  },
+  {
+   "id": 40771118,
+   "name": "Verhängnisvolle Strafe",
+   "limit": 1,
+   "rules": [
+    "12"
+   ],
+   "rule": "12 Teil 2",
+   "note": "Rule 12 part 2 (Ä12): searches or places the parts of Destiny Board by name. Not named in the authors' list.",
+   "source": "rule-text"
+  },
+  {
+   "id": 35316708,
+   "name": "Zeitsiegel",
+   "limit": 1,
+   "rules": [
+    "11a"
+   ],
+   "rule": "11",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 23171610,
+   "name": "Begrenzer-Entferner",
+   "limit": 2,
+   "rules": [
+    "6b"
+   ],
+   "rule": "6(b) + Eigenkosten",
+   "note": "Regel jetzt vorhanden",
+   "source": "list"
+  },
+  {
+   "id": 82301904,
+   "name": "Chaos-Imperatordrache - Gesandter des Endes",
+   "limit": 2,
+   "rules": [
+    "8"
+   ],
+   "rule": "8, Merkmal I + II",
+   "note": "[korr.] war 1",
+   "source": "list"
+  },
+  {
+   "id": 90488465,
+   "name": "Der Chaosschöpfer",
+   "limit": 2,
+   "rules": [
+    "7b"
+   ],
+   "rule": "7(b), Merkmal I + II",
+   "note": "[korr.] war 1",
+   "source": "list"
+  },
+  {
+   "id": 59400890,
+   "name": "Dunkler Magier der Zerstörung",
+   "limit": 2,
+   "rules": [
+    "7c"
+   ],
+   "rule": "7(c), Merkmal I + II",
+   "note": "[korr.] war 1",
+   "source": "list"
+  },
+  {
+   "id": 24317029,
+   "name": "Grabwächters Spion",
+   "limit": 2,
+   "rules": [
+    "7e"
+   ],
+   "rule": "7(e) neu (Ä13)",
+   "note": "[NEU] war unlimitiert",
+   "source": "list"
+  },
+  {
+   "id": 79206925,
+   "name": "Grabwächters Übernatürlicher",
+   "limit": 2,
+   "rules": [
+    "9a"
+   ],
+   "rule": "9(a) + Bedingungskette (Ä4)",
+   "note": "[NEU] fehlte ganz",
+   "source": "list"
+  },
+  {
+   "id": 63176202,
+   "name": "Großer Shogun Shien",
+   "limit": 2,
+   "rules": [
+    "3.2"
+   ],
+   "rule": "3, Schritt 2 (Monsteranker)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 31305911,
+   "name": "Marshmallon",
+   "limit": 2,
+   "rules": [
+    "9b"
+   ],
+   "rule": "9(b)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 58481572,
+   "name": "Maskierter HELD Dunkles Gesetz",
+   "limit": 2,
+   "rules": [
+    "3.2"
+   ],
+   "rule": "3, Prüfschritt 2 (Monsteranker)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 4929256,
+   "name": "Möbius der Frostmonarch",
+   "limit": 2,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Tributkosten",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 57839750,
+   "name": "Mutter Grizzly",
+   "limit": 2,
+   "rules": [
+    "7e"
+   ],
+   "rule": "7(e) neu (Ä13)",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 22842126,
+   "name": "Pantheismus der Monarchen",
+   "limit": 2,
+   "rules": [
+    "5"
+   ],
+   "rule": "5 + gebundene Eigenkosten (Ä3)",
+   "note": "Regel jetzt vorhanden",
+   "source": "list"
+  },
+  {
+   "id": 90434657,
+   "name": "Pharaonengräber im Tal der Toten",
+   "limit": 2,
+   "rules": [
+    "10"
+   ],
+   "rule": "10 + Bedingungskette (Ä4)",
+   "note": "[NEU] fehlte ganz",
+   "source": "list"
+  },
+  {
+   "id": 77044671,
+   "name": "Pyramidenschildkröte",
+   "limit": 2,
+   "rules": [
+    "7e"
+   ],
+   "rule": "7(e) neu (Ä13)",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 86346643,
+   "name": "Regenbogen-Neos",
+   "limit": 2,
+   "rules": [
+    "8"
+   ],
+   "rule": "8, Merkmal I + II",
+   "note": "[NEU] war unlimitiert (3)",
+   "source": "list"
+  },
+  {
+   "id": 79856792,
+   "name": "Regenbogendrache",
+   "limit": 2,
+   "rules": [
+    "8"
+   ],
+   "rule": "8, Merkmal I + II",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 97017120,
+   "name": "Riesenratte",
+   "limit": 2,
+   "rules": [
+    "7e"
+   ],
+   "rule": "7(e) neu (Ä13)",
+   "note": "[NEU] war unlimitiert",
+   "source": "list"
+  },
+  {
+   "id": 60461804,
+   "name": "Schicksals-HELD - Destroyer Phoenix Enforcer",
+   "limit": 2,
+   "rules": [
+    "7b"
+   ],
+   "rule": "7(b)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 95956346,
+   "name": "Strahlender Engel (official German name: Glänzender Elf)",
+   "limit": 2,
+   "rules": [
+    "7e"
+   ],
+   "rule": "7(e) neu (Ä13)",
+   "note": "[NEU] The list says \"Strahlender Engel\"; the card of the June list is Shining Angel.",
+   "source": "list"
+  },
+  {
+   "id": 47355498,
+   "name": "Tal der Toten",
+   "limit": 2,
+   "rules": [
+    "3.2"
+   ],
+   "rule": "3, Schritt 2 (Spielfeldzauber)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 60806437,
+   "name": "Ufo-Schildkröte",
+   "limit": 2,
+   "rules": [
+    "7e"
+   ],
+   "rule": "7(e) neu (Ä13)",
+   "note": "[NEU]",
+   "source": "list"
+  },
+  {
+   "id": 70000776,
+   "name": "Verborgene Tempel im Tal der Toten",
+   "limit": 2,
+   "rules": [
+    "3.2"
+   ],
+   "rule": "3, Schritt 2 (Selbstzerstörungsklausel)",
+   "note": "",
+   "source": "list"
+  },
+  {
+   "id": 43898403,
+   "name": "Zwillings-Twister",
+   "limit": 2,
+   "rules": [
+    "8"
+   ],
+   "rule": "8 + Eigenkosten (Abwurf)",
+   "note": "[korr.] war 1, Name war falsch",
+   "source": "list"
+  },
+  {
+   "id": 64631466,
+   "name": "Aufgegeben",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Keine Regel greift. Er rüstet aus statt Kontrolle zu übernehmen, und er zahlt den vollen Ritualpreis → Regel 7 greift nach Ä9 nicht. Konami hat ihn nie limitiert",
+   "source": "list"
+  },
+  {
+   "id": 37742478,
+   "name": "Aufrichtig",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase",
+   "source": "list"
+  },
+  {
+   "id": 17375316,
+   "name": "Beschlagnahme",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "nur 1 Karte aus der Hand → Regel 8 greift nicht",
+   "source": "list"
+  },
+  {
+   "id": 74063034,
+   "name": "Beschwörung",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "geben nur eigene Karten ab",
+   "source": "list"
+  },
+  {
+   "id": 35480699,
+   "name": "Buch der Verfinsterung",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "verdecktes Drehen zählt nicht als Removal",
+   "source": "list"
+  },
+  {
+   "id": 21082832,
+   "name": "Chaosform",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 1546123,
+   "name": "Cyber End-Drache",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Durchschlag bzw. zweiter Angriff sind keine Vervielfachung",
+   "source": "list"
+  },
+  {
+   "id": 74157028,
+   "name": "Cyber Zwillings-Drache",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Durchschlag bzw. zweiter Angriff sind keine Vervielfachung",
+   "source": "list"
+  },
+  {
+   "id": 40737112,
+   "name": "Dunkler Magier des Chaos",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 47222536,
+   "name": "Dunkler magischer Kreis",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Suchen zählt nicht als Ziehen",
+   "source": "list"
+  },
+  {
+   "id": 35809262,
+   "name": "Elementar-HELD Flammenflügelmann",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Schaden nur nach Kampfzerstörung",
+   "source": "list"
+  },
+  {
+   "id": 94820406,
+   "name": "Finstere Fusion",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "geben nur eigene Karten ab",
+   "source": "list"
+  },
+  {
+   "id": 18964575,
+   "name": "Flinke Vogelscheuche",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase",
+   "source": "list"
+  },
+  {
+   "id": 84536654,
+   "name": "Gestaltwechsel",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "reguläre Beschwörungsmethode der Maskierten HELDEN",
+   "source": "list"
+  },
+  {
+   "id": 58657303,
+   "name": "Grabwächters Spiritualist",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "gibt das aufgeführte Material ab",
+   "source": "list"
+  },
+  {
+   "id": 99523325,
+   "name": "Grabwächters Stele",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Suchen zählt nicht als Ziehen",
+   "source": "list"
+  },
+  {
+   "id": 19665973,
+   "name": "Kampfausblender",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase",
+   "source": "list"
+  },
+  {
+   "id": 40640057,
+   "name": "Kuriboh",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Regel 4, Battle-Phase-Ausnahme — wirken ausschließlich in der Battle Phase",
+   "source": "list"
+  },
+  {
+   "id": 47963370,
+   "name": "Magier des Chaos",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 79613121,
+   "name": "Magier des Schwarzen Chaos MAX",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "unverändert aus v3",
+   "source": "list"
+  },
+  {
+   "id": 21143940,
+   "name": "Maskenwechsel",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "reguläre Beschwörungsmethode der Maskierten HELDEN",
+   "source": "list"
+  },
+  {
+   "id": 93600443,
+   "name": "Maskenwechsel II",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "reguläre Beschwörungsmethode der Maskierten HELDEN",
+   "source": "list"
+  },
+  {
+   "id": 63899196,
+   "name": "Masterplan der Monarchen",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "suchen, ziehen nicht",
+   "source": "list"
+  },
+  {
+   "id": 54652250,
+   "name": "Menschenfresserkäfer",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "zerstört nur 1 Monster",
+   "source": "list"
+  },
+  {
+   "id": 83011278,
+   "name": "Mystische Tomate",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Suchen zählt nicht als Ziehen",
+   "source": "list"
+  },
+  {
+   "id": 24094653,
+   "name": "Polymerisation",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Eigenes Material zählt nicht als Removal (Ä2, Merkmal II)",
+   "source": "list"
+  },
+  {
+   "id": 83555666,
+   "name": "Ring der Zerstörung",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Schaden ist Nebenprodukt, braucht ein gegnerisches Monster (Ä8)",
+   "source": "list"
+  },
+  {
+   "id": 54913680,
+   "name": "Sechs Schriftrollen der Samurai",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "gibt nur eigene Karten als Tribut ab",
+   "source": "list"
+  },
+  {
+   "id": 23212990,
+   "name": "Sechserangriff - Donnerschlag",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "1 Karte pro Effekt",
+   "source": "list"
+  },
+  {
+   "id": 33244944,
+   "name": "Vertrag mit Exodia",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "Erledigt, bleibt unlimitiert. Tote Karte bis alle 5 Teile im Friedhof liegen, beschwört dann genau ein Monster, das selbst auf 1 steht. Eine zweite Kopie hat nichts zu beschwören",
+   "source": "list"
+  },
+  {
+   "id": 13048472,
+   "name": "Vor-Vorbereitung der Riten",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "suchen, ziehen nicht",
+   "source": "list"
+  },
+  {
+   "id": 96729612,
+   "name": "Vorbereitung der Riten",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "suchen, ziehen nicht",
+   "source": "list"
+  },
+  {
+   "id": 45906428,
+   "name": "Wunderfusion",
+   "limit": 3,
+   "rules": [],
+   "rule": "",
+   "note": "geben nur eigene Karten ab",
+   "source": "list"
+  }
+ ]
+}

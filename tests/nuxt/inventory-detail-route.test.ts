@@ -2,9 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DOMWrapper, enableAutoUnmount } from '@vue/test-utils'
 import { nextTick, toValue } from 'vue'
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
+import { USelect } from '#components'
 import CardDetailModal from '~/components/card/CardDetailModal.vue'
 import InventorySearchPanel from '~/components/inventory/InventorySearchPanel.vue'
 import InventoryPage from '~/pages/inventory/index.vue'
+import { optionLabels, selectWithOption } from './fixtures/select-wrapper'
 
 // The inventory's detail panel follows `?card=` (#145), and "Liste" takes
 // the search panel's filters.
@@ -202,21 +204,74 @@ describe('filters in "Liste" (#145)', () => {
     expect(listToggle.attributes('aria-pressed')).toBe('true')
   })
 
-  // Tester feedback, round 15: the list sorts too (A-Z), with the number of cards it lists, next to the search text.
-  it('has a sort and a count in "Liste" and in "Galerie", beside the search text', async () => {
+  // Tester feedback, rounds 15 and 16: the number of cards the view lists at the left of a toolbar above the cards ("an den blauen
+  // Pfeil"), at its right selecting, the view and the sort ("Zieh den roten Bereich runter").
+  it('has a toolbar above the cards: the count at the left, selecting, the view and the sort at the right', async () => {
     state.inventory = { items: [listRow], total: 1 }
 
     const list = await mountSuspended(InventoryPage, { route: '/inventory' })
-    expect(list.text()).toContain('Sortierung')
-    expect(list.find('[data-testid="inventory-shown-count"]').text()).toBe('1 Karte')
+    const toolbar = list.find('[data-testid="inventory-toolbar"]')
+    expect(toolbar.exists()).toBe(true)
+    expect(toolbar.element.firstElementChild).toBe(toolbar.find('[data-testid="inventory-shown-count"]').element)
+    expect(toolbar.find('[data-testid="inventory-shown-count"]').text()).toBe('1 Karte')
+    expect(toolbar.text()).toContain('Auswählen')
+    expect(toolbar.text()).toContain('Liste')
+    expect(toolbar.text()).toContain('Galerie')
+    expect(toolbar.text()).toContain('Sortierung')
+    // None of them is at the top of the page any more: one of each.
+    expect(list.findAll('[data-testid="inventory-shown-count"]')).toHaveLength(1)
+    expect(list.findAll('button').filter(button => button.text() === 'Auswählen')).toHaveLength(1)
+    expect(list.findAll('button').filter(button => button.text() === 'Galerie')).toHaveLength(1)
     list.unmount()
 
     const gallery = await mountSuspended(InventoryPage, { route: '/inventory?view=gallery' })
-    expect(gallery.text()).toContain('Sortierung')
+    expect(gallery.find('[data-testid="inventory-toolbar"]').text()).toContain('Sortierung')
     expect(gallery.find('[data-testid="inventory-shown-count"]').exists()).toBe(true)
+    // Selecting belongs to the list.
+    expect(gallery.find('[data-testid="inventory-toolbar"]').text()).not.toContain('Auswählen')
+  })
+
+  it('sorts the list by every field with a direction, the latest change first by default, and writes it to the URL', async () => {
+    state.inventory = { items: [listRow], total: 1 }
+    state.calls = []
+
+    const component = await mountSuspended(InventoryPage, { route: '/inventory' })
+    const route = useRouter().currentRoute
+    const select = selectWithOption(component.findAllComponents(USelect), 'updated')!
+
+    expect(optionLabels(select)).toEqual(['Zuletzt geändert', 'Erscheinungsdatum', 'Angriff', 'Defensive', 'Stufe', 'Name', 'Kartentyp', 'Pendelbereich'])
+    expect(select.props('modelValue')).toBe('updated')
+    expect(component.find('[data-testid="card-sort-direction"]').attributes('aria-label')).toBe('Absteigend')
+    // The default is not written to the URL or sent.
+    expect(lastQuery('/api/inventory').sort).toBeUndefined()
+    expect(route.value.query.listSort).toBeUndefined()
+
+    await select.setValue('name')
+    await vi.waitFor(() => {
+      expect(route.value.query.listSort).toBe('-name')
+    })
+    expect(lastQuery('/api/inventory')).toMatchObject({ sort: '-name' })
+
+    await component.find('[data-testid="card-sort-direction"]').trigger('click')
+    await vi.waitFor(() => {
+      expect(route.value.query.listSort).toBe('name')
+    })
+    expect(lastQuery('/api/inventory')).toMatchObject({ sort: 'name' })
+  })
+
+  it('reads a link with the sort of the list and of the gallery', async () => {
+    state.inventory = { items: [listRow], total: 1 }
+
+    const list = await mountSuspended(InventoryPage, { route: '/inventory?listSort=-atk' })
+    expect(lastQuery('/api/inventory')).toMatchObject({ sort: '-atk' })
+    expect(selectWithOption(list.findAllComponents(USelect), 'updated')!.props('modelValue')).toBe('atk')
+    list.unmount()
+
+    const gallery = await mountSuspended(InventoryPage, { route: '/inventory?view=gallery&sort=-quantity' })
+    expect(selectWithOption(gallery.findAllComponents(USelect), 'quantity')!.props('modelValue')).toBe('quantity')
+    expect(optionLabels(selectWithOption(gallery.findAllComponents(USelect), 'quantity')!)[0]).toBe('Anzahl')
   })
 })
-
 describe('closing the detail panel (#148)', () => {
   it('goes back when the previous entry is this view without the card', async () => {
     state.inventory = { items: [listRow], total: 1 }

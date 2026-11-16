@@ -60,7 +60,7 @@
         "progress": "{count} duel played | {count} duels played",
         "help1": "You pair a duel whenever you like: pick two players, pick single duel or best of 3, start.",
         "help2": "Then enter the result, with the score for best of 3 (2:0 or 2:1). A duel you paired by mistake can be taken back as long as it has no result.",
-        "help3": "The standings sort by points, then by the difference of the games, then by the direct comparison. A single duel won is worth 3 points; a best-of-3 duel follows the chosen scoring."
+        "help3": "The standings sort by points, then by the difference of the games, then by the direct comparison. Points are given for every duel (game) won, not for the match: 3 or 1 point, as set."
       },
       "setup": {
         "title": "Settings",
@@ -287,6 +287,14 @@
       "games": {
         "label": "By games (3 · 2 · 1 · 0)",
         "description": "A win without dropping a game is worth 3 points, a win that dropped a game 2, a loss that won a game 1, any other loss 0. A 2:0 therefore ranks above a 2:1."
+      },
+      "duel_3_0": {
+        "label": "Per duel 3 · 0",
+        "description": "Every duel (game) won is worth 3 points, every one lost 0. A best of 3 that ends 2:1 is worth 6 points to the winner and 3 to the other."
+      },
+      "duel_1_0": {
+        "label": "Per duel 1 · 0",
+        "description": "Every duel (game) won is worth 1 point, every one lost 0. A best of 3 that ends 2:1 is worth 2 points to the winner and 1 to the other."
       },
       "match": {
         "label": "Classic (3 · 0)",

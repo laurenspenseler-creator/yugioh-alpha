@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BYE_SCORINGS, SCORING_SYSTEMS } from '~~/shared/tournaments'
+import { BYE_SCORINGS, PLAN_SCORING_SYSTEMS } from '~~/shared/tournaments'
 import type { ByeScoring, ScoringSystem, TournamentDetail } from '~~/shared/tournaments'
 
 // How points are awarded (ADR 0031). Editable by the organizer until the
@@ -21,7 +21,7 @@ const isSaving = ref(false)
 const errorMessage = ref('')
 
 const scoringItems = computed(() =>
-  SCORING_SYSTEMS.map(value => ({ label: t(`tournaments.scoring.${value}.label`), value })))
+  PLAN_SCORING_SYSTEMS.map(value => ({ label: t(`tournaments.scoring.${value}.label`), value })))
 const byeScoringItems = computed(() =>
   BYE_SCORINGS.map(value => ({ label: t(`tournaments.byeScoring.${value}.label`), value })))
 
@@ -63,7 +63,7 @@ async function save(patch: { scoring?: ScoringSystem, byeScoring?: ByeScoring })
     <div class="grid gap-4 sm:grid-cols-2">
       <UFormField :label="t('tournaments.scoringPanel.scoring')">
         <USelect
-          :model-value="tournament.scoring"
+          :model-value="(tournament.scoring as typeof PLAN_SCORING_SYSTEMS[number])"
           :items="scoringItems"
           :disabled="isSaving"
           :aria-label="t('tournaments.scoringPanel.scoring')"

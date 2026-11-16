@@ -14,12 +14,6 @@
       "allSets": "Alle Sets",
       "reset": "Zurücksetzen"
     },
-    "sort": {
-      "label": "Sortierung",
-      "nameAsc": "Name A-Z",
-      "nameDesc": "Name Z-A",
-      "newest": "Neueste zuerst"
-    },
     "loadFailed": "Katalog konnte nicht geladen werden",
     "tryAgain": "Bitte versuche es erneut.",
     "reload": "Erneut laden",

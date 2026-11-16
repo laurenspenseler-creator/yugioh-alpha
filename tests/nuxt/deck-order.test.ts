@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cardCategoryRank, compareDeckRows, compareDeckRowsBy, DECK_SORTS, isDeckSort } from '~~/shared/deck-order'
+import { cardCategoryRank, compareDeckRows, compareDeckRowsBy, DECK_SORT_DEFAULT, isDeckSort, normalizeDeckSort } from '~~/shared/deck-order'
 import type { DeckSort } from '~~/shared/deck-order'
 
 // The deck-list order, shared by the server and the deck editor's optimistic rows (#148).
@@ -56,10 +56,75 @@ describe('compareDeckRowsBy', () => {
     expect(rows.sort((a, b) => compareDeckRowsBy('oldest', 'side', a, b, 'en')).map(row => row.name)).toEqual(['C', 'A', 'B'])
   })
 
-  it('knows its choices', () => {
-    expect(DECK_SORTS).toEqual(['default', 'newest', 'oldest'])
-    expect(isDeckSort('newest')).toBe(true)
-    expect(isDeckSort('random')).toBe(false)
+  it('knows its choices: the usual order, or a field of the card lists with a direction, and the old "newest" and "oldest"', () => {
+    expect(DECK_SORT_DEFAULT).toBe('default')
+    for (const value of ['default', 'newest', 'oldest', 'release', '-release', 'atk', '-def', 'level', 'name', '-name', 'type', '-scale']) {
+      expect(isDeckSort(value), value).toBe(true)
+    }
+    for (const value of ['random', '', '-', 'atk-', 'ATK', 'quantity', 'updated']) {
+      expect(isDeckSort(value), value).toBe(false)
+    }
     expect(isDeckSort(null)).toBe(false)
+  })
+
+  it('reads an old stored choice in the spelling of today', () => {
+    expect(normalizeDeckSort('newest')).toBe('-release')
+    expect(normalizeDeckSort('oldest')).toBe('release')
+    expect(normalizeDeckSort('-atk')).toBe('-atk')
+    expect(normalizeDeckSort('default')).toBe('default')
+    expect(normalizeDeckSort('sideways')).toBe('default')
+    expect(normalizeDeckSort(null)).toBe('default')
+  })
+})
+
+// Tester feedback, round 16: one sort for every card list, a field and a direction.
+describe('compareDeckRowsBy by every field', () => {
+  const row = (name: string, extra: Record<string, unknown> = {}) => ({ name, type: 'Effect Monster', frameType: 'effect', ...extra })
+  const names = (sort: string, rows: Array<ReturnType<typeof row>>, section: 'main' | 'extra' | 'side' = 'side') =>
+    [...rows].sort((a, b) => compareDeckRowsBy(sort, section, a, b, 'en')).map(card => card.name)
+
+  it('sorts by ATK and DEF, a card without one (a Spell) or with "?" (stored -1) last either way', () => {
+    const rows = [row('Spell', { type: 'Spell Card', frameType: 'spell', atk: null }), row('Weak', { atk: 500 }), row('Strong', { atk: 3000 }), row('Unknown', { atk: -1 })]
+
+    expect(names('atk', rows)).toEqual(['Weak', 'Strong', 'Spell', 'Unknown'])
+    expect(names('-atk', rows)).toEqual(['Strong', 'Weak', 'Spell', 'Unknown'])
+    const defs = [row('A', { def: 2000 }), row('B', { def: 100 }), row('C', { def: null })]
+    expect(names('def', defs)).toEqual(['B', 'A', 'C'])
+    expect(names('-def', defs)).toEqual(['A', 'B', 'C'])
+  })
+
+  it('sorts by level and by pendulum scale', () => {
+    const rows = [row('L4', { level: 4 }), row('L8', { level: 8 }), row('Link', { level: null }), row('L1', { level: 1 })]
+    expect(names('level', rows)).toEqual(['L1', 'L4', 'L8', 'Link'])
+    expect(names('-level', rows)).toEqual(['L8', 'L4', 'L1', 'Link'])
+
+    const scales = [row('S8', { scale: 8 }), row('None'), row('S0', { scale: 0 }), row('S3', { scale: 3 })]
+    expect(names('scale', scales)).toEqual(['S0', 'S3', 'S8', 'None'])
+    expect(names('-scale', scales)).toEqual(['S8', 'S3', 'S0', 'None'])
+  })
+
+  it('sorts by name in the card language, either way round', () => {
+    const rows = [row('Charlie', { nameDe: 'Zeta' }), row('Alpha', { nameDe: 'Mu' }), row('Bravo', { nameDe: 'Beta' })]
+    expect(names('name', rows)).toEqual(['Alpha', 'Bravo', 'Charlie'])
+    expect(names('-name', rows)).toEqual(['Charlie', 'Bravo', 'Alpha'])
+    expect([...rows].sort((a, b) => compareDeckRowsBy('name', 'main', a, b, 'de')).map(card => card.name)).toEqual(['Bravo', 'Alpha', 'Charlie'])
+  })
+
+  it('sorts by card type in the order of the game: Normal, Effekt, Ritual, Fusion ... Pendel ... Zauber, Falle', () => {
+    const rows = [
+      row('Trap', { type: 'Trap Card', frameType: 'trap' }),
+      row('Fusion', { type: 'Fusion Monster', frameType: 'fusion' }),
+      row('Spell', { type: 'Spell Card', frameType: 'spell' }),
+      row('Normal', { type: 'Normal Monster', frameType: 'normal' }),
+      row('Pendulum', { type: 'Pendulum Effect Monster', frameType: 'effect_pendulum' }),
+      row('Effect'),
+    ]
+    expect(names('type', rows)).toEqual(['Normal', 'Effect', 'Fusion', 'Pendulum', 'Spell', 'Trap'])
+    expect(names('-type', rows)).toEqual(['Trap', 'Spell', 'Pendulum', 'Fusion', 'Effect', 'Normal'])
+  })
+
+  it('keeps the usual order among cards that are level on the field', () => {
+    const same = [row('Zed', { atk: 1000 }), row('Abe', { atk: 1000 })]
+    expect(names('atk', same)).toEqual(['Abe', 'Zed'])
   })
 })

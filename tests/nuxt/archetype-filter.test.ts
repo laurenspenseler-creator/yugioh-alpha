@@ -3,14 +3,16 @@ import Database from 'better-sqlite3'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as schema from '../../server/db/schema'
 import { CATALOG_FIXTURE_IDS, seedCatalogFixture } from '../../server/db/fixtures/catalog-fixture'
 import { buildCardListWhere, parseCardListQuery } from '../../server/utils/catalog-query'
 import { getCatalogFacets, searchCatalog } from '../../server/utils/catalog-search'
 import { listOwnedCards, parseInventoryListQuery } from '../../server/utils/inventory'
 import { buildInventorySearchWhere, loadInventorySearchFacets, parseInventorySearchQuery } from '../../server/utils/inventory-search'
-import { ARCHETYPE_EXTRA_MEMBERS, extraArchetypesOf, extraMemberIds } from '../../shared/archetype-members'
+import { archetypesForMenu, buildArchetypeData, useArchetypeDataForTests } from '../../server/utils/archetype-data'
+import membersJson from '../../server/data/archetype-members.json'
+import namesDeJson from '../../shared/data/archetype-names-de.json'
 
 const ID = CATALOG_FIXTURE_IDS
 const now = new Date()
@@ -46,6 +48,8 @@ describe('the filter on a database', () => {
   let db: ReturnType<typeof createTestDb>
 
   beforeEach(() => {
+    // No data of the game here: every card keeps the archetype of the catalog, which is what these tests are about.
+    useArchetypeDataForTests({})
     db = createTestDb()
     db.insert(schema.user).values(['user-a', 'user-b'].map(id => ({
       id, name: id, email: `${id}@example.com`, emailVerified: false, createdAt: now, updatedAt: now,
@@ -66,6 +70,10 @@ describe('the filter on a database', () => {
       owned('o5', 'user-a', ATLANTIS_CARD),
       owned('x1', 'user-b', ID.stardustDragon),
     ]).run()
+  })
+
+  afterEach(() => {
+    useArchetypeDataForTests(undefined)
   })
 
   async function catalogNames(query: Record<string, string | string[]>) {
@@ -140,23 +148,32 @@ describe('the filter on a database', () => {
   })
 })
 
-// Tester feedback, round 15: "Magna Warrior" showed 2 cards. The game has 4 (Valkyrion, Berserkion, Tellusion, Plasma Warrior
-// Eitom); YGOPRODeck files two of them under "Magnet Warrior", and the Electromagnet Warriors etc. under "Magnet".
-describe('the Magna Warrior / Magnet Warrior family', () => {
+// Tester feedback, rounds 15 and 16: "Magna Warrior" showed 2 cards, and "Die Deckthemen passen immer noch nicht". The game has
+// several archetypes per card and a card need not carry the archetype's name; the catalog (YGOPRODeck) has one per card. The data
+// from Yugipedia (ADR 0049) decides for the cards it has, the catalog's archetype for the others.
+describe('the archetypes of the game (data from Yugipedia)', () => {
   const VALKYRION = 75347539
   const BERSERKION = 42901635
   const TELLUSION = 24431911
   const EITOM = 45700805
   const ALPHA = 99785935 // Alpha The Magnet Warrior
-  const ALPHA_ELECTRO = 42023223 // Alpha The Electromagnet Warrior, filed under "Magnet"
+  const ALPHA_ELECTRO = 42023223 // Alpha The Electromagnet Warrior
   const MAGNETIC_FIELD = 4740489 // a "Magnet" spell, not a monster of the family
+  const NEWCOMER = 770000042 // newer than the data: not in it
 
   let db: ReturnType<typeof createTestDb>
 
   beforeEach(() => {
+    // What the data says: the four Magna Warriors, the Magnet Warrior monsters (Valkyrion is not one of them), the "Magnet" theme.
+    useArchetypeDataForTests({
+      'Magna Warrior': [VALKYRION, BERSERKION, TELLUSION, EITOM],
+      'Magnet Warrior': [ALPHA, ALPHA_ELECTRO],
+      'Magnet': [ALPHA_ELECTRO, MAGNETIC_FIELD],
+    })
     db = createTestDb()
     db.insert(schema.user).values({ id: 'user-a', name: 'a', email: 'a@example.com', emailVerified: false, createdAt: now, updatedAt: now }).run()
-    const card = (id: number, name: string, archetype: string) => ({
+    // What the catalog says (YGOPRODeck, one archetype per card): it files Valkyrion and Berserkion under "Magnet Warrior".
+    const card = (id: number, name: string, archetype: string | null) => ({
       id, name, type: 'Effect Monster', frameType: 'effect', desc: '', archetype, syncedAt: now,
     })
     db.insert(schema.catalogCard).values([
@@ -167,7 +184,12 @@ describe('the Magna Warrior / Magnet Warrior family', () => {
       card(ALPHA, 'Alpha The Magnet Warrior', 'Magnet Warrior'),
       card(ALPHA_ELECTRO, 'Alpha The Electromagnet Warrior', 'Magnet'),
       card(MAGNETIC_FIELD, 'Magnetic Field', 'Magnet'),
+      card(NEWCOMER, 'A Newer Magnet Warrior', 'Magnet Warrior'),
     ]).run()
+  })
+
+  afterEach(() => {
+    useArchetypeDataForTests(undefined)
   })
 
   async function catalogNames(archetype: string | string[]) {
@@ -181,7 +203,7 @@ describe('the Magna Warrior / Magnet Warrior family', () => {
     }))).run()
   }
 
-  it('gives "Magna Warrior" all four Magna Warriors, the two the catalog files elsewhere included', async () => {
+  it('gives "Magna Warrior" all four Magna Warriors, the two the catalog files under "Magnet Warrior" included', async () => {
     expect(await catalogNames('Magna Warrior')).toEqual([
       'Berserkion the Electromagna Warrior',
       'Plasma Warrior Eitom',
@@ -190,18 +212,24 @@ describe('the Magna Warrior / Magnet Warrior family', () => {
     ])
   })
 
-  it('gives "Magnet Warrior" its monsters, also the ones filed under "Magnet", but no spell of the "Magnet" theme', async () => {
+  it('takes a card out of the archetype the catalog files it under when the data says otherwise', async () => {
     const names = await catalogNames('Magnet Warrior')
 
-    expect(names).toContain('Alpha The Magnet Warrior')
+    // The data has Alpha The Electromagnet Warrior in it although the catalog says "Magnet" ...
     expect(names).toContain('Alpha The Electromagnet Warrior')
-    expect(names).not.toContain('Magnetic Field')
-    // What the catalog says stays: a card is still under its own archetype too.
-    expect(names).toContain('Valkyrion the Magna Warrior')
+    expect(names).toContain('Alpha The Magnet Warrior')
+    // ... and not Valkyrion, which the catalog files under "Magnet Warrior".
+    expect(names).not.toContain('Valkyrion the Magna Warrior')
   })
 
-  it('leaves the other archetypes as the catalog has them', async () => {
+  it('keeps the catalog\'s archetype for a card the data does not have', async () => {
+    expect(await catalogNames('Magnet Warrior')).toContain('A Newer Magnet Warrior')
+    expect(await catalogNames('Magna Warrior')).not.toContain('A Newer Magnet Warrior')
+  })
+
+  it('puts a card in all the archetypes the data names it in', async () => {
     expect(await catalogNames('Magnet')).toEqual(['Alpha The Electromagnet Warrior', 'Magnetic Field'])
+    expect((await catalogNames('Magnet Warrior')).includes('Alpha The Electromagnet Warrior')).toBe(true)
   })
 
   it('takes both archetypes at once without a card twice (the German menu picks both for "Magnetkrieger")', async () => {
@@ -209,6 +237,7 @@ describe('the Magna Warrior / Magnet Warrior family', () => {
 
     expect(names).toHaveLength(new Set(names).size)
     expect(names).toEqual([
+      'A Newer Magnet Warrior',
       'Alpha The Electromagnet Warrior',
       'Alpha The Magnet Warrior',
       'Berserkion the Electromagna Warrior',
@@ -234,22 +263,62 @@ describe('the Magna Warrior / Magnet Warrior family', () => {
     expect(gallery).toEqual(['Valkyrion the Magna Warrior'])
   })
 
-  it('offers an owned card\'s extra archetypes in the menu of the inventory, and no one that nobody owns', () => {
-    own(VALKYRION, ALPHA_ELECTRO)
+  it('lists the archetypes of the catalog for the menu: the data\'s for the cards it has, the catalog\'s for the others', async () => {
+    const { archetypes } = await getCatalogFacets(db)
 
-    expect(loadInventorySearchFacets(db, 'user-a').archetypes).toEqual(['Magna Warrior', 'Magnet', 'Magnet Warrior'])
+    expect(archetypes).toEqual(['Magna Warrior', 'Magnet', 'Magnet Warrior'])
   })
 
-  it('knows the extra members: ids only once, only whole numbers, and each card under the archetypes it is added to', () => {
-    for (const [name, ids] of Object.entries(ARCHETYPE_EXTRA_MEMBERS)) {
-      expect(new Set(ids).size, name).toBe(ids.length)
-      expect(ids.every(id => Number.isInteger(id) && id > 0), name).toBe(true)
+  it('offers an owned card\'s archetypes in the menu of the inventory, the game\'s own, and none that nobody owns', () => {
+    own(VALKYRION, ALPHA_ELECTRO)
+
+    // Valkyrion: "Magna Warrior" only (the catalog says "Magnet Warrior"); Alpha Electromagnet: "Magnet" and "Magnet Warrior".
+    expect(loadInventorySearchFacets(db, 'user-a').archetypes).toEqual(['Magna Warrior', 'Magnet', 'Magnet Warrior'])
+    expect(loadInventorySearchFacets(db, 'nobody').archetypes).toEqual([])
+  })
+
+  it('has no filter for an archetype that has no cards', async () => {
+    expect(await catalogNames('No Such Theme')).toEqual([])
+  })
+})
+
+describe('the data of the archetypes', () => {
+  const data = buildArchetypeData({ 'A': [1, 2], 'B': [2, 3], 'C': [] })
+
+  it('knows the cards of the archetypes, each once, and the archetypes of a card', () => {
+    expect(data.names).toEqual(['A', 'B', 'C'])
+    expect(data.memberIds(['A', 'B']).sort()).toEqual([1, 2, 3])
+    expect(data.memberIds(['Nope'])).toEqual([])
+    expect(data.memberIds([])).toEqual([])
+    expect(data.archetypesOf(2)).toEqual(['A', 'B'])
+    expect(data.archetypesOf(99)).toEqual([])
+    expect(data.coveredIds).toEqual(new Set([1, 2, 3]))
+    expect(JSON.parse(data.coveredIdsJson).sort()).toEqual([1, 2, 3])
+  })
+
+  it('takes the data\'s archetypes for a card it has and the catalog\'s for one it lacks', () => {
+    expect(archetypesForMenu(data, 2, 'Z')).toEqual(['A', 'B'])
+    expect(archetypesForMenu(data, 99, 'Z')).toEqual(['Z'])
+    expect(archetypesForMenu(data, 99, null)).toEqual([])
+    expect(archetypesForMenu(data, 99, undefined)).toEqual([])
+  })
+
+  it('is what the shipped file says: the four Magna Warriors, no leftovers of the wiki\'s titles, German names for most', () => {
+    const members = membersJson as unknown as Record<string, number[]>
+    const names = Object.keys(members)
+
+    expect(members['Magna Warrior']!.sort()).toEqual([24431911, 42901635, 45700805, 75347539])
+    // "Dark Magician (archetype)" is "Dark Magician"; an archetype of the anime only is none.
+    expect(names.filter(name => /\((archetype|series|anime)\)/i.test(name))).toEqual([])
+    expect(names.length).toBeGreaterThan(800)
+    for (const ids of Object.values(members)) {
+      expect(ids.every(id => Number.isInteger(id) && id > 0)).toBe(true)
     }
-    expect(extraMemberIds(['Magna Warrior']).sort()).toEqual([VALKYRION, BERSERKION].sort())
-    expect(extraMemberIds(['Blue-Eyes'])).toEqual([])
-    expect(extraMemberIds([])).toEqual([])
-    expect(extraArchetypesOf(VALKYRION)).toEqual(['Magna Warrior'])
-    expect(extraArchetypesOf(ALPHA_ELECTRO)).toEqual(['Magnet Warrior'])
-    expect(extraArchetypesOf(1)).toEqual([])
+    const german = namesDeJson as Record<string, string>
+    expect(Object.keys(german).length).toBeGreaterThan(700)
+    // Every German name is of an archetype that has cards.
+    expect(Object.keys(german).filter(name => !members[name])).toEqual([])
+    expect(german['Magna Warrior']).toBe('Magnetkrieger')
+    expect(german['Magnet Warrior']).toBe('Magnetkrieger')
   })
 })

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import {
+  DEFAULT_EVENING_SCORING,
+  EVENING_SCORING_SYSTEMS,
   MAX_PARTICIPANTS,
   PARTICIPANT_NAME_MAX_LENGTH,
-  SCORING_SYSTEMS,
+  PLAN_SCORING_SYSTEMS,
   TOURNAMENT_DESCRIPTION_MAX_LENGTH,
   TOURNAMENT_NAME_MAX_LENGTH,
 } from '~~/shared/tournaments'
@@ -44,7 +46,8 @@ const formatItems = computed(() => [
 
 const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
 const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`tournaments.queue.bestOf.${choice}.label`), value: choice })))
-const scoringItems = computed(() => SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
+// A Spielabend counts every duel won (3 or 1 point), the other modes their matches.
+const scoringItems = computed(() => (isFree.value ? EVENING_SCORING_SYSTEMS : PLAN_SCORING_SYSTEMS).map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
 
 // Every new tournament is played in Spieltage (ADR 0043): a plan by days, no tables, no queue. Everybody gets the
 // same choices: the mode (round robin, Champions League, Swiss), a head start for the Swiss system, best of 1 or 3
@@ -66,6 +69,15 @@ const form = reactive({
 // (what the classic scoring says). The choice is shown as that and cannot be changed until the duel is best of 3.
 // A Spielabend (mode "free") has single games and best-of-3 duels side by side, so the scoring by games stays available there.
 const isFree = computed(() => form.mode === 'free')
+// Changing to or from a Spielabend takes the scoring of the new mode (the others do not fit it).
+watch(isFree, (free) => {
+  if (free && !(EVENING_SCORING_SYSTEMS as readonly string[]).includes(form.scoring)) {
+    form.scoring = DEFAULT_EVENING_SCORING
+  }
+  else if (!free && !(PLAN_SCORING_SYSTEMS as readonly string[]).includes(form.scoring)) {
+    form.scoring = 'games'
+  }
+})
 const singleGame = computed(() => form.bestOf === 1 && !isFree.value)
 const effectiveScoring = computed<ScoringSystem>(() => singleGame.value ? 'match' : form.scoring)
 

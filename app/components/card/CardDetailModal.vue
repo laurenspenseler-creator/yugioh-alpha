@@ -8,8 +8,8 @@
  *   when a card has no German text (ADR 0015).
  * - `variant="catalog"` adds the English-name subtitle, the printings and
  *   the TCG/OCG release dates; `variant="deck"` (the deck editor) is the
- *   catalog view without the printings; `variant="inventory"` shows only
- *   the card.
+ *   catalog view without the printings; `variant="inventory"` shows the card and its printings
+ *   (tester feedback, round 16: "Im Inventar kannst du auch die Sets anzeigen").
  * - The caller adds its own sections through the `context` slot (before the
  *   card text: the inventory's editor is the overlay's main job there, and
  *   on phones it shouldn't sit below the whole text) and its buttons through
@@ -82,7 +82,7 @@ const summary = computed<CardDetailSummary | null>(() => {
 
 // What each variant adds to the card (#88; `deck`: owner feedback in #148, printings don't matter for a deck).
 const showEnglishName = computed(() => props.variant !== 'inventory')
-const showPrintings = computed(() => props.variant === 'catalog')
+const showPrintings = computed(() => props.variant !== 'deck')
 const showDates = computed(() => props.variant !== 'inventory')
 
 const subtitle = computed(() => showEnglishName.value && shown.value ? englishName(shown.value) : null)
@@ -93,7 +93,7 @@ const showGermanHint = computed(() => cardLocale.value === 'de' && detail.value 
 // from `md` up and does not scroll as a whole: the card text and the list of sets scroll on their own ("bei den Sets
 // scrollen, nicht im ganzen Kartenanzeige-Fenster"). The other views scroll as one, their caller's editor decides the height.
 const ui = computed(() => showPrintings.value
-  ? { content: 'sm:max-w-6xl md:h-[min(54rem,calc(100dvh-2rem))]', body: 'md:overflow-hidden', header: 'shrink-0', wrapper: 'min-w-0 flex-1 pe-10' }
+  ? { content: 'sm:max-w-6xl md:h-[min(56rem,calc(100dvh-2rem))]', body: 'md:overflow-hidden', header: 'shrink-0', wrapper: 'min-w-0 flex-1 pe-10' }
   : { content: 'sm:max-w-5xl', header: 'shrink-0', wrapper: 'min-w-0 flex-1 pe-10' })
 
 // An alias id loads its canonical card (ADR 0023). Only a fresh detail
@@ -248,7 +248,7 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
           <section
             v-else
             :aria-busy="pending"
-            :class="showPrintings ? 'md:max-h-[42%] md:shrink-0 md:overflow-y-auto md:pe-2' : undefined"
+            :class="showPrintings ? 'md:min-h-0 md:flex-1 md:overflow-y-auto md:pe-2' : undefined"
             data-testid="card-text-section"
           >
             <h3 class="text-sm font-semibold text-highlighted">
@@ -262,7 +262,7 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
             </p>
             <p
               v-if="detail"
-              class="mt-2 whitespace-pre-line break-words text-sm leading-6 text-default"
+              class="mt-2 whitespace-pre-line break-words text-base leading-7 text-default md:text-[1.0625rem]"
             >
               {{ cardDesc(detail.card) }}
             </p>
@@ -280,25 +280,25 @@ const hasDates = computed(() => Boolean(detail.value?.card.tcgDate || detail.val
             <!-- The sets scroll in their own box; the rest of the window stands still. Below `md` the whole window scrolls. -->
             <section
               v-if="showPrintings && detail.printings.length > 0"
-              class="md:flex md:min-h-0 md:flex-1 md:flex-col"
+              class="md:flex md:shrink-0 md:flex-col"
               data-testid="printings-section"
             >
               <h3 class="shrink-0 text-sm font-semibold text-highlighted">
                 {{ t('card.detail.printings') }}
               </h3>
               <ul
-                class="mt-2 divide-y divide-default overflow-y-auto rounded-lg border border-default max-md:max-h-80 md:min-h-0 md:flex-1"
+                class="mt-2 max-h-32 divide-y divide-default overflow-y-auto rounded-lg border border-default md:max-h-36"
                 data-testid="printings-list"
               >
                 <li
                   v-for="printing in detail.printings"
                   :key="printing.setCode"
-                  class="p-3 text-sm"
+                  class="px-3 py-1.5 text-xs"
                 >
                   <p class="font-medium break-words text-highlighted">
                     {{ printing.setName }}
                   </p>
-                  <p class="mt-1 break-words text-muted">
+                  <p class="break-words text-muted">
                     {{ printing.setCode }}
                     <template v-if="printing.rarity">
                       · {{ printing.rarity }}

@@ -110,6 +110,8 @@ export interface DeckCardRow {
   imageSmall: string | null
   /** When the card first came out in the TCG (`YYYY-MM-DD`); null for a card that is OCG only. The deck editor can sort by it. */
   tcgDate: string | null
+  /** A Pendulum monster's scale; null for every other card. The deck editor can sort by it. */
+  scale: number | null
   section: DeckSection
   quantity: number
   /** Copies the user owns in total, across all collections. */
@@ -597,6 +599,7 @@ function loadDeckCardRows(db: Db, userId: string, deckId: string): DeckCardRow[]
       def: catalogCard.def,
       imageSmall: primaryImageUrlSql('imageUrlSmall'),
       tcgDate: catalogCard.tcgDate,
+      scale: catalogCard.scale,
       retiredAt: catalogCard.retiredAt,
     })
     .from(deckCard)

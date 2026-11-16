@@ -74,7 +74,9 @@ Field Spell, Tribut = Tribute, Kosten = cost, Material = material, Kontrolle
 übernehmen = take/gain control, Kampfschaden = battle damage, Effektschaden =
 effect damage, Spielzug = turn, Hand = hand, Extra Deck = Extra Deck.
 
-## Rules (verbatim; "Testfassung", rule 8 as of v3.1)
+## Rules (verbatim; "Testfassung", changed by Classic Plus v3.1 of 16 November 2026, ADR 0045 and 0050)
+
+**Interpretation (Ä16, comes before every rule).** Every rule has a purpose, and the purpose is part of the rule. Inside the purpose the effect counts, not the wording: it does not matter who acts or which verb the card uses (a card that makes the opponent discard, Tribute or give away cards removes them itself). Outside the purpose a rule does not apply, even if the wording fits.
 
 Rules 1 and 2 are listed for context only. The tiers of Classic Plus v3.1 (Ä2 to
 Ä4: limit 2 for a body or own costs, back to 1 for no real answer, one step milder
@@ -89,8 +91,8 @@ classification of a new card can leave `traits` out, the re-check adds them.
 Effekttext erwähnen.
 
 **3 — FLOODGATES.** Floodgate: ein Dauereffekt, der eine Handlungsklasse des
-Gegners einschränkt — ob durch Verbot, Verzögerung, Kosten oder Zwang, ist
-unerheblich. Handlungsklassen sind unter anderem: beschwören, Karten
+Gegners einschränkt — ob durch Verbot, Verzögerung, Kosten, Zwang oder Umleitung,
+ist unerheblich (Ä6). Handlungsklassen sind unter anderem: beschwören, Karten
 aktivieren, angreifen, Effekte nutzen, Karten zwischen Zonen bewegen,
 Kampfposition wählen.
 Prüfschritte von oben, der erste zutreffende gilt:
@@ -106,12 +108,9 @@ Prüfschritte von oben, der erste zutreffende gilt:
    Handlungsklasse (Stufe, ATK, Typ, Eigenschaft)? → LIMIT 1
 4. Sonst → VERBOTEN
 
-**4 — HANDTRAPS.** Handtrap: ein Monstereffekt, der von der Hand aus im
-Spielzug des Gegners aktiviert werden kann. VERBOTEN, wenn er eine Aktion des
-Gegners annulliert oder verhindert, oder eine Karte aus einer beliebigen Zone
-entfernt, ausgenommen diese Karte selbst. Ausnahme, die dem Verbot vorgeht:
-Effekte, die ausschließlich in der Battle Phase oder gegen Kampfschaden wirken,
-sind erlaubt und unlimitiert.
+**4 — HANDTRAPS.** Handtrap: ein Effekt, der von der Hand aus im Spielzug des
+Gegners aktiviert werden kann — gleichgültig ob Monster-, Zauber- oder Fallenkarte
+(Ä17; eine Fallenkarte, die ausdrücklich 
 
 **5 — LIMIT 1.** Ziehkarten. Suchen zählt nicht als Ziehen. Ziehen greift auf
 ungespielte Ressourcen zu, Wiederherstellung auf verbrauchte. Karten, die
@@ -119,15 +118,23 @@ Verlorenes aus dem Friedhof auf die Hand zurückholen, erzeugen zwar rechnerisch
 Kartenvorteil, aber keinen Zuwachs. Sie fallen nicht unter Regel 5.
 
 **6 — SCHADEN, LIMIT 1.**
-(a) Effektschaden als primäre Funktion. Schaden ist primär, wenn die Karte
-Schaden zufügt, ohne dafür den Zustand des Spielfelds zu verändern. Das bloße
-Ablesen des Spielfelds (Karten zählen) ist keine Veränderung. Wird der Schaden
-dadurch ausgelöst, dass eine Karte zerstört, beschworen oder ein Kampf
-ausgetragen wird, ist er Nebenprodukt.
-(b) Vervielfachung von Kampfschaden.
+(a) Effektschaden als primäre Funktion, flach bei Limit 1, ohne Stufung. Schaden ist
+primär, wenn die Karte Schaden zufügt, ohne dafür den Zustand des Spielfelds zu
+verändern. Das bloße Ablesen des Spielfelds (Karten zählen) ist keine Veränderung.
+Wird der Schaden dadurch ausgelöst, dass eine Karte zerstört, beschworen oder ein
+Kampf ausgetragen wird, ist er Nebenprodukt. Eine Veränderung des Spielfelds zählt
+nur, wenn sie Karten des Gegners betrifft (Ä8): wer nur eigene Karten in Schaden
+umwandelt, fügt primär Schaden zu.
+(b) Vervielfachung von Kampfschaden oder ATK, mit der Stufung (Ä5).
+Regel 6 gilt sinngemäß für das Abbauen des gegnerischen Decks (Ä14): reine Burn-
+und Mill-Karten stehen auf 1, wiederholbare auf Verbot, Karten mit angreifbarem
+Körper auf 2.
 
-**7 — PREISUMGEHUNG, LIMIT 1.** Karten, die Spielfeldpräsenz verschaffen, ohne
-den regulären Preis dafür zu zahlen:
+**7 — PREISUMGEHUNG, LIMIT 1.** Regel 7 greift nur, wenn die Karte Spielfeldpräsenz
+verschafft, ohne den regulären Preis dafür zu zahlen. Wer den vollen Preis zahlt,
+fällt nicht unter Regel 7, auch wenn (a) bis (e) dem Wortlaut nach passen (Ä9: ein
+Ritualmonster, das Ritualzauber und Tributmaterial bezahlt, ist kein Fall). Karten,
+die Spielfeldpräsenz verschaffen:
 (a) die Kontrolle über Karten übernehmen, die der Gegner kontrolliert
 (b) Monster aus einem Friedhof oder aus der verbannten Zone auf das Spielfeld
 zurückholen. Das gilt auch, wenn ein Monster sich selbst zurückholt.
@@ -135,15 +142,18 @@ zurückholen. Das gilt auch, wenn ein Monster sich selbst zurückholt.
 aufgeführte Material vollständig abzugeben. Dass die Beschwörung als
 Fusionsbeschwörung behandelt wird, ändert daran nichts.
 (d) für eine Fusionsbeschwörung Material aus dem Deck verwenden
-Die Überschrift erklärt, warum (a) bis (d) zusammengehören. Entschieden wird
-ausschließlich über (a) bis (d).
+(e) Monster aus dem Deck auf das Spielfeld beschwören (Ä13; der Code ist 7e)
+Entschieden wird über (a) bis (e); die Überschrift gibt den Zweck an (Ä9).
 
 **8 — MASSENREMOVAL, LIMIT 1.** Karten, die mehr als 1 Karte des Gegners vom
 Spielfeld entfernen können — zerstören, auf den Friedhof legen, verbannen, auf
 Hand oder Deck zurück, als Tribut. Der Wortlaut ist egal. Es zählt das
 Potenzial, nicht der Spielstand. Was der aktivierende Spieler selbst als
 Kosten, Material oder Tribut abgibt, zählt nicht. Regel 8 gilt auch für
-Extra-Deck-Monster (v3.1, Ä1: die frühere Ausnahme entfällt ersatzlos).
+Extra-Deck-Monster (v3.1, Ä1: die frühere Ausnahme entfällt ersatzlos). Es ist gleichgültig,
+wer die Karten entfernt und welches Verb die Karte benutzt (Ä11): eine Karte, die den
+Gegner abwerfen, tributieren oder abgeben lässt, entfernt sie im Sinne dieser Regel
+selbst. Das gilt auch für das Deck des Gegners (Mill).
 
 **9 — SCHUTZ.** Karten, die bewirken, dass ein Monster einen der folgenden
 Zustände hat — unabhängig davon, ob die Karte selbst das betroffene Monster
@@ -160,6 +170,17 @@ Standby Phase, Main Phase oder seine reguläre Normalbeschwörung nehmen. LIMIT 
 als einmaliger Effekt. VERBOTEN, wenn sie das in aufeinanderfolgenden
 Spielzügen wiederholt tun können. Was der Kontrolleur sich selbst als Kosten
 auferlegt, zählt nicht. Die Battle Phase steht bewusst nicht in dieser Liste.
+
+**12 — ALTERNATIVE SIEGBEDINGUNGEN (Ä12, v3.1).**
+Teil 1. Karten, die das Duell gewinnen, ohne die LP des Gegners auf 0 zu bringen,
+sowie die Karten, die eine solche Siegbedingung namentlich voraussetzen, sind
+limitiert auf 1. VERBOTEN, wenn die Bedingung nach ihrer Aktivierung durch nichts
+mehr unterbrochen werden kann, was der Gegner auf dem Spielfeld beseitigen könnte.
+Teil 2. Karten, die gezielt Bestandteile einer alternativen Siegbedingung suchen,
+wiederherstellen oder zwischen Zonen bewegen, sind ebenfalls limitiert auf 1. Die
+allgemeine Freistellung von Suchkarten gilt hier nicht. Die Karte muss die
+Siegbedingung oder ihre Bestandteile namentlich nennen; generische Karten, die sich
+dafür verwenden lassen, sind nicht gemeint.
 
 ## Notes on applying the rules
 
@@ -178,3 +199,7 @@ auferlegt, zählt nicht. Die Battle Phase steht bewusst nicht in dieser Liste.
 - Rule 9 counts both self-protection and granting protection to other
   monsters.
 - Do not treat searching (adding from Deck to hand) as drawing (rule 5).
+- Own costs (trait cost, Ä10) are cards given away, Tributes or Summons; Life Points do not count (LP are cheap in this format).
+- A face-down Flip effect is not an attackable body (Ä15): the normal answer, attacking it, pays the effect instead of preventing it.
+- The frequency modifier does not apply when every repetition costs a card of the player's own field (Ä7): whoever burns their own board limits themselves.
+- Rule 12 and rule 7(e) are new: report them with the codes 12 and 7e.

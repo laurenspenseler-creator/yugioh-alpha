@@ -141,11 +141,41 @@ describe('CardDetailModal', () => {
 
     // Wide and tall (it was 3xl before), and the body does not scroll on its own on a desktop.
     expect(dialog().classes().join(' ')).toContain('sm:max-w-6xl')
-    expect(dialog().classes().join(' ')).toContain('md:h-[min(54rem,calc(100dvh-2rem))]')
+    expect(dialog().classes().join(' ')).toContain('md:h-[min(56rem,calc(100dvh-2rem))]')
     expect(dialog().find('[data-slot="body"]').classes()).toContain('md:overflow-hidden')
     // The printings have their own scroll area, the card text too.
     expect(dialog().find('[data-testid="printings-list"]').classes()).toContain('overflow-y-auto')
     expect(dialog().find('[data-testid="card-text-section"]').classes().join(' ')).toContain('md:overflow-y-auto')
+  })
+
+  // Tester feedback, round 16: "Mach den Effekttext größer und das Setfeld kleiner."
+  it('gives the card text the room and a bigger type, and the sets a small box of their own', async () => {
+    const printings = Array.from({ length: 40 }, (_, index) => ({ setCode: `SET-${index}`, setName: `Set ${index}`, rarity: 'Rare', price: null }))
+    await mountModal({ detail: cardDetail({}, { printings }) })
+    await vi.waitFor(() => {
+      expect(dialog().text()).toContain('SET-39')
+    })
+
+    const text = dialog().find('[data-testid="card-text-section"] p.whitespace-pre-line')
+    expect(text.classes()).toContain('text-base')
+    expect(text.classes()).not.toContain('text-sm')
+    // The text takes what is left of the window; the sets are a short list that scrolls.
+    expect(dialog().find('[data-testid="card-text-section"]').classes()).toContain('md:flex-1')
+    const list = dialog().find('[data-testid="printings-list"]')
+    expect(list.classes().join(' ')).toMatch(/max-h-32/)
+    expect(list.classes().join(' ')).toMatch(/md:max-h-36/)
+    expect(list.classes()).toContain('overflow-y-auto')
+    expect(dialog().find('[data-testid="printings-section"]').classes()).toContain('md:shrink-0')
+  })
+
+  it('shows the sets of the inventory\'s card window in the same small box', async () => {
+    await mountModal({ props: { variant: 'inventory' } })
+    await vi.waitFor(() => {
+      expect(dialog().text()).toContain('LOB-001')
+    })
+
+    expect(dialog().find('[data-testid="printings-list"]').exists()).toBe(true)
+    expect(dialog().classes().join(' ')).toContain('sm:max-w-6xl')
   })
 
   it('shows a "?" stat (stored as -1) as "?" and a missing one (a Link\'s DEF) as a dash (#134)', async () => {
@@ -255,7 +285,7 @@ describe('CardDetailModal', () => {
     expect(text).not.toContain('There is no German text')
   })
 
-  it('inventory: the card and the caller\'s context, no English name, printings or dates', async () => {
+  it('inventory: the card, the caller\'s context and the sets, no English name or dates', async () => {
     await mountModal({ props: { variant: 'inventory' } })
 
     await vi.waitFor(() => {
@@ -266,8 +296,9 @@ describe('CardDetailModal', () => {
     expect(text).toContain('Normales Monster')
     expect(text).toContain('Kontextbereich')
     expect(text).not.toContain('Englisch:')
-    expect(text).not.toContain('Printings')
-    expect(text).not.toContain('LOB-001')
+    // The sets the card came out in are shown here too (tester feedback, round 16: "Im Inventar kannst du auch die Sets anzeigen").
+    expect(text).toContain('Printings')
+    expect(text).toContain('LOB-001')
     expect(text).not.toContain('2002-03-08')
 
     // The caller's context comes before the card text (#135): the

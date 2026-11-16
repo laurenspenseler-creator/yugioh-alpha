@@ -1,6 +1,7 @@
 import { and, eq, inArray, or, sql, type SQL } from 'drizzle-orm'
 import { catalogCard, catalogPrinting, ownedCard } from '../db/schema'
 import { archetypeClause } from './archetype-clause'
+import { readSortValue } from './card-sort-sql'
 import { activeCatalogCard, cardNameMatches, cardTextMatches } from './card-name-search'
 import { cardKindClause, cardKindExcludeClause, parseCardKinds } from './card-kind-sql'
 import { legalityClause, parseFormatLegalityQuery } from './format-legality'
@@ -8,7 +9,8 @@ import { parseQueryFlag } from './query-flag'
 import type { CardKind } from '../../shared/card-kind'
 import type { FormatLegality } from '../../shared/format-legality'
 
-export type CatalogSort = 'name' | '-name' | 'newest'
+/** A field of `shared/card-sort.ts`, "-" in front for descending (`name`, `-atk`, `-release`); the old `newest` is read as `-release`. */
+export type CatalogSort = string
 
 export interface CardListQuery {
   q: string
@@ -40,7 +42,6 @@ export type RawCardListQuery = Record<string, RawQueryValue>
 
 const DEFAULT_PAGE_SIZE = 24
 const MAX_PAGE_SIZE = 60
-const SORTS = new Set<CatalogSort>(['name', '-name', 'newest'])
 
 function getValues(value: RawQueryValue): string[] {
   const values = Array.isArray(value) ? value : [value]
@@ -89,7 +90,7 @@ export function parseCardListQuery(rawQuery: RawCardListQuery): CardListQuery {
       .map(value => Number.parseInt(value, 10))
       .filter(Number.isFinite),
     setId: getFirst(rawQuery.setId),
-    sort: sort && SORTS.has(sort as CatalogSort) ? sort as CatalogSort : 'name',
+    sort: readSortValue(sort),
     page,
     pageSize: Math.min(requestedPageSize, MAX_PAGE_SIZE),
   }

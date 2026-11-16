@@ -2,6 +2,8 @@
 // every deck response) and the deck editor (which slots an optimistic row in
 // before the answer arrives, #148). Pure, no Vue, no Drizzle.
 import { compareCardNames } from './card-text'
+import { CARD_SORT_FIELDS, compareCardsByField, parseSortValue, sortValueOf } from './card-sort'
+import type { SortableCard } from './card-sort'
 import type { AppLocale } from './locale'
 import type { DeckSection } from './deck-sections'
 
@@ -33,41 +35,37 @@ export function compareDeckRows(section: DeckSection, a: DeckOrderRow, b: DeckOr
 }
 
 /**
- * How the deck editor lists the cards of a section (tester feedback, round 13): the conventional order above, or by the
- * date the card first came out in the TCG, newest or oldest first.
+ * How the deck editor lists the cards of a section: the conventional order above (`default`), or by a field and a direction
+ * like every card list (shared/card-sort.ts: `release`, `-atk`, `name`, ...; tester feedback, rounds 13 and 16). The first
+ * version only knew `newest` and `oldest`: they still read as `-release` and `release`.
  */
-export type DeckSort = 'default' | 'newest' | 'oldest'
+export type DeckSort = string
 
-export const DECK_SORTS = ['default', 'newest', 'oldest'] as const
+export const DECK_SORT_DEFAULT = 'default'
 
 export function isDeckSort(value: unknown): value is DeckSort {
-  return typeof value === 'string' && (DECK_SORTS as readonly string[]).includes(value)
+  return value === DECK_SORT_DEFAULT || parseSortValue(value, CARD_SORT_FIELDS) !== undefined
 }
 
-export interface DeckDatedRow extends DeckOrderRow {
+/** The sort in its current spelling (an old `newest` becomes `-release`); anything unknown is the conventional order. */
+export function normalizeDeckSort(value: unknown): DeckSort {
+  const choice = parseSortValue(value, CARD_SORT_FIELDS)
+  return choice ? sortValueOf(choice) : DECK_SORT_DEFAULT
+}
+
+export interface DeckDatedRow extends DeckOrderRow, Partial<Omit<SortableCard, 'name' | 'nameDe' | 'type'>> {
   /** `YYYY-MM-DD`, or null when the card has no TCG release date (an OCG-only card). */
   tcgDate?: string | null
 }
 
 /**
- * The order of two rows of a section under `sort`. By date, a card without one comes last whichever way it goes, and
- * cards of the same day (a whole set comes out at once) keep the conventional order among themselves.
+ * The order of two rows of a section under `sort`. By a field, a card without a value comes last whichever way it goes, and
+ * cards that are level (a whole set comes out at once) keep the conventional order among themselves.
  */
 export function compareDeckRowsBy(sort: DeckSort, section: DeckSection, a: DeckDatedRow, b: DeckDatedRow, cardLocale: AppLocale): number {
-  if (sort === 'default') {
+  const choice = parseSortValue(sort, CARD_SORT_FIELDS)
+  if (!choice) {
     return compareDeckRows(section, a, b, cardLocale)
   }
-  const dateA = a.tcgDate || null
-  const dateB = b.tcgDate || null
-  if (dateA !== dateB) {
-    if (dateA === null) {
-      return 1
-    }
-    if (dateB === null) {
-      return -1
-    }
-    // ISO dates compare as text.
-    return (dateA < dateB ? -1 : 1) * (sort === 'newest' ? -1 : 1)
-  }
-  return compareDeckRows(section, a, b, cardLocale)
+  return compareCardsByField(choice, a, b, cardLocale) || compareDeckRows(section, a, b, cardLocale)
 }

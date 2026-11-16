@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { getQuery } from 'h3'
 import { useDb } from '../../../db'
@@ -13,26 +13,16 @@ import {
 import type { InventorySearchSort } from '../../../utils/inventory-search'
 import { legalityCardIds } from '../../../utils/format-legality'
 import { requireUser } from '../../../utils/session'
-import { cardSortKey } from '../../../utils/card-translation-sql'
+import { cardSortOrderBy } from '../../../utils/card-sort-sql'
 import { resolveCardLocale } from '../../../utils/ui-locale'
 import type { AppLocale } from '../../../../shared/locale'
 
 const totalQuantitySql = sql<number>`sum(${ownedCard.quantity})`
 
-// "By name" sorts by the name in the card language (ADR 0015).
+// "By name" sorts by the name in the card language (ADR 0015); the sort values are the same everywhere (shared/card-sort.ts),
+// the gallery adds the number of copies owned.
 function buildOrderBy(sort: InventorySearchSort, cardLocale: AppLocale): SQL[] {
-  const nameKey = cardSortKey(cardLocale)
-  switch (sort) {
-    case '-name':
-      return [desc(nameKey)]
-    case 'quantity':
-      return [desc(totalQuantitySql), asc(nameKey)]
-    case 'newest':
-      return [desc(catalogCard.tcgDate)]
-    case 'name':
-    default:
-      return [asc(nameKey)]
-  }
+  return cardSortOrderBy(sort, cardLocale, { quantity: totalQuantitySql })
 }
 
 export default defineEventHandler(async (event) => {

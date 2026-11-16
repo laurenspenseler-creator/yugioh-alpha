@@ -13,7 +13,7 @@ import { cardFrame } from '~~/shared/card-frame'
 import { CARD_KINDS } from '~~/shared/card-kind'
 import { UNASSIGNED_COLLECTION_ID } from '~~/shared/inventory'
 import { deckBreakdownGroups } from '~~/shared/deck-breakdown'
-import { compareDeckRowsBy, DECK_SORTS, isDeckSort } from '~~/shared/deck-order'
+import { compareDeckRowsBy, DECK_SORT_DEFAULT, isDeckSort, normalizeDeckSort } from '~~/shared/deck-order'
 import type { DeckSort } from '~~/shared/deck-order'
 import type { CardDetailPreview } from '~/utils/card-detail'
 import { deckCountState, deckMeterFill } from '~/utils/deck-meter'
@@ -33,6 +33,8 @@ interface DeckCardRow {
   imageSmall: string | null
   /** The day the card first came out in the TCG; read null-safely, older fixtures lack it. */
   tcgDate?: string | null
+  /** A Pendulum monster's scale (for the sort by "Pendelbereich"); read null-safely. */
+  scale?: number | null
   section: DeckSection
   quantity: number
   owned: number
@@ -589,6 +591,7 @@ function optimisticRow(card: OptimisticCard, section: DeckSection, quantity: num
     imageSmall: card.imageSmall ?? null,
     // The cards of the add panel carry no date; the server's answer has it a moment later.
     tcgDate: card.tcgDate ?? known?.tcgDate ?? null,
+    scale: known?.scale ?? null,
     section,
     quantity,
     owned: known?.owned ?? card.owned ?? 0,
@@ -602,14 +605,14 @@ function optimisticRow(card: OptimisticCard, section: DeckSection, quantity: num
 // How the cards of a section are listed (tester feedback, round 13: "die Karten nach Erscheinungsdatum sortieren"):
 // the usual order, or by the day a card first came out in the TCG. A choice of this browser, kept like the table's.
 const SORT_KEY = 'ygo-deck-sort'
-const deckSort = ref<DeckSort>('default')
-const sortItems = computed(() => DECK_SORTS.map(value => ({ label: t(`decks.editor.sort.${value}`), value })))
+const deckSort = ref<DeckSort>(DECK_SORT_DEFAULT)
 
 onMounted(() => {
   try {
     const saved = localStorage.getItem(SORT_KEY)
     if (isDeckSort(saved)) {
-      deckSort.value = saved
+      // The first version stored "newest" and "oldest": they are "-release" and "release" now.
+      deckSort.value = normalizeDeckSort(saved)
     }
   }
   catch {
@@ -646,7 +649,7 @@ const sections = computed<Record<DeckSection, DeckCardRow[]>>(() => {
       const index = rows.findIndex(existing => compareDeckRowsBy(deckSort.value, section, shownRow, existing, cardLocale.value) < 0)
       rows.splice(index === -1 ? rows.length : index, 0, shownRow)
     }
-    if (deckSort.value !== 'default') {
+    if (deckSort.value !== DECK_SORT_DEFAULT) {
       rows.sort((a, b) => compareDeckRowsBy(deckSort.value, section, a, b, cardLocale.value))
     }
     shown[section] = rows
@@ -1002,22 +1005,6 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
         :title="deck.name"
         :description="deck.description ?? undefined"
       >
-        <!-- The sort by release date sits at the top right, in the free space beside the name and the counts (tester
-             feedback, round 15: "Zieh den blauen Bereich in den roten"). -->
-        <template #actions>
-          <UFormField
-            :label="t('decks.editor.sort.label')"
-            class="w-full sm:w-56"
-          >
-            <USelect
-              v-model="deckSort"
-              :items="sortItems"
-              :aria-label="t('decks.editor.sort.label')"
-              class="w-full"
-              data-testid="deck-sort"
-            />
-          </UFormField>
-        </template>
         <!-- Who can see the deck belongs to the name (tester feedback, round 10: "Setz das Privat dahin"). -->
         <template #titleAside>
           <SharingVisibilityBadge
@@ -1037,8 +1024,8 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
           class="mt-2"
         />
 
-        <!-- One line (tester feedback, round 10): the actions on the left, the format at the right end; on a narrow
-             screen the buttons wrap and the format takes the last line. -->
+        <!-- One line (tester feedback, rounds 10 and 16): the actions on the left, the format and the sort at the right end
+             ("Zieh den blauen Bereich runter"); on a narrow screen the buttons wrap and these take the last lines. -->
         <div class="mt-4 flex flex-wrap items-center gap-2">
           <!-- Mobile shortcut: the add panel lives below the deck sections. -->
           <UButton
@@ -1088,6 +1075,14 @@ const loadErrorDescription = computed(() => (error.value ? apiError(error.value,
             :items="formatItems"
             class="w-full min-w-0 sm:ml-auto sm:w-44 sm:shrink-0"
             :aria-label="t('decks.editor.formatLabel')"
+          />
+
+          <!-- The order of the cards: the usual one, or by a field with a direction like in the catalog and the inventory. -->
+          <CardSortControl
+            v-model="deckSort"
+            :plain="[DECK_SORT_DEFAULT]"
+            class="w-full sm:w-auto"
+            data-testid="deck-sort"
           />
         </div>
       </LayoutPageHeader>

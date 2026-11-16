@@ -1,9 +1,9 @@
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import Database from 'better-sqlite3'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as schema from '../../server/db/schema'
 import { addOwnedCard, validateInventoryInput } from '../../server/utils/inventory'
 import { assertCollectionOwnedByUser, createCollection } from '../../server/utils/collections'
@@ -15,6 +15,8 @@ import {
   UNASSIGNED_COLLECTION_ID,
 } from '../../server/utils/inventory-search'
 import type { InventorySearchSort } from '../../server/utils/inventory-search'
+import { cardSortOrderBy } from '../../server/utils/card-sort-sql'
+import { useArchetypeDataForTests } from '../../server/utils/archetype-data'
 import { seedGermanNames } from './fixtures/german-names'
 
 function createTestDb() {
@@ -96,18 +98,9 @@ function runInventorySearch(db: TestDb, userId: string, rawQuery: Record<string,
   const where = buildInventorySearchWhere(userId, filters)
   const totalQuantitySql = sql<number>`sum(${schema.ownedCard.quantity})`
 
+  // The route's own order (shared/card-sort.ts + the gallery's quantity), in English.
   function buildOrderBy(sort: InventorySearchSort): SQL[] {
-    switch (sort) {
-      case '-name':
-        return [desc(schema.catalogCard.name)]
-      case 'quantity':
-        return [desc(totalQuantitySql), asc(schema.catalogCard.name)]
-      case 'newest':
-        return [desc(schema.catalogCard.tcgDate)]
-      case 'name':
-      default:
-        return [asc(schema.catalogCard.name)]
-    }
+    return cardSortOrderBy(sort, 'en', { quantity: totalQuantitySql })
   }
 
   const pageRows = db
@@ -441,7 +434,7 @@ describe('inventory search aggregation (in-memory db)', () => {
     expect(ids({ q: 'Hexer', inText: '1' })).toEqual([46986414])
   })
 
-  it('sorts by quantity desc and by newest (tcgDate) desc', async () => {
+  it('sorts by quantity (-quantity most first, quantity fewest first) and by release date either way, and reads the old "newest"', async () => {
     seedCards(db, [
       { id: 1, name: 'Old Small Card', type: 'Normal Monster', tcgDate: '1999-01-01' },
       { id: 2, name: 'New Big Card', type: 'Normal Monster', tcgDate: '2020-01-01' },
@@ -449,11 +442,15 @@ describe('inventory search aggregation (in-memory db)', () => {
     await addOwnedCard(db, 'user-a', validateInventoryInput({ catalog_card_id: 1, quantity: 1 }))
     await addOwnedCard(db, 'user-a', validateInventoryInput({ catalog_card_id: 2, quantity: 9 }))
 
-    const byQuantity = runInventorySearch(db, 'user-a', { sort: 'quantity' })
-    expect(byQuantity.items.map(item => item.catalogCardId)).toEqual([2, 1])
+    const order = (sort: string) => runInventorySearch(db, 'user-a', { sort }).items.map(item => item.catalogCardId)
 
-    const byNewest = runInventorySearch(db, 'user-a', { sort: 'newest' })
-    expect(byNewest.items.map(item => item.catalogCardId)).toEqual([2, 1])
+    expect(order('-quantity')).toEqual([2, 1])
+    expect(order('quantity')).toEqual([1, 2])
+    expect(order('-release')).toEqual([2, 1])
+    expect(order('release')).toEqual([1, 2])
+    expect(order('newest')).toEqual([2, 1])
+    // A sort the gallery does not know is the default, by name.
+    expect(order('updated')).toEqual([2, 1])
   })
 
   it('paginates over the aggregated results', async () => {
@@ -606,8 +603,14 @@ describe('inventory search facets', () => {
   let db: TestDb
 
   beforeEach(() => {
+    // No data of the game here (ADR 0049): every card keeps the archetype of the catalog, which these tests are about.
+    useArchetypeDataForTests({})
     db = createTestDb()
     seedUsers(db)
+  })
+
+  afterEach(() => {
+    useArchetypeDataForTests(undefined)
   })
 
   it('returns only distinct owned catalog values, scoped to the user', async () => {

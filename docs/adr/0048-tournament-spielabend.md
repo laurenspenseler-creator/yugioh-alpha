@@ -34,9 +34,13 @@ plays whom, when they like.
   (2:0 or 2:1) when its own best-of is 3 and for the winner alone when it is 1; the server checks it against the same
   value. The best-of of the tournament is then only what a new duel starts with in the form. It stays set when a duel is
   started, because an evening is mostly one kind of duel.
-* **Scoring** is the one chosen for the tournament, and the scoring "nach Spielen" stays available although a new duel
-  may be a single game: a best-of-3 duel scores 3/2/1/0 by its games and a single game 3:0. The table sorts as in
-  ADR 0044: points, then the difference of the games, then the direct comparison.
+* **Scoring** (changed in round 16, "Verteil Punkte beim Spielabend über Duelle, nicht Matches. Da geht nur 3-0 oder 1-0"): a
+  Spielabend scores every duel (game) won, not the match: `duel_3_0` gives 3 points per game won, `duel_1_0` gives 1, a lost
+  game 0 (`shared/tournaments.ts`: `EVENING_SCORING_SYSTEMS`; `duelPoints()` in `shared/tournament-table.ts`). A best of 3 won 2:1 is
+  6 points and 3 (or 2 and 1), a single game 3 and 0 (or 1 and 0). The other modes keep "nach Spielen" and "klassisch" (the server
+  refuses the wrong family: `invalid_scoring`; changing the mode takes the new mode's default). A Spielabend made before
+  round 16 with another scoring shows the new default in its settings and keeps its old points until it is saved. The table sorts
+  as in ADR 0044: points, then the difference of the games, then the direct comparison.
 * **Take back a duel** that was paired by mistake (`DELETE /api/tournaments/:id/free-duels/:duelId`, "Zurücknehmen"), but
   only one that has no result yet (`duel_not_open`); a played duel is corrected like in every other mode.
 * **API:** `POST /api/tournaments/:id/free-duels` `{ participantAId, participantBId, bestOf }` (organizer only, only for

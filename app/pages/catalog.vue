@@ -2,6 +2,7 @@
 import { cardFrame } from '~~/shared/card-frame'
 import { isCardKind } from '~~/shared/card-kind'
 import type { CardKind } from '~~/shared/card-kind'
+import { CARD_SORT_FIELDS, parseSortValue, sortValueOf } from '~~/shared/card-sort'
 import { DEFAULT_FORMAT_LEGALITY, isFormatLegality } from '~~/shared/format-legality'
 import type { FormatLegality } from '~~/shared/format-legality'
 import { isPreviousHistoryEntry } from '~/utils/history-entry'
@@ -69,7 +70,8 @@ const attribute = ref<string[]>(queryList(route.query.attribute))
 const race = ref<string[]>(queryList(route.query.race))
 const level = ref<number[]>(queryList(route.query.level).map(value => Number.parseInt(value, 10)).filter(Number.isFinite))
 const setId = ref(typeof route.query.setId === 'string' ? route.query.setId : '')
-const sort = ref(typeof route.query.sort === 'string' ? route.query.sort : 'name')
+// A field and a direction (shared/card-sort.ts: "atk", "-atk"); an older link said "newest", which is "-release".
+const sort = ref(sortValueOf(parseSortValue(route.query.sort, CARD_SORT_FIELDS) ?? { field: 'name', direction: 'asc' }))
 // "Auch im Kartentext suchen" (owner feedback in #148); kept in the URL even without a search text.
 const inText = ref(route.query.inText === '1')
 const page = ref(Number.parseInt(typeof route.query.page === 'string' ? route.query.page : '1', 10) || 1)
@@ -112,12 +114,6 @@ const { data: facets } = await useFetch<CatalogFacets>('/api/catalog/facets', {
   default: () => ({ types: [], attributes: [], races: [], levels: [], sets: [] }),
 })
 
-const sortItems = computed(() => [
-  { label: t('catalog.sort.nameAsc'), value: 'name' },
-  { label: t('catalog.sort.nameDesc'), value: '-name' },
-  { label: t('catalog.sort.newest'), value: 'newest' },
-])
-
 // A plain `<select>` with 1000+ sets meant scrolling through an unsearchable
 // list to find one (UX review #5) — `USelectMenu` is searchable by default.
 // The set filter stays single-select, and reka-ui reserves the empty string
@@ -130,8 +126,9 @@ const setItems = computed(() => [
 ])
 const setSelection = computed({
   get: () => setId.value || noSetValue,
-  set: (value: string) => {
-    setId.value = value === noSetValue ? '' : value
+  // The cross of the menu (`clear`) hands over nothing: no set.
+  set: (value: string | null | undefined) => {
+    setId.value = !value || value === noSetValue ? '' : value
   },
 })
 
@@ -308,6 +305,7 @@ async function onAddedToInventory() {
             v-model="setSelection"
             :items="setItems"
             value-key="value"
+            :clear="setId !== ''"
             :aria-label="t('catalog.filters.set')"
             :placeholder="t('catalog.filters.set')"
             class="min-w-0 w-full"
@@ -360,17 +358,10 @@ async function onAddedToInventory() {
             />
           </div>
 
-          <UFormField
-            :label="t('catalog.sort.label')"
-            class="flex items-center gap-2 sm:ml-auto"
-          >
-            <USelect
-              v-model="sort"
-              :items="sortItems"
-              :aria-label="t('catalog.sort.label')"
-              class="w-40"
-            />
-          </UFormField>
+          <CardSortControl
+            v-model="sort"
+            class="sm:ml-auto"
+          />
         </div>
       </section>
     </div>

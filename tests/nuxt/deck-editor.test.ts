@@ -188,8 +188,9 @@ describe('deck editor', () => {
     expect(text).not.toContain('Mit KI')
   })
 
-  // Tester feedback, round 13: "kannst du bei Decks die Option hinzufügen, die Karten nach Erscheinungsdatum zu sortieren".
-  describe('the sort by release date', () => {
+  // Tester feedback, rounds 13, 15 and 16: the cards of a section by release date, and then by every field of the card lists with a
+  // small button for the direction ("einheitlich"), in the action line at the right end ("Zieh den blauen Bereich runter").
+  describe('the sort of the cards', () => {
     const dated = (name: string, id: number, tcgDate: string | null, overrides: Partial<DeckCardRow> = {}) =>
       row({ name, catalogCardId: id, section: 'main', tcgDate, ...overrides })
 
@@ -198,82 +199,123 @@ describe('deck editor', () => {
       // The server sends the usual order: monsters, then spells, each by name.
       state.deck = deckDetail({
         main: [
-          dated('Decode Talker', 1, '2017-07-21', { type: 'Effect Monster', frameType: 'effect' }),
-          dated('Kuriboh', 2, '2002-06-26', { type: 'Effect Monster', frameType: 'effect' }),
-          dated('Old OCG Card', 3, null, { type: 'Effect Monster', frameType: 'effect' }),
-          dated('Pot of Greed', 4, '2002-03-08', { type: 'Spell Card', frameType: 'spell' }),
+          dated('Decode Talker', 1, '2017-07-21', { type: 'Effect Monster', frameType: 'effect', atk: 2300, def: 0, level: 4 }),
+          dated('Kuriboh', 2, '2002-06-26', { type: 'Effect Monster', frameType: 'effect', atk: 300, def: 200, level: 1 }),
+          dated('Old OCG Card', 3, null, { type: 'Effect Monster', frameType: 'effect', atk: 1000, def: 1000, level: 8 }),
+          dated('Pot of Greed', 4, '2002-03-08', { type: 'Spell Card', frameType: 'spell', atk: null, def: null, level: null }),
         ],
       })
     }
 
     const mainNames = (component: Awaited<ReturnType<typeof mountSuspended>>) =>
       component.findAll('li .stretched-link').map((link: { text: () => string }) => link.text())
+    const fieldSelect = (component: Awaited<ReturnType<typeof mountSuspended>>) => selectWithOption(component.findAllComponents(USelect), 'release')!
 
     beforeEach(() => {
       localStorage.removeItem('ygo-deck-sort')
     })
 
-    it('offers the usual order, the newest first and the oldest first, and starts with the usual one', async () => {
+    it('offers the usual order and the seven fields of every card list, and starts with the usual one', async () => {
       mainDeck()
       const component = await mountSuspended(DeckEditorPage)
-      const select = selectWithOption(component.findAllComponents(USelect), 'newest')!
+      const select = fieldSelect(component)
 
-      expect(optionLabels(select)).toEqual(['Standard', 'Neueste zuerst', 'Älteste zuerst'])
+      expect(optionLabels(select)).toEqual(['Standard', 'Erscheinungsdatum', 'Angriff', 'Defensive', 'Stufe', 'Name', 'Kartentyp', 'Pendelbereich'])
       expect(select.props('modelValue')).toBe('default')
-      expect(component.text()).toContain('Sortierung nach Erscheinungsdatum')
+      // The usual order has no direction to switch.
+      expect(component.find('[data-testid="card-sort-direction"]').exists()).toBe(false)
       expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Old OCG Card', 'Pot of Greed'])
     })
 
-    // Tester feedback, round 15: "Zieh den blauen Bereich in den roten": the select sits top right in the header.
-    it('sits in the header, at the right of the title, not above the sections', async () => {
+    // Round 16: not in the free space at the top right any more but down in the action line, beside the format.
+    it('sits in the action line beside the format, and nowhere else', async () => {
       mainDeck()
       const component = await mountSuspended(DeckEditorPage)
-      const header = component.find('header')
-      const select = header.find('[data-testid="deck-sort"]')
+      const sort = component.find('[data-testid="deck-sort"]')
 
-      expect(select.exists()).toBe(true)
-      expect(header.text()).toContain('Sortierung nach Erscheinungsdatum')
-      // In the box of the header's actions, which is pinned to the right.
-      expect(select.element.closest('header > div:last-child')).not.toBeNull()
+      expect(sort.exists()).toBe(true)
       expect(component.findAll('[data-testid="deck-sort"]')).toHaveLength(1)
+      const line = sort.element.parentElement!
+      expect(line.querySelector('[aria-label="Format"]'), 'the format select is on the same line').not.toBeNull()
+      // The header has no box of actions at the top right any more: only the block with the title.
+      expect(component.find('header').element.querySelectorAll(':scope > div')).toHaveLength(1)
     })
 
-    it('lists the cards by release date and puts a card without a date last', async () => {
+    it('lists the cards by release date, oldest or newest first, and puts a card without a date last', async () => {
       mainDeck()
       const component = await mountSuspended(DeckEditorPage)
-      const select = selectWithOption(component.findAllComponents(USelect), 'newest')!
 
-      await select.setValue('newest')
-      expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Pot of Greed', 'Old OCG Card'])
-
-      await select.setValue('oldest')
+      await fieldSelect(component).setValue('release')
       expect(mainNames(component)).toEqual(['Pot of Greed', 'Kuriboh', 'Decode Talker', 'Old OCG Card'])
 
-      await select.setValue('default')
+      await component.find('[data-testid="card-sort-direction"]').trigger('click')
+      expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Pot of Greed', 'Old OCG Card'])
+
+      await fieldSelect(component).setValue('default')
       expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Old OCG Card', 'Pot of Greed'])
     })
 
-    it('remembers the choice in this browser', async () => {
+    it('lists the cards by ATK, DEF, level, name and card type, either way round', async () => {
+      mainDeck()
+      const component = await mountSuspended(DeckEditorPage)
+      const flip = () => component.find('[data-testid="card-sort-direction"]').trigger('click')
+
+      await fieldSelect(component).setValue('atk')
+      // Ascending: the weakest first, the Spell (no ATK) last.
+      expect(mainNames(component)).toEqual(['Kuriboh', 'Old OCG Card', 'Decode Talker', 'Pot of Greed'])
+      await flip()
+      expect(mainNames(component)).toEqual(['Decode Talker', 'Old OCG Card', 'Kuriboh', 'Pot of Greed'])
+
+      await fieldSelect(component).setValue('level')
+      expect(mainNames(component)).toEqual(['Old OCG Card', 'Decode Talker', 'Kuriboh', 'Pot of Greed'])
+
+      await fieldSelect(component).setValue('def')
+      expect(mainNames(component)).toEqual(['Old OCG Card', 'Kuriboh', 'Decode Talker', 'Pot of Greed'])
+
+      await fieldSelect(component).setValue('name')
+      expect(mainNames(component)).toEqual(['Pot of Greed', 'Old OCG Card', 'Kuriboh', 'Decode Talker'])
+      await flip()
+      expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Old OCG Card', 'Pot of Greed'])
+
+      await fieldSelect(component).setValue('type')
+      // Monsters before the Spell, ascending; the other way round it starts with the Spell.
+      expect(mainNames(component)[3]).toBe('Pot of Greed')
+      await flip()
+      expect(mainNames(component)[0]).toBe('Pot of Greed')
+    })
+
+    it('remembers the choice and its direction in this browser', async () => {
       mainDeck()
       const first = await mountSuspended(DeckEditorPage)
-      await selectWithOption(first.findAllComponents(USelect), 'newest')!.setValue('oldest')
-      expect(localStorage.getItem('ygo-deck-sort')).toBe('oldest')
+      await fieldSelect(first).setValue('release')
+      await first.find('[data-testid="card-sort-direction"]').trigger('click')
+      expect(localStorage.getItem('ygo-deck-sort')).toBe('-release')
       first.unmount()
 
       const second = await mountSuspended(DeckEditorPage)
       await flushPromises()
-      expect(selectWithOption(second.findAllComponents(USelect), 'newest')!.props('modelValue')).toBe('oldest')
-      expect(mainNames(second)).toEqual(['Pot of Greed', 'Kuriboh', 'Decode Talker', 'Old OCG Card'])
+      expect(fieldSelect(second).props('modelValue')).toBe('release')
+      expect(second.find('[data-testid="card-sort-direction"]').attributes('aria-label')).toBe('Absteigend')
+      expect(mainNames(second)).toEqual(['Decode Talker', 'Kuriboh', 'Pot of Greed', 'Old OCG Card'])
+    })
+
+    it('reads the choice stored by the first version: "newest" is the release date, newest first', async () => {
+      localStorage.setItem('ygo-deck-sort', 'newest')
+      mainDeck()
+      const component = await mountSuspended(DeckEditorPage)
+      await flushPromises()
+
+      expect(fieldSelect(component).props('modelValue')).toBe('release')
+      expect(mainNames(component)).toEqual(['Decode Talker', 'Kuriboh', 'Pot of Greed', 'Old OCG Card'])
     })
 
     it('ignores a value in the storage that is not a choice', async () => {
       localStorage.setItem('ygo-deck-sort', 'sideways')
       mainDeck()
       const component = await mountSuspended(DeckEditorPage)
-      expect(selectWithOption(component.findAllComponents(USelect), 'newest')!.props('modelValue')).toBe('default')
+      expect(fieldSelect(component).props('modelValue')).toBe('default')
     })
   })
-
   it('marks an undersized and an oversized section', async () => {
     state.source = { items: [], total: 0 }
     state.deck = deckDetail({

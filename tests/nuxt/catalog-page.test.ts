@@ -265,13 +265,40 @@ describe('catalog page', () => {
     const component = await mountPage()
     const route = useRouter().currentRoute
 
-    const sort = selectWithOption(component.findAllComponents(USelect), '-name')
+    // One sort for every card list (round 16): a field in a menu and a small button for the direction.
+    const sort = selectWithOption(component.findAllComponents(USelect), 'release')
     expect(sort).toBeTruthy()
-    await sort!.setValue('-name')
+    expect(sort!.props('modelValue')).toBe('name')
+    await sort!.setValue('atk')
     await vi.waitFor(() => {
-      expect(route.value.query.sort).toBe('-name')
+      expect(route.value.query.sort).toBe('atk')
     })
-    expect(lastQuery('/api/catalog/cards')).toMatchObject({ sort: '-name' })
+    expect(lastQuery('/api/catalog/cards')).toMatchObject({ sort: 'atk' })
+
+    // The button flips the direction and keeps the field.
+    await component.find('[data-testid="card-sort-direction"]').trigger('click')
+    await vi.waitFor(() => {
+      expect(route.value.query.sort).toBe('-atk')
+    })
+    expect(lastQuery('/api/catalog/cards')).toMatchObject({ sort: '-atk' })
+  })
+
+  it('offers the seven fields: release date, ATK, DEF, level, name, card type, pendulum scale', async () => {
+    const component = await mountPage()
+    const sort = selectWithOption(component.findAllComponents(USelect), 'release')!
+
+    expect((sort.props('items') as Array<{ label: string }>).map(item => item.label)).toEqual([
+      'Erscheinungsdatum', 'Angriff', 'Defensive', 'Stufe', 'Name', 'Kartentyp', 'Pendelbereich',
+    ])
+  })
+
+  it('reads an older sort link: "newest" is the release date, newest first', async () => {
+    const component = await mountPage({ route: '/catalog?sort=newest' })
+    const sort = selectWithOption(component.findAllComponents(USelect), 'release')!
+
+    expect(sort.props('modelValue')).toBe('release')
+    expect(lastQuery('/api/catalog/cards')).toMatchObject({ sort: '-release' })
+    expect(component.find('[data-testid="card-sort-direction"]').attributes('aria-label')).toBe('Absteigend')
   })
 
   // "Auch im Kartentext suchen" (owner feedback in #148): the server already
@@ -406,7 +433,7 @@ describe('catalog page', () => {
       expect(component.find('[aria-label="Format"]').text()).toContain('Edison')
       expect(component.find('[aria-label="Zulässigkeit"]').text()).toContain('Nicht zulässig')
       // The filter value is the English name of the archetype, the menu shows it in the card language (round 15).
-      expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blauäugiger')
+      expect(component.find('[aria-label="Deckthema"]').text()).toContain('Blauäugig')
 
       const reset = component.findAll('button').find(btn => btn.text() === 'Zurücksetzen')
       await reset!.trigger('click')
@@ -599,7 +626,7 @@ describe('catalog page', () => {
     expect(text).toContain('Add to wishlist')
     expect(text).toContain('Level 8')
     expect(text).toContain('Blue-Eyes White Dragon')
-    expect(text).not.toContain('Blauäugiger')
+    expect(text).not.toContain('Blauäugig')
     expect(component.find('input[aria-label="Search cards"]').exists()).toBe(true)
     expect(text).toContain('Also search card text')
     expect(component.find('[aria-label="Type"]').exists()).toBe(true)
@@ -623,7 +650,7 @@ describe('catalog page', () => {
 
     expect(component.text()).toContain('Katalog')
     expect(component.text()).toContain('Blue-Eyes White Dragon')
-    expect(component.text()).not.toContain('Blauäugiger')
+    expect(component.text()).not.toContain('Blauäugig')
   })
 
   it('shows the German name, the English name, the German text and no source credit in the detail', async () => {
@@ -679,7 +706,7 @@ describe('catalog page', () => {
 
     expect(detail).toContain('Blue-Eyes White Dragon')
     expect(detail).toContain('powerful engine')
-    expect(detail).not.toContain('Blauäugiger')
+    expect(detail).not.toContain('Blauäugig')
     expect(detail).not.toContain('English:')
     expect(detail).not.toContain('German card texts')
   })

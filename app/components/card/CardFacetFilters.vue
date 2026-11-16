@@ -39,12 +39,14 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
 }>(), { menuClass: 'w-full min-w-0', disabled: false })
 
-const kind = defineModel<CardKind[]>('kind')
-const excludeKind = defineModel<CardKind[]>('excludeKind')
-const type = defineModel<string[]>('type', { required: true })
-const attribute = defineModel<string[]>('attribute', { required: true })
-const race = defineModel<string[]>('race', { required: true })
-const level = defineModel<number[]>('level')
+// The cross of a menu (clear, tester feedback, round 16: every filter can be reset on its own) leaves nothing, not undefined;
+// a model that is left out stays undefined (that menu is hidden).
+const kind = defineModel<CardKind[]>('kind', { set: value => value ?? [] })
+const excludeKind = defineModel<CardKind[]>('excludeKind', { set: value => value ?? [] })
+const type = defineModel<string[]>('type', { required: true, set: value => value ?? [] })
+const attribute = defineModel<string[]>('attribute', { required: true, set: value => value ?? [] })
+const race = defineModel<string[]>('race', { required: true, set: value => value ?? [] })
+const level = defineModel<number[]>('level', { set: value => value ?? [] })
 
 const { t } = useI18n()
 const { cardValueOptions } = useCardText()
@@ -148,6 +150,7 @@ watch(() => kind.value && [...kind.value], () => {
     v-if="kind !== undefined"
     v-model="kind"
     multiple
+    clear
     value-key="value"
     :items="kindItems"
     :disabled="disabled"
@@ -159,6 +162,7 @@ watch(() => kind.value && [...kind.value], () => {
     v-if="excludeKind !== undefined"
     v-model="excludeKind"
     multiple
+    clear
     value-key="value"
     :items="kindItems"
     :disabled="disabled"
@@ -170,6 +174,7 @@ watch(() => kind.value && [...kind.value], () => {
     v-if="showType"
     v-model="type"
     multiple
+    clear
     value-key="value"
     :items="typeItems"
     :disabled="disabled"
@@ -181,6 +186,7 @@ watch(() => kind.value && [...kind.value], () => {
     v-if="showAttribute"
     v-model="attribute"
     multiple
+    clear
     value-key="value"
     :items="attributeItems"
     :disabled="disabled"
@@ -191,6 +197,7 @@ watch(() => kind.value && [...kind.value], () => {
   <USelectMenu
     v-model="race"
     multiple
+    clear
     value-key="value"
     :items="raceItems"
     :disabled="disabled"
@@ -202,6 +209,7 @@ watch(() => kind.value && [...kind.value], () => {
     v-if="showLevel"
     v-model="level"
     multiple
+    clear
     value-key="value"
     :items="levelItems"
     :disabled="disabled"

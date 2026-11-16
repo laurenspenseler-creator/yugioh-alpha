@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import banlist from '../../server/utils/classic-plus-banlist.json'
+import cardList from '../../scripts/classic-plus/card-list-v31.json'
+import handtraps from '../../server/utils/classic-plus-handtraps.json'
 import overrides from '../../scripts/classic-plus/overrides.json'
-import { CLASSIC_PLUS_FORBIDDEN_TYPES } from '../../shared/classic-plus'
+import { CLASSIC_PLUS_FORBIDDEN_TYPES, CLASSIC_PLUS_STEPS, hitLimit } from '../../shared/classic-plus'
 
-// Classic Plus v3.1 (ADR 0045): the card list of the change block ("Teil 3") and the corrections of "Teil 2" are the
-// final limits of those cards in the generated banlist, whatever the classification says. The ids are the catalog's.
+// Classic Plus v3.1 (ADR 0045, 0050): the card list of the change block ("Teil 3") and the corrections of "Teil 2" are the
+// final limits of those cards in the generated banlist, whatever the classification says. The ids are the catalog's. The list of 16\n// November 2026 is the complete one (119 cards named by the authors); 30 more are the cards the new rules 4 (Spells and Traps from the\n// hand, Ä17) and 12 (alternative win conditions, Ä12) hit by their wording ("source": "rule-text"): the authors confirm those.
 
 type Limit = 0 | 1 | 2 | 3
 
@@ -21,44 +23,8 @@ function limitOf(id: number): Limit {
   return 3
 }
 
-/** [catalog id, official German name, limit in v3.1] */
-const CARD_LIST: Array<[number, string, Limit]> = [
-  // What moved.
-  [86346643, 'Regenbogen-Neos', 2],
-  [40854197, 'Elementar-HELD Absoluter Nullpunkt', 1],
-  [79206925, 'Grabwächters Übernatürlicher', 2],
-  [90434657, 'Pharaonengräber im Tal der Toten', 2],
-  [20654247, 'Blauäugiger Chaosdrache', 1],
-  [23015896, 'Feuerkönig Hochavatar Garunix', 1],
-  [41578483, 'Millenniumäugiges Opfer', 1],
-  [63519819, 'Tausendäugiges Opfer', 1],
-  [70551291, 'Schwarz Glänzender Soldat - Legendärer Schwertkämpfer', 1],
-  [59400890, 'Dunkler Magier der Zerstörung', 2],
-  [90488465, 'Der Chaosschöpfer', 2],
-  [82301904, 'Chaos-Imperatordrache - Gesandter des Endes', 2],
-  [93920745, 'Pinguinsoldat', 2],
-  // Unchanged, but now covered by a rule.
-  [37630732, 'Kraftbündnis', 2],
-  [23171610, 'Begrenzer-Entferner', 2],
-  [22842126, 'Pantheismus der Monarchen', 2],
-  [4929256, 'Möbius der Frostmonarch', 2],
-  [60461804, 'Schicksals-HELD - Destroyer Phoenix Enforcer', 2],
-  [31305911, 'Marshmallon', 2],
-  [63176202, 'Großer Shogun Shien', 2],
-  [47355498, 'Tal der Toten', 2],
-  [70000776, 'Verborgene Tempel im Tal der Toten', 2],
-  [58481572, 'Maskierter HELD Dunkles Gesetz', 2],
-  // Unchanged and checked.
-  [34966096, 'Chaosbetrüger', 1],
-  [23020408, 'Seelendiener', 1],
-  [37576645, 'Tollkühne Gier', 1],
-  [19523799, 'Ookazi', 1],
-  [87910978, 'Gehirnkontrolle', 1],
-  [43228023, 'Blauäugiger alternativer ultimativer Drache', 1],
-  [56532353, 'Neo-Blauäugiger ultimativer Drache', 1],
-  [83555666, 'Ring der Zerstörung', 3],
-  [16762927, 'Grabwächters Diener', 0],
-]
+/** [catalog id, German name, limit in v3.1]: the whole card list (scripts/classic-plus/card-list-v31.json, ADR 0045 and 0050). */
+const CARD_LIST: Array<[number, string, Limit]> = cardList.cards.map(card => [card.id, card.name, card.limit as Limit])
 
 /**
  * The rule authors' test table (tester feedback, round 12: "Das Format weist noch einige Fehler auf"): seven pairs of
@@ -94,9 +60,10 @@ describe('Classic Plus v3.1 card list', () => {
   })
 
   it('forbids the Pendulum monster "Chaos-Imperator, der Drache des Armageddon" by rule 1 (K1)', () => {
-    // The catalog has it as a "Pendulum Effect Monster"; rule 1's card-type filter covers that type, so it is not on the list.
+    // The catalog has it as a "Pendulum Effect Monster"; rule 1's card-type filter covers that type, and since the list of 16 November
+    // names it, it is on the banlist as forbidden too.
     expect(CLASSIC_PLUS_FORBIDDEN_TYPES).toContain('Pendulum Effect Monster')
-    expect(limitOf(4538826)).toBe(3)
+    expect(limitOf(4538826)).toBe(0)
   })
 
   it('applies rule 8 to Extra Deck monsters now (Ä1): the exemption is gone, and they are no longer unlimited', () => {
@@ -175,5 +142,101 @@ describe('Classic Plus: the rule authors\' test table (round 12)', () => {
     }
     // The plain Polymerisation has no mass removal at all.
     expect(limitOf(24094653)).toBe(3)
+  })
+})
+
+// The hand-over of 16 November 2026 (ADR 0050): the complete card list and the rules Ä6 to Ä18.
+describe('Classic Plus: the hand-over of 16 November 2026', () => {
+  const byName = (name: string) => cardList.cards.find(card => card.name === name)!
+
+  it('has the 119 cards the authors named, and the cards the new rules hit by their wording flagged for them to confirm', () => {
+    expect(cardList.cards.filter(card => card.source === 'list')).toHaveLength(119)
+    const byRule = cardList.cards.filter(card => card.source === 'rule-text')
+    expect(byRule.length).toBeGreaterThan(0)
+    // Each of them names the rule and says it is for the authors to confirm.
+    for (const card of byRule) {
+      expect(overrides[String(card.id) as keyof typeof overrides]?.note, card.name).toContain('For the rule authors to confirm')
+    }
+    expect(new Set(cardList.cards.map(card => card.id)).size).toBe(cardList.cards.length)
+  })
+
+  it('has the Exodia complex at limit 1: the five parts, Auslöschen!!!, its Blaze, Millennium Ankh, the Incarnations, Necross and the Defender', () => {
+    for (const name of ['Exodia, die Verbotene', 'Rechter Arm der Verbotenen', 'Linker Arm der Verbotenen', 'Rechtes Bein der Verbotenen', 'Linkes Bein der Verbotenen', 'Auslöschen!!!', 'Auslöschen!!!-Lohe', 'Millenniums-Anch', 'Inkarnation der legendären Exodia', 'Inkarnation der unaufhaltbaren Exodia', 'Exodia Necross', 'Exodia, die legendäre Verteidigerin']) {
+      expect(limitOf(byName(name).id), name).toBe(1)
+    }
+    // "Vertrag mit Exodia" was decided to stay unlimited.
+    expect(limitOf(byName('Vertrag mit Exodia').id)).toBe(3)
+  })
+
+  it('treats a Trap Card that can be activated from the hand as a hand trap (Ä17): Unendliche Unbeständigkeit is forbidden', () => {
+    expect(limitOf(10045474)).toBe(0)
+    expect(handtraps.ids).toContain(10045474)
+    // Those among them that negate or remove something are forbidden too, as the rule says ...
+    for (const [id, name] of [[14883228, 'Taifun'], [23002292, 'Roter Neustart'], [58053438, 'Lieder der Beherrscher'], [97045737, 'Dominus-Säuberung']] as const) {
+      expect(limitOf(id), name).toBe(0)
+      expect(handtraps.ids, name).toContain(id)
+    }
+    // ... and one that neither negates nor removes anything is not forbidden by rule 4 (NEXT summons, Tachyon Spiral Galaxy protects).
+    expect(limitOf(74414885), 'NEXT').toBeGreaterThan(0)
+    expect(limitOf(89789152), 'Tachyonen-Spiralgalaxie').toBeGreaterThan(0)
+    // A Spell that is activated from the hand in the own turn only is no hand trap.
+    expect(limitOf(2295831), 'Symbol der Freundschaft').toBe(3)
+  })
+
+  it('limits the cards with an alternative win condition to 1, and forbids the one nothing can interrupt (Ä12)', () => {
+    // Destiny Board and its Spirit Messages, Exodius, Jackpot 7: limit 1. Final Countdown is a Normal Spell: nothing stays on the field.
+    for (const [id, name] of [[94212438, 'Schicksalstafel'], [31893528, 'Geisternachricht I'], [67287533, 'Geisternachricht N'], [94772232, 'Geisternachricht A'], [30170981, 'Geisternachricht L'], [13893596, 'Exodius'], [81171949, 'Jackpot-7']] as const) {
+      expect(limitOf(id), name).toBe(1)
+    }
+    expect(limitOf(95308449), 'Letzter Countdown').toBe(0)
+    expect(limitOf(8062132), 'Vennominaga').toBe(0)
+    // Rule 12 part 2: what searches or places the parts of Destiny Board by name.
+    expect(limitOf(14386013), 'Beherrschung des dunklen Geistes').toBe(1)
+    expect(limitOf(40771118), 'Verhängnisvolle Strafe').toBe(1)
+  })
+
+  it('moves what Ä7, Ä10, Ä11, Ä13, Ä15 and Ä18 decide: the Cannon cards, the Duo, Neos\' Spirit, the June monsters of 7(e)', () => {
+    expect(limitOf(99877698), 'Grabwächters Kanonenträger').toBe(1)
+    expect(limitOf(11384280), 'Kanonensoldat').toBe(1)
+    expect(limitOf(44763025), 'Verbrecher-Duo').toBe(1)
+    expect(limitOf(13256226), 'Elementar-HELD Geist von Neos').toBe(1)
+    expect(limitOf(81843628), 'Nadelwurm').toBe(1)
+    for (const [id, name] of [[97017120, 'Riesenratte'], [24317029, 'Grabwächters Spion'], [57839750, 'Mutter Grizzly'], [95956346, 'Glänzender Elf (Strahlender Engel)'], [60806437, 'UFO-Schildkröte'], [77044671, 'Pyramidenschildkröte']] as const) {
+      expect(limitOf(id), name).toBe(2)
+    }
+  })
+
+  it('keeps the cards that were checked and found unlimited unlimited', () => {
+    for (const card of cardList.cards.filter(card => card.limit === 3)) {
+      expect(limitOf(card.id), card.name).toBe(3)
+    }
+    expect(cardList.cards.filter(card => card.limit === 3).length).toBeGreaterThan(20)
+  })
+
+  // Teil 5 of the hand-over, "Testliste für Alpha": the pairs look alike and have different answers (the seven first ones are the
+  // test table above); the eighth pair and the single cases.
+  it('answers the eighth pair and the single cases of the test list', () => {
+    expect([limitOf(48130397), limitOf(44763025)], 'Superpolymerisation / Verbrecher-Duo').toEqual([1, 1])
+    for (const [id, name, limit] of [
+      [4538826, 'Chaos-Imperator, der Drache des Armageddon', 0],
+      [58921041, 'Antimagischer Duft', 0],
+      [16762927, 'Grabwächters Diener', 0],
+      [10045474, 'Unendliche Unbeständigkeit', 0],
+      [24317029, 'Grabwächters Spion', 2],
+      [97017120, 'Riesenratte', 2],
+      [81843628, 'Nadelwurm', 1],
+    ] as const) {
+      expect(limitOf(id), name).toBe(limit)
+    }
+  })
+
+  it('has the steps 7e and 12, 7e tiered like the other Preisumgehung rules', () => {
+    const codes = CLASSIC_PLUS_STEPS.map(step => step.code)
+    expect(codes).toContain('7e')
+    expect(codes).toContain('12')
+    // A body lifts it to 2, no real answer keeps it at 1.
+    expect(hitLimit('7e', 1, ['body'])).toBe(2)
+    expect(hitLimit('7e', 1, ['body', 'noanswer'])).toBe(1)
+    expect(hitLimit('12', 1, ['body'])).toBe(1)
   })
 })

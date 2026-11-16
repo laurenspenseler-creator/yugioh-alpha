@@ -60,7 +60,7 @@
         "progress": "{count} Duell gespielt | {count} Duelle gespielt",
         "help1": "Ein Duell paarst du, wann du willst: zwei Teilnehmer wählen, Einzelduell oder Best of 3 wählen, starten.",
         "help2": "Trage danach das Ergebnis ein, bei Best of 3 mit dem Spielstand (2:0 oder 2:1). Ein Duell, das du falsch gepaart hast, kannst du zurücknehmen, solange noch kein Ergebnis drin ist.",
-        "help3": "Die Tabelle sortiert nach Punkten, dann nach der Differenz der Duelle (Partien), dann nach dem direkten Vergleich. Wer ein Einzelduell gewinnt, bekommt 3 Punkte; bei Best of 3 gilt die gewählte Punktevergabe."
+        "help3": "Die Tabelle sortiert nach Punkten, dann nach der Differenz der Duelle (Partien), dann nach dem direkten Vergleich. Die Punkte gibt es pro gewonnenem Duell (Partie), nicht pro Match: 3 oder 1 Punkt, wie eingestellt."
       },
       "setup": {
         "title": "Einstellungen",
@@ -291,6 +291,14 @@
       "match": {
         "label": "Klassisch (3 · 0)",
         "description": "Sieg 3 Punkte, Niederlage 0 – unabhängig vom Spielstand. (Unentschieden 1, nur in älteren Turnieren.)"
+      },
+      "duel_3_0": {
+        "label": "Pro Duell 3 · 0",
+        "description": "Jedes gewonnene Duell (jede Partie) zählt 3 Punkte, jedes verlorene 0. Ein Best of 3, das 2:1 endet, bringt dem Sieger 6 Punkte und dem anderen 3."
+      },
+      "duel_1_0": {
+        "label": "Pro Duell 1 · 0",
+        "description": "Jedes gewonnene Duell (jede Partie) zählt 1 Punkt, jedes verlorene 0. Ein Best of 3, das 2:1 endet, bringt dem Sieger 2 Punkte und dem anderen 1."
       }
     },
     "byeScoring": {

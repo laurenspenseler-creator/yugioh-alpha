@@ -37,6 +37,7 @@ import {
   BYE_SCORINGS,
   DECK_NAME_MAX_LENGTH,
   DEFAULT_BYE_SCORING,
+  DEFAULT_EVENING_SCORING,
   DEFAULT_SCORING,
   DEFAULT_WIN_GAMES,
   MAX_DECKS_PER_PARTICIPANT,
@@ -49,6 +50,7 @@ import {
   PARTICIPANT_NAME_MAX_LENGTH,
   roundRobinRoundCount,
   SCORING_SYSTEMS,
+  scoringsFor,
   swissRoundCount,
   TOURNAMENT_DESCRIPTION_MAX_LENGTH,
   TOURNAMENT_ENGINES,
@@ -258,11 +260,17 @@ function normalizePairingSystem(raw: unknown): PairingSystem {
   return raw as PairingSystem
 }
 
-function normalizeScoring(raw: unknown): ScoringSystem {
+/**
+ * The scoring of a request. With a mode (`queueMode`, null for the classic engine) only the scorings that mode may have are
+ * accepted: a Spielabend scores every duel won (3 or 1 point), every other tournament its matches (round 16). `'any'` takes every
+ * known scoring (the patch of a tournament, where the mode may come with it and is checked when the patch is applied).
+ */
+function normalizeScoring(raw: unknown, queueMode: string | null | 'any' = 'any'): ScoringSystem {
   if (raw === undefined) {
-    return DEFAULT_SCORING
+    return queueMode === 'free' ? DEFAULT_EVENING_SCORING : DEFAULT_SCORING
   }
-  if (typeof raw !== 'string' || !(SCORING_SYSTEMS as readonly string[]).includes(raw)) {
+  const allowed: readonly string[] = queueMode === 'any' ? SCORING_SYSTEMS : scoringsFor(queueMode)
+  if (typeof raw !== 'string' || !allowed.includes(raw)) {
     badRequest('invalid_scoring', 'Unknown scoring system')
   }
   return raw as ScoringSystem
@@ -324,7 +332,7 @@ export function validateTournamentInput(body: unknown): TournamentInput {
     description: normalizeDescription(body.description),
     formatId: normalizeFormatId(body.formatId),
     pairingSystem: queue ? (queue.mode === 'round_robin' ? 'round_robin' : 'swiss') : normalizePairingSystem(body.pairingSystem),
-    scoring: normalizeScoring(body.scoring),
+    scoring: normalizeScoring(body.scoring, queue ? queue.mode : null),
     byeScoring: normalizeByeScoring(body.byeScoring),
     // A round robin has no R of its own: every player meets every other.
     plannedRounds: queue?.mode === 'round_robin' ? null : plannedRounds,
@@ -1331,12 +1339,19 @@ export function updateTournament(db: Db, userId: string, id: string, patch: Tour
   }
 
   const queueMode = patch.queueMode ?? row.queueMode
+  // The scoring has to suit the mode: a Spielabend counts every duel won, the others their matches. A scoring that comes with the
+  // patch must be one of the mode's; one that was there before and does not suit a new mode gives way to the mode's default.
+  const allowedScorings = scoringsFor(row.engine === 'queue' ? queueMode : null)
+  if (patch.scoring !== undefined && !allowedScorings.includes(patch.scoring)) {
+    badRequest('invalid_scoring', 'This scoring does not fit the mode')
+  }
+  const scoring = patch.scoring ?? (allowedScorings.includes(row.scoring) ? row.scoring : queueMode === 'free' ? DEFAULT_EVENING_SCORING : DEFAULT_SCORING)
   db.update(tournament).set({
     name: patch.name ?? row.name,
     description: patch.description !== undefined ? patch.description : row.description,
     formatId: patch.formatId !== undefined ? patch.formatId : row.formatId,
     pairingSystem: row.engine === 'queue' ? (queueMode === 'round_robin' ? 'round_robin' : 'swiss') : patch.pairingSystem ?? row.pairingSystem,
-    scoring: patch.scoring ?? row.scoring,
+    scoring,
     byeScoring: patch.byeScoring ?? row.byeScoring,
     // A round robin has no R of its own; the others keep what was set.
     plannedRounds: row.engine === 'queue' && queueMode === 'round_robin'

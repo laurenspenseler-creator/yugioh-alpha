@@ -36,9 +36,24 @@ export type TournamentEngine = typeof TOURNAMENT_ENGINES[number]
  * 0 otherwise — so a 2:0 outranks a 2:1. `match`: classic 3 / 0 (1 for a
  * draw); what tournaments created before ADR 0031 keep.
  */
-export const SCORING_SYSTEMS = ['games', 'match'] as const
+export const SCORING_SYSTEMS = ['games', 'match', 'duel_3_0', 'duel_1_0'] as const
 export type ScoringSystem = typeof SCORING_SYSTEMS[number]
 
+/** The scorings of every tournament with a plan (the classic engine and the duel-queue modes but the Spielabend). */
+export const PLAN_SCORING_SYSTEMS = ['games', 'match'] as const
+
+/**
+ * The scorings of a Spielabend (tester feedback, round 16: "Verteil Punkte über Duelle, nicht Matches. Da geht nur 3-0 oder
+ * 1-0"): every duel, i.e. every game, that a player wins is worth 3 points (`duel_3_0`) or 1 (`duel_1_0`), a lost one 0. A
+ * best-of-3 match won 2:1 is worth 6 and 3 points (or 2 and 1), a single game 3 and 0 (or 1 and 0).
+ */
+export const EVENING_SCORING_SYSTEMS = ['duel_3_0', 'duel_1_0'] as const
+export const DEFAULT_EVENING_SCORING: ScoringSystem = 'duel_3_0'
+
+/** The scorings a tournament of this mode may have (`queueMode`; null for the classic engine). */
+export function scoringsFor(queueMode: string | null | undefined): readonly ScoringSystem[] {
+  return queueMode === 'free' ? EVENING_SCORING_SYSTEMS : PLAN_SCORING_SYSTEMS
+}
 /**
  * What a bye is worth. `none`: nothing — no points, no match played, no games.
  * `win`: scored as a 2:0 win (the behavior before ADR 0031).

@@ -14,12 +14,17 @@ import type { Duel, DuelsState } from './tournament-duels'
 
 /**
  * How a duel is worth points (ADR 0031). `games`: a win without losing a game 3, a win that lost one 2, a loss with a
- * game won 1, else 0; `match`: 3 for a win, 0 for a loss. A single game has no score to tell them apart: 3 and 0.
+ * game won 1, else 0; `match`: 3 for a win, 0 for a loss. A single game has no score to tell them apart: 3 and 0. The scorings of
+ * a Spielabend count every game (duel) won: `duel_3_0` 3 points each, `duel_1_0` 1 point each (round 16).
  */
-export type PointScoring = 'games' | 'match'
+export type PointScoring = 'games' | 'match' | 'duel_3_0' | 'duel_1_0'
 
 /** The points a player got from one done duel. */
 export function duelPoints(duel: Duel, playerId: string, scoring: PointScoring): number {
+  if (scoring === 'duel_3_0' || scoring === 'duel_1_0') {
+    // Every game won counts: 2:1 is 2 games for the winner, 1 for the other; a single game, entered without a score, is 1:0.
+    return duelGames(duel, playerId).won * (scoring === 'duel_3_0' ? 3 : 1)
+  }
   const won = duel.winner === playerId
   const own = duel.a === playerId ? duel.gamesA : duel.gamesB
   const other = duel.a === playerId ? duel.gamesB : duel.gamesA

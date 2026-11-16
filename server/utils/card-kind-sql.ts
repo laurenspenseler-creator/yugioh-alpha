@@ -2,7 +2,7 @@ import { sql } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 import { catalogCard } from '../db/schema'
 import { CARD_FRAMES, CARD_FRAME_TYPE_KEYWORDS } from '../../shared/card-frame'
-import { isCardKind } from '../../shared/card-kind'
+import { CARD_KINDS, isCardKind } from '../../shared/card-kind'
 import type { CardKind } from '../../shared/card-kind'
 
 // The SQL twin of `cardFrame()` (shared/card-frame.ts), so the "Kartenart"
@@ -28,6 +28,15 @@ const frameFromTypeLine = sql`(case when ${typeLine} = '' then null ${sql.join(
 
 const frame = sql`(case when ${hasKnownFrame} then ${baseFrameType} else ${frameFromTypeLine} end)`
 const isPendulum = sql`(case when ${hasKnownFrame} then ${hasPendulumSuffix} else ${typeLine} like '%pendulum%' end)`
+
+/**
+ * The place of a card's kind in the game's own order (`CARD_KINDS`: Normal, Effekt, Ritual ... Pendel, Token, Zauber, Falle), for
+ * "sort by card type"; a card without a kind (a Skill Card) is last. The SQL twin of `cardTypeRank()` (shared/card-sort.ts).
+ */
+export const cardKindRank: SQL = sql`(case when ${isPendulum} then ${sql.raw(String(CARD_KINDS.indexOf('pendulum')))} ${sql.join(
+  CARD_KINDS.filter(kind => kind !== 'pendulum').map(kind => sql`when ${frame} = ${kind} then ${sql.raw(String(CARD_KINDS.indexOf(kind)))}`),
+  sql` `,
+)} else ${sql.raw(String(CARD_KINDS.length))} end)`
 
 /**
  * The WHERE clause of a "Kartenart" filter: the card has any of `kinds`.

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LocationQueryRaw } from 'vue-router'
 import { isCardKind } from '~~/shared/card-kind'
+import { CARD_SORT_FIELDS, parseSortValue, sortValueOf } from '~~/shared/card-sort'
 import type { InventoryKind } from '~~/shared/deck-breakdown'
 import { DEFAULT_FORMAT_LEGALITY, isFormatLegality } from '~~/shared/format-legality'
 import { UNASSIGNED_COLLECTION_ID } from '~~/shared/inventory'
@@ -157,16 +158,18 @@ onMounted(() => {
   }
 })
 
-// The order of "Liste" (tester feedback, round 15: "Sortierung von A-Z"): the latest change first as before, or by name. It has
-// its own URL key (`?listSort=`) because "Galerie" keeps its own `?sort=`, like each view keeps its page.
-const LIST_SORTS = ['updated', 'name', '-name'] as const
-type ListSort = typeof LIST_SORTS[number]
-const listSort = ref<ListSort>(LIST_SORTS.find(value => value === route.query.listSort) ?? 'updated')
+// The order of "Liste" (tester feedback, rounds 15 and 16): a field and a direction like everywhere (shared/card-sort.ts), or the
+// time of the last change, the latest first as before. It has its own URL key (`?listSort=`) because "Galerie" keeps its own
+// `?sort=`, like each view keeps its page.
+const LIST_EXTRA_SORTS = ['updated'] as const
+const DEFAULT_LIST_SORT = '-updated'
+const listSort = ref(sortValueOf(parseSortValue(route.query.listSort, [...CARD_SORT_FIELDS, ...LIST_EXTRA_SORTS]) ?? { field: 'updated', direction: 'desc' }))
 
-const SEARCH_SORTS: ReadonlyArray<SearchFilters['sort']> = ['name', '-name', 'quantity', 'newest']
+// "Galerie" adds the number of copies to the card's own fields.
+const GALLERY_EXTRA_SORTS = ['quantity'] as const
 
-function querySort(value: unknown): SearchFilters['sort'] {
-  return SEARCH_SORTS.find(sort => sort === value) ?? 'name'
+function querySort(value: unknown): string {
+  return sortValueOf(parseSortValue(value, [...CARD_SORT_FIELDS, ...GALLERY_EXTRA_SORTS]) ?? { field: 'name', direction: 'asc' })
 }
 
 // A positive integer `?page=`, else 1.
@@ -221,7 +224,7 @@ const listQuery = computed(() => ({
   archetype: filters.value.archetype.length ? filters.value.archetype : undefined,
   formatId: filters.value.formatId || undefined,
   legality: filters.value.formatId ? filters.value.legality : undefined,
-  sort: listSort.value === 'updated' ? undefined : listSort.value,
+  sort: listSort.value === DEFAULT_LIST_SORT ? undefined : listSort.value,
   page: page.value,
   pageSize,
   collectionId: collectionId.value || undefined,
@@ -357,7 +360,7 @@ watch(
       formatId: filters.value.formatId || undefined,
       legality: filters.value.formatId && filters.value.legality !== DEFAULT_FORMAT_LEGALITY ? filters.value.legality : undefined,
       sort: filters.value.sort === 'name' ? undefined : filters.value.sort,
-      listSort: listSort.value === 'updated' ? undefined : listSort.value,
+      listSort: listSort.value === DEFAULT_LIST_SORT ? undefined : listSort.value,
       page: shownPage > 1 ? String(shownPage) : undefined,
     })
   },
@@ -421,17 +424,6 @@ const searchTotal = computed(() => searchData.value?.total ?? 0)
 // How many cards the view lists right now, whatever the filters leave (the header says how many there are in all).
 const shownCount = computed(() => (mode.value === 'gallery' ? searchTotal.value : total.value))
 
-const gallerySortItems = computed(() => [
-  { label: t('inventory.search.sort.nameAsc'), value: 'name' },
-  { label: t('inventory.search.sort.nameDesc'), value: '-name' },
-  { label: t('inventory.search.sort.quantity'), value: 'quantity' },
-  { label: t('inventory.search.sort.newest'), value: 'newest' },
-])
-const listSortItems = computed(() => [
-  { label: t('inventory.search.sort.updated'), value: 'updated' },
-  { label: t('inventory.search.sort.nameAsc'), value: 'name' },
-  { label: t('inventory.search.sort.nameDesc'), value: '-name' },
-])
 const searchPageCount = computed(() => Math.max(1, Math.ceil(searchTotal.value / searchPageSize)))
 
 // A `?page=` past the end (cards removed since, an old link) shows the last
@@ -693,34 +685,6 @@ async function onMoved() {
           @filled="refreshAll"
         />
 
-        <div class="flex flex-wrap items-center gap-2">
-          <UButton
-            v-if="mode === 'list'"
-            icon="i-lucide-list-checks"
-            color="neutral"
-            :variant="isSelecting ? 'subtle' : 'outline'"
-            :label="t('inventory.select.toggle')"
-            :aria-pressed="isSelecting"
-            @click="() => { isSelecting ? stopSelecting() : (isSelecting = true) }"
-          />
-
-          <UFieldGroup>
-            <UButton
-              :label="t('inventory.view.list')"
-              :color="mode === 'list' ? 'primary' : 'neutral'"
-              :variant="mode === 'list' ? 'subtle' : 'outline'"
-              :aria-pressed="mode === 'list'"
-              @click="() => { mode = 'list' }"
-            />
-            <UButton
-              :label="t('inventory.view.gallery')"
-              :color="mode === 'gallery' ? 'primary' : 'neutral'"
-              :variant="mode === 'gallery' ? 'subtle' : 'outline'"
-              :aria-pressed="mode === 'gallery'"
-              @click="() => { mode = 'gallery' }"
-            />
-          </UFieldGroup>
-        </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
@@ -735,36 +699,6 @@ async function onMoved() {
           v-model="filters.inText"
           :label="t('inventory.search.inText')"
         />
-
-        <!-- At the right end (tester feedback, round 15): how many cards the view lists right now, and the sort, which the
-             list has too (A-Z, Z-A, or the latest change first as before). -->
-        <div class="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
-          <p
-            class="text-sm font-semibold text-highlighted tabular-nums"
-            data-testid="inventory-shown-count"
-          >
-            {{ count('inventory.cardCount', shownCount) }}
-          </p>
-          <UFormField
-            :label="t('inventory.search.sortLabel')"
-            class="flex items-center gap-2"
-          >
-            <USelect
-              v-if="mode === 'gallery'"
-              v-model="filters.sort"
-              :items="gallerySortItems"
-              :aria-label="t('inventory.search.sortLabel')"
-              class="w-48"
-            />
-            <USelect
-              v-else
-              v-model="listSort"
-              :items="listSortItems"
-              :aria-label="t('inventory.search.sortLabel')"
-              class="w-48"
-            />
-          </UFormField>
-        </div>
       </div>
     </div>
 
@@ -775,6 +709,60 @@ async function onMoved() {
       :facets="facets"
       :kind-counts="kindCounts"
     />
+
+    <!-- One line above the cards (tester feedback, round 16: "Mach die Anzahl an den blauen Pfeil. Zieh den roten Bereich
+         runter"): how many cards the view lists right now at the left, at the right selecting, the view and the sort. -->
+    <div
+      class="flex flex-wrap items-center justify-between gap-x-4 gap-y-3"
+      data-testid="inventory-toolbar"
+    >
+      <p
+        class="text-sm font-semibold text-highlighted tabular-nums"
+        data-testid="inventory-shown-count"
+      >
+        {{ count('inventory.cardCount', shownCount) }}
+      </p>
+
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <UButton
+          v-if="mode === 'list'"
+          icon="i-lucide-list-checks"
+          color="neutral"
+          :variant="isSelecting ? 'subtle' : 'outline'"
+          :label="t('inventory.select.toggle')"
+          :aria-pressed="isSelecting"
+          @click="() => { isSelecting ? stopSelecting() : (isSelecting = true) }"
+        />
+
+        <UFieldGroup>
+          <UButton
+            :label="t('inventory.view.list')"
+            :color="mode === 'list' ? 'primary' : 'neutral'"
+            :variant="mode === 'list' ? 'subtle' : 'outline'"
+            :aria-pressed="mode === 'list'"
+            @click="() => { mode = 'list' }"
+          />
+          <UButton
+            :label="t('inventory.view.gallery')"
+            :color="mode === 'gallery' ? 'primary' : 'neutral'"
+            :variant="mode === 'gallery' ? 'subtle' : 'outline'"
+            :aria-pressed="mode === 'gallery'"
+            @click="() => { mode = 'gallery' }"
+          />
+        </UFieldGroup>
+
+        <CardSortControl
+          v-if="mode === 'gallery'"
+          v-model="filters.sort"
+          :extras="GALLERY_EXTRA_SORTS"
+        />
+        <CardSortControl
+          v-else
+          v-model="listSort"
+          :extras="LIST_EXTRA_SORTS"
+        />
+      </div>
+    </div>
 
     <!-- Galerie: aggregated, faceted inventory-wide search -->
     <div

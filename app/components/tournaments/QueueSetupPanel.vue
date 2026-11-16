@@ -18,7 +18,7 @@ import {
   validateSetup,
 } from '~~/shared/tournament-modes'
 import type { BestOf, QueueFlow, QueueMode, SetupInput } from '~~/shared/tournament-modes'
-import { SCORING_SYSTEMS } from '~~/shared/tournaments'
+import { DEFAULT_EVENING_SCORING, EVENING_SCORING_SYSTEMS, PLAN_SCORING_SYSTEMS } from '~~/shared/tournaments'
 import type { ScoringSystem, TournamentDetail } from '~~/shared/tournaments'
 
 // The settings of a duel tournament (ADR 0042, 0043): mode, duels per player, best of 1 or 3, how a duel is worth points,
@@ -107,13 +107,26 @@ const formatItems = computed(() => {
 const modeItems = computed(() => QUEUE_MODES.map(mode => ({ label: t(`tournaments.queue.mode.${mode}.label`), value: mode })))
 const flowItems = computed(() => QUEUE_FLOWS.map(flow => ({ label: t(`tournaments.queue.flow.${flow}.label`), value: flow })))
 const bestOfItems = computed(() => BEST_OF_CHOICES.map(choice => ({ label: t(`tournaments.queue.bestOf.${choice}.label`), value: choice })))
-const scoringItems = computed(() => SCORING_SYSTEMS.map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
+// A Spielabend counts every duel won (3 or 1 point), the other modes their matches (round 16).
+const scoringItems = computed(() => (isFree.value ? EVENING_SCORING_SYSTEMS : PLAN_SCORING_SYSTEMS).map(scoring => ({ label: t(`tournaments.scoring.${scoring}.label`), value: scoring })))
 // A single game has no score, so the scoring by games cannot tell anything apart: it is shown as the classic 3 and 0 and
 // cannot be changed while a duel is one game (it comes back as chosen when the duel is best of 3 again).
 // A Spielabend (mode "free", tester feedback, round 15) has no plan and no duration: the organizer pairs the duels one by one
 // and picks single game or best of three for every duel, so the scoring by games is always available there.
 const isFree = computed(() => form.mode === 'free')
 const singleGame = computed(() => form.bestOf === 1 && !isFree.value)
+// The scoring has to suit the mode: changing to or from a Spielabend takes the new mode's (a Spielabend made before round 16 may still
+// have a scoring of the matches: it shows the new default, which a save keeps).
+function fitScoring() {
+  if (isFree.value && !(EVENING_SCORING_SYSTEMS as readonly string[]).includes(form.scoring)) {
+    form.scoring = DEFAULT_EVENING_SCORING
+  }
+  else if (!isFree.value && !(PLAN_SCORING_SYSTEMS as readonly string[]).includes(form.scoring)) {
+    form.scoring = 'games'
+  }
+}
+fitScoring()
+watch(isFree, fitScoring)
 const effectiveScoring = computed<ScoringSystem>(() => singleGame.value ? 'match' : form.scoring)
 // New tournaments are only played in Spieltage; the choice is left to the ones that still have tables and a queue.
 const showFlow = computed(() => setup.value.flow === 'queue')

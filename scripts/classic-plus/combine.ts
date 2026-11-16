@@ -231,6 +231,10 @@ function main() {
         banlist.forbidden.push(card.id)
         rule1ByBanlist += 1
       }
+      else if (overrides[card.id]?.maxCopies === 0) {
+        // The type filter already forbids it; the card list names it (v3.1, K1), so it is on the banlist too.
+        banlist.forbidden.push(card.id)
+      }
       continue
     }
     if (card.route === '2') {
@@ -240,7 +244,8 @@ function main() {
     }
     const override = overrides[card.id]
     // A card no pattern matched is not classified, but the card list may still name it (an override).
-    if (card.route !== 'candidate' && !(card.route === 'clear' && override)) {
+    // (A Normal Monster has no effect to classify, but the card list names the Exodia parts.)
+    if (card.route !== 'candidate' && !((card.route === 'clear' || card.route === 'normal') && override)) {
       continue
     }
     const classification = classifications.get(card.id)

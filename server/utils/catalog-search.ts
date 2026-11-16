@@ -1,11 +1,13 @@
-import { and, asc, count, desc, eq, isNotNull, ne, sql } from 'drizzle-orm'
+import { and, asc, count, eq, isNotNull, ne, sql } from 'drizzle-orm'
 import type { useDb } from '../db'
 import { catalogCard, catalogCardImage, catalogPrinting, catalogSet } from '../db/schema'
 import type { AppLocale } from '../../shared/locale'
+import { archetypeData, archetypesForMenu } from './archetype-data'
 import { activeCatalogCard } from './card-name-search'
+import { cardSortOrderBy } from './card-sort-sql'
 import { resolveCatalogCardId } from './card-passcode'
 import { primaryImageFirst, primaryImageUrlSql } from './card-image-sql'
-import { cardDescDeSql, cardNameDeSql, cardSortKey } from './card-translation-sql'
+import { cardDescDeSql, cardNameDeSql } from './card-translation-sql'
 import { buildCardListWhere, type CardListQuery } from './catalog-query'
 import { legalityCardIds } from './format-legality'
 
@@ -39,12 +41,7 @@ export async function searchCatalog(db: Db, filters: CardListQuery, cardLocale: 
   const legalityIds = userId ? legalityCardIds(db, userId, filters) : null
   const where = buildCardListWhere(filters, userId, legalityIds)
   const offset = (filters.page - 1) * filters.pageSize
-  const nameKey = cardSortKey(cardLocale)
-  const orderBy = filters.sort === '-name'
-    ? [desc(nameKey)]
-    : filters.sort === 'newest'
-      ? [sql`${catalogCard.tcgDate} is null`, desc(catalogCard.tcgDate), asc(nameKey)]
-      : [asc(nameKey)]
+  const orderBy = cardSortOrderBy(filters.sort, cardLocale)
 
   const totalRows = await db
     .select({ total: count() })
@@ -197,13 +194,14 @@ export async function getCatalogFacets(db: Db) {
       })
       .from(catalogSet)
       .orderBy(asc(catalogSet.name)),
-    // The "Deckthema" menu: every archetype of an active card (about 700).
+    // The "Deckthema" menu: every archetype of an active card (about 800): the game's own (`archetype-data.ts`) for the cards the
+    // data has, the catalog's for the others.
     db
-      .selectDistinct({ value: catalogCard.archetype })
+      .select({ id: catalogCard.id, archetype: catalogCard.archetype })
       .from(catalogCard)
-      .where(and(activeCatalogCard(), isNotNull(catalogCard.archetype), ne(catalogCard.archetype, '')))
-      .orderBy(asc(catalogCard.archetype)),
+      .where(activeCatalogCard()),
   ])
+  const data = archetypeData()
 
   // A set without a printing of an active card would find nothing in the set
   // filter, so the facet leaves it out. The rows stay because a format's
@@ -216,7 +214,7 @@ export async function getCatalogFacets(db: Db) {
     attributes: attributes.flatMap(item => item.value ? [item.value] : []),
     races: races.flatMap(item => item.value ? [item.value] : []),
     levels: levels.flatMap(item => item.value === null ? [] : [item.value]),
-    archetypes: archetypes.flatMap(item => item.value ? [item.value] : []),
+    archetypes: [...new Set(archetypes.flatMap(row => archetypesForMenu(data, row.id, row.archetype)))].filter(name => name !== '').sort(),
     sets: sets.filter(set => set.hasCards).map(toOption),
     setsWithoutCards: sets.filter(set => !set.hasCards).map(toOption),
   }

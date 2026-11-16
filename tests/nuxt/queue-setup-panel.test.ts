@@ -227,7 +227,7 @@ describe('the format of a duel tournament that has not started', () => {
 
 // Tester feedback, round 15: "gib mir noch den spielmodus, spielabend."
 describe('the settings of a Spielabend', () => {
-  const EVENING: Partial<QueueSetupDto> = { mode: 'free', flow: 'rounds', rounds: null, bestOf: 1, scoring: 'games', prelaunch: false }
+  const EVENING: Partial<QueueSetupDto> = { mode: 'free', flow: 'rounds', rounds: null, bestOf: 1, scoring: 'duel_3_0', prelaunch: false }
 
   it('asks for nothing but the format and how a duel is worth points: no rounds, no tables, no minutes, no best-of, no estimate', async () => {
     const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament(EVENING) } })
@@ -250,25 +250,38 @@ describe('the settings of a Spielabend', () => {
     expect(component.text()).toContain('Empfohlen bei 11 Spielern')
   })
 
-  it('keeps the scoring by games available although a new duel starts as a single game', async () => {
-    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament(EVENING) } })
+  it('offers the two scorings per duel, "Pro Duell 3 · 0" and "Pro Duell 1 · 0", although a new duel starts as a single game', async () => {
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ ...EVENING, scoring: 'duel_1_0' }) } })
 
     expect(component.find('button[aria-label="Punktevergabe"]').attributes('disabled')).toBeUndefined()
-    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Nach Spielen')
+    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Pro Duell 1 · 0')
+    expect(component.text()).toContain('Jedes gewonnene Duell')
+  })
+
+  it('shows the scoring per duel for a Spielabend made before it, which still has the scoring of the matches, and saves it', async () => {
+    const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ ...tournament(EVENING) }))
+    vi.stubGlobal('$fetch', fetchSpy)
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ ...EVENING, scoring: 'games' }) } })
+
+    expect(component.find('button[aria-label="Punktevergabe"]').text()).toContain('Pro Duell 3 · 0')
+    await findButton(component, 'Einstellungen speichern').trigger('click')
+    await flushPromises()
+
+    const call = fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments/t-1')!
+    expect(call[1]).toMatchObject({ body: { queueMode: 'free', scoring: 'duel_3_0' } })
   })
 
   it('saves it as a Spielabend without rounds and with the scoring chosen', async () => {
     const fetchSpy = vi.fn(async (_url: string, _options?: unknown) => ({ ...tournament(EVENING) }))
     vi.stubGlobal('$fetch', fetchSpy)
-    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament(EVENING) } })
+    const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament({ ...EVENING, scoring: 'duel_1_0' }) } })
 
     await findButton(component, 'Einstellungen speichern').trigger('click')
     await flushPromises()
 
     const call = fetchSpy.mock.calls.find(entry => entry[0] === '/api/tournaments/t-1')!
-    expect(call[1]).toMatchObject({ method: 'PATCH', body: { queueMode: 'free', flow: 'rounds', bestOf: 1, scoring: 'games', plannedRounds: null, prelaunch: false } })
+    expect(call[1]).toMatchObject({ method: 'PATCH', body: { queueMode: 'free', flow: 'rounds', bestOf: 1, scoring: 'duel_1_0', plannedRounds: null, prelaunch: false } })
   })
-
   it('changes to the other modes and back: the fields of a plan come back', async () => {
     const component = await mountSuspended(QueueSetupPanel, { props: { tournament: tournament(EVENING) } })
     const form = (component.vm as unknown as { form: { mode: string } }).form

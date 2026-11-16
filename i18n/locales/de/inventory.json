@@ -73,15 +73,7 @@
       "placeholder": "Im Inventar suchen...",
       "label": "Inventar durchsuchen",
       "inText": "Auch im Kartentext suchen",
-      "reset": "Reset",
-      "sortLabel": "Sortierung",
-      "sort": {
-        "updated": "Zuletzt geändert",
-        "nameAsc": "Name (A-Z)",
-        "nameDesc": "Name (Z-A)",
-        "quantity": "Anzahl",
-        "newest": "Neueste"
-      }
+      "reset": "Reset"
     },
     "gallery": {
       "loadFailed": "Die Suche konnte nicht geladen werden",

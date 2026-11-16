@@ -16,11 +16,12 @@ export interface InventorySearchFilters {
   /** "Zulässigkeit" (tester feedback, round 14): a rule format (`''` for none) and what to show of it. */
   formatId: string
   legality: FormatLegality
-  sort: 'name' | '-name' | 'quantity' | 'newest'
+  /** The gallery's order: a field of shared/card-sort.ts or `quantity`, "-" in front for descending (`name`, `-atk`). */
+  sort: string
 }
 
-// The sort is not here: it sits with the search text (tester feedback, round 15), where the page also shows how many
-// cards it lists, for the list and the gallery alike.
+// The sort is not here: it sits in the toolbar above the cards (tester feedback, round 16), next to how many cards the
+// view lists, for the list and the gallery alike.
 withDefaults(defineProps<{
   facets: CardFacetOptions
   /** Different cards per card kind, shown as chips in a row under the filters; they also toggle the "Kartenart" filter. */

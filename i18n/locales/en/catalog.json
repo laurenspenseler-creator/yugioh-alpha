@@ -14,12 +14,6 @@
       "allSets": "All sets",
       "reset": "Reset"
     },
-    "sort": {
-      "label": "Sort by",
-      "nameAsc": "Name A-Z",
-      "nameDesc": "Name Z-A",
-      "newest": "Newest first"
-    },
     "loadFailed": "Couldn't load the catalog",
     "tryAgain": "Please try again.",
     "reload": "Reload",

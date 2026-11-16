@@ -785,22 +785,64 @@ describe('a Spielabend: duels paired by hand', () => {
     expect(duels.find(duel => duel.id === single.id)).toMatchObject({ status: 'done', winnerParticipantId: ids[2], gamesA: null, gamesB: null })
   })
 
-  it('scores a best-of-3 duel by games and a single game 3:0, and ranks by the difference of the games', () => {
-    const { id, ids } = startedEvening()
+  // Tester feedback, round 16: "Verteil Punkte beim Spielabend über Duelle, nicht Matches. Da geht nur 3-0 oder 1-0."
+  it('scores every duel (game) won 3 points, and ranks by points, then by the difference of the games', () => {
+    const { id, ids, started } = startedEvening()
+    expect(started.queueSetup).toMatchObject({ scoring: 'duel_3_0' })
     const bo3 = pair(id, ids[0]!, ids[1]!, 3).queue!.duels[0]!
     const single = pair(id, ids[2]!, ids[3]!, 1).queue!.duels[1]!
     reportDuelResult(db, ORGANIZER, id, bo3.id, { winnerParticipantId: ids[0], gamesA: 2, gamesB: 1 })
     const detail = reportDuelResult(db, ORGANIZER, id, single.id, { winnerParticipantId: ids[2] })
 
     const row = (participantId: string) => detail.queue!.table.find(candidate => candidate.participantId === participantId)!
-    expect([row(ids[0]!).points, row(ids[0]!).gamesWon, row(ids[0]!).gamesLost]).toEqual([2, 2, 1])
-    expect([row(ids[1]!).points, row(ids[1]!).gamesWon, row(ids[1]!).gamesLost]).toEqual([1, 1, 2])
+    // 2:1 is two games for the winner (6 points) and one for the other (3), a single game 3 and 0.
+    expect([row(ids[0]!).points, row(ids[0]!).gamesWon, row(ids[0]!).gamesLost]).toEqual([6, 2, 1])
+    expect([row(ids[1]!).points, row(ids[1]!).gamesWon, row(ids[1]!).gamesLost]).toEqual([3, 1, 2])
     expect([row(ids[2]!).points, row(ids[2]!).gamesWon, row(ids[2]!).gamesLost]).toEqual([3, 1, 0])
     expect([row(ids[3]!).points, row(ids[3]!).gamesWon, row(ids[3]!).gamesLost]).toEqual([0, 0, 1])
-    expect(detail.queue!.table[0]!.participantId).toBe(ids[2])
+    expect(detail.queue!.table[0]!.participantId).toBe(ids[0])
     expect(detail.queue!.duelsDone).toBe(2)
   })
 
+  it('scores every duel won 1 point with "Pro Duell 1 · 0"', () => {
+    const created = newQueueTournament(db, { mode: 'free', scoring: 'duel_1_0' }, 4)
+    const started = startTournament(db, ORGANIZER, created.id)
+    expect(started.queueSetup).toMatchObject({ scoring: 'duel_1_0' })
+    const ids = started.participants.map(participant => participant.id)
+    const bo3 = pair(created.id, ids[0]!, ids[1]!, 3).queue!.duels[0]!
+    const single = pair(created.id, ids[2]!, ids[3]!, 1).queue!.duels[1]!
+    reportDuelResult(db, ORGANIZER, created.id, bo3.id, { winnerParticipantId: ids[1], gamesA: 0, gamesB: 2 })
+    const detail = reportDuelResult(db, ORGANIZER, created.id, single.id, { winnerParticipantId: ids[3] })
+
+    const points = (participantId: string) => detail.queue!.table.find(row => row.participantId === participantId)!.points
+    expect([points(ids[0]!), points(ids[1]!), points(ids[2]!), points(ids[3]!)]).toEqual([0, 2, 0, 1])
+  })
+
+  it('takes only the scorings per duel for a Spielabend and only the others for every other mode', () => {
+    expect(codeOf(() => validateTournamentInput({ name: 'x', engine: 'queue', mode: 'free', scoring: 'games' }))).toBe('invalid_scoring')
+    expect(codeOf(() => validateTournamentInput({ name: 'x', engine: 'queue', mode: 'free', scoring: 'match' }))).toBe('invalid_scoring')
+    expect(codeOf(() => validateTournamentInput({ name: 'x', engine: 'queue', mode: 'swiss', scoring: 'duel_3_0' }))).toBe('invalid_scoring')
+    expect(codeOf(() => validateTournamentInput({ name: 'x', scoring: 'duel_1_0' }))).toBe('invalid_scoring')
+    expect(validateTournamentInput({ name: 'x', engine: 'queue', mode: 'free' }).scoring).toBe('duel_3_0')
+    expect(validateTournamentInput({ name: 'x', engine: 'queue', mode: 'free', scoring: 'duel_1_0' }).scoring).toBe('duel_1_0')
+    expect(validateTournamentInput({ name: 'x', engine: 'queue', mode: 'swiss' }).scoring).toBe('games')
+  })
+
+  it('changes the scoring with the mode until the start, and refuses one that does not fit', () => {
+    const created = newQueueTournament(db, { mode: 'swiss', plannedRounds: 2, scoring: 'match' }, 4)
+
+    const toEvening = updateTournament(db, ORGANIZER, created.id, { queueMode: 'free' })
+    expect(toEvening.queueSetup).toMatchObject({ mode: 'free', scoring: 'duel_3_0' })
+    expect(updateTournament(db, ORGANIZER, created.id, { scoring: 'duel_1_0' }).queueSetup).toMatchObject({ scoring: 'duel_1_0' })
+    expect(codeOf(() => updateTournament(db, ORGANIZER, created.id, { scoring: 'games' }))).toBe('invalid_scoring')
+
+    const back = updateTournament(db, ORGANIZER, created.id, { queueMode: 'round_robin' })
+    expect(back.queueSetup).toMatchObject({ mode: 'round_robin', scoring: 'games' })
+    expect(codeOf(() => updateTournament(db, ORGANIZER, created.id, { scoring: 'duel_3_0' }))).toBe('invalid_scoring')
+    // Both at once is fine, and the new scoring has to fit the new mode.
+    expect(updateTournament(db, ORGANIZER, created.id, { queueMode: 'free', scoring: 'duel_1_0' }).queueSetup).toMatchObject({ mode: 'free', scoring: 'duel_1_0' })
+    expect(codeOf(() => updateTournament(db, ORGANIZER, created.id, { queueMode: 'swiss', scoring: 'duel_1_0' }))).toBe('invalid_scoring')
+  })
   it('refuses a pair that does not work: the same player twice, someone in a duel, a stranger, a best-of that does not exist', () => {
     const { id, ids } = startedEvening()
     pair(id, ids[0]!, ids[1]!, 1)

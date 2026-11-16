@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, ne, or, sql } from 'drizzle-orm'
 import { createError } from 'h3'
 import type { useDb } from '../db'
 import { catalogCard, ownedCard } from '../db/schema'
@@ -10,6 +10,7 @@ import type { AppLocale } from '../../shared/locale'
 import { activeCatalogCard, cardNameMatches, escapedLike, escapeLikeTerm } from './card-name-search'
 import { primaryImageUrlSql } from './card-image-sql'
 import { resolvePasscode } from './card-passcode'
+import { cardSortOrderBy, readSortValue } from './card-sort-sql'
 import { cardDescDeSql, cardNameDeSql, cardSortKey } from './card-translation-sql'
 import { assertCollectionOwnedByUser } from './collections'
 import { legalityCardIds } from './format-legality'
@@ -53,15 +54,19 @@ export interface InventoryListOptions {
   legality?: FormatLegality
   // "Deckthema": the archetypes of a card, exact names.
   archetype?: string[]
-  // The order of the list (tester feedback, round 15: "Sortierung von A-Z"): recently changed first (the default),
-  // or by the name of the card in the card language, either way round.
+  // The order of the list (tester feedback, rounds 15 and 16): a field of shared/card-sort.ts or `updated` (the last change of
+  // the copies), "-" in front for descending. Without one: the latest change first.
   sort?: InventoryListSort
   cardLocale?: AppLocale
 }
 
-export type InventoryListSort = 'updated' | 'name' | '-name'
+export type InventoryListSort = string
 
-export const INVENTORY_LIST_SORTS: readonly InventoryListSort[] = ['updated', 'name', '-name']
+/** The fields the list has on top of the card's own ones. */
+export const LIST_EXTRA_SORTS = ['updated'] as const
+
+/** What the list starts with: the latest change first. */
+export const DEFAULT_LIST_SORT = '-updated'
 
 // `code` (+ `params`) is what the UI translates (`errors.api.<code>`, ADR
 // 0014); the English statusMessage stays technical. Only errors a user can
@@ -731,17 +736,16 @@ export function parseInventoryListQuery(query: Record<string, unknown>): Invento
     formatId,
     legality,
     archetype,
-    sort: INVENTORY_LIST_SORTS.find(value => value === query.sort),
+    sort: readSortValue(query.sort, DEFAULT_LIST_SORT, LIST_EXTRA_SORTS),
   }
 }
 
-/** The rows of the list: the newest change first, or by card name (in the card language, ADR 0015), the rows of one card by their change. */
+/**
+ * The rows of the list in the order of a sort value (shared/card-sort.ts, in the card language, ADR 0015, or the time of the
+ * last change); the rows of one card follow each other, the latest change first.
+ */
 function listOrderBy(sort: InventoryListSort, cardLocale: AppLocale) {
-  if (sort === 'updated') {
-    return [desc(ownedCard.updatedAt)]
-  }
-  const nameKey = cardSortKey(cardLocale)
-  return [sort === '-name' ? desc(nameKey) : asc(nameKey), desc(ownedCard.updatedAt)]
+  return cardSortOrderBy(sort, cardLocale, { updated: sql`${ownedCard.updatedAt}` }, [desc(ownedCard.updatedAt)])
 }
 
 export function listOwnedCards(db: Db, userId: string, options: InventoryListOptions = {}) {
@@ -799,7 +803,7 @@ export function listOwnedCards(db: Db, userId: string, options: InventoryListOpt
     .from(ownedCard)
     .innerJoin(catalogCard, eq(ownedCard.catalogCardId, catalogCard.id))
     .where(where)
-    .orderBy(...listOrderBy(options.sort ?? 'updated', options.cardLocale ?? 'en'))
+    .orderBy(...listOrderBy(options.sort ?? DEFAULT_LIST_SORT, options.cardLocale ?? 'en'))
     .limit(pageSize)
     .offset((page - 1) * pageSize)
     .all()

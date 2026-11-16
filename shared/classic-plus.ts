@@ -36,12 +36,14 @@ export const CLASSIC_PLUS_STEPS: ClassicPlusStep[] = [
   { code: '7b', maxCopies: 1, label: 'Rule 7b: revives from GY or banishment' },
   { code: '7c', maxCopies: 1, label: 'Rule 7c: Extra Deck summon without full materials' },
   { code: '7d', maxCopies: 1, label: 'Rule 7d: Fusion material from the Deck' },
+  { code: '7e', maxCopies: 1, label: 'Rule 7e: Special Summons a monster from the Deck (v3.1, Ä13)' },
   { code: '8', maxCopies: 1, label: 'Rule 8: mass removal' },
   { code: '9a', maxCopies: 1, label: 'Rule 9a: protection from card effects' },
   { code: '9b', maxCopies: 2, label: 'Rule 9b: protection from battle' },
   { code: '10', maxCopies: 1, label: 'Rule 10: negation' },
   { code: '11a', maxCopies: 1, label: 'Rule 11: denies a phase or Normal Summon once' },
   { code: '11b', maxCopies: 0, label: 'Rule 11: denies a phase or Normal Summon repeatedly' },
+  { code: '12', maxCopies: 1, label: 'Rule 12: alternative win condition, or searches its parts by name (v3.1, Ä12)' },
   { code: 'frequency', maxCopies: 0, label: 'Frequency modifier: limited effect usable twice per turn' },
   { code: 'stacking', maxCopies: 0, label: 'Stacking rule: protection plus multiplied battle damage' },
 ]
@@ -54,7 +56,7 @@ export const CLASSIC_PLUS_TRAITS = ['body', 'cost', 'noanswer', 'bound', 'chain'
 export type ClassicPlusTrait = typeof CLASSIC_PLUS_TRAITS[number]
 
 /** The rules whose base limit the traits `body`, `cost` and `noanswer` move. */
-export const CLASSIC_PLUS_TIERED_RULES: readonly string[] = ['6b', '7a', '7b', '7c', '7d', '8']
+export const CLASSIC_PLUS_TIERED_RULES: readonly string[] = ['6b', '7a', '7b', '7c', '7d', '7e', '8']
 
 /** The traits that mean something on a hit of `rule`; the others are ignored. */
 export function applicableTraits(rule: string, traits: readonly string[]): ClassicPlusTrait[] {

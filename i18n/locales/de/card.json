@@ -29,6 +29,25 @@
       "pendulumScale": "Pendelbereich"
     },
     "archetypeSearch": "Deckthema suchen...",
+    "sort": {
+      "label": "Sortierung",
+      "field": {
+        "release": "Erscheinungsdatum",
+        "atk": "Angriff",
+        "def": "Defensive",
+        "level": "Stufe",
+        "name": "Name",
+        "type": "Kartentyp",
+        "scale": "Pendelbereich",
+        "updated": "Zuletzt geändert",
+        "quantity": "Anzahl",
+        "default": "Standard"
+      },
+      "ascending": "Aufsteigend",
+      "descending": "Absteigend",
+      "switchToAscending": "Aufsteigend sortieren (A–Z, kleinste, älteste zuerst)",
+      "switchToDescending": "Absteigend sortieren (Z–A, größte, neueste zuerst)"
+    },
     "legality": {
       "anyFormat": "Alle Formate",
       "legal": "Zulässig",

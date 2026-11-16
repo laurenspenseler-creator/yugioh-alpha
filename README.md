@@ -172,4 +172,7 @@ detail, tests and the project structure.
 - Card data and images: [YGOPRODeck](https://ygoprodeck.com/api-guide/).
 - German card names and texts: [ygoresources.com](https://db.ygoresources.com/)
   ([card-history repo](https://github.com/db-ygoresources-com/yugioh-card-history)). The texts are Konami's.
+- Which card belongs to which archetype ("Deckthema"), and the official German names of the archetypes:
+  [Yugipedia](https://yugipedia.com/) (text under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/); only these
+  facts are taken, refreshed with `scripts/archetypes/build.ts`, see [ADR 0049](docs/adr/0049-archetypes-from-the-game-and-one-sort.md)).
 - Card names, texts and artwork are © Konami.
