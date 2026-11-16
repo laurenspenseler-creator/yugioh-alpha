@@ -9,6 +9,9 @@ dist
 
 # Local data
 data/
+# ... but not the app's own data files (the archetypes, ADR 0049)
+!server/data/
+!shared/data/
 e2e-data/
 
 # Playwright
